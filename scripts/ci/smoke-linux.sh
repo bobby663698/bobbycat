@@ -64,7 +64,7 @@ host() {
   if [ "${1:-}" = "--sde" ]; then sde=$2; shift 2; fi
   [ $# -eq 1 ] || { echo "usage: $0 [--sde SDE64] DIR" >&2; exit 2; }
   dir=$(cd "$1" && pwd)
-  local bin="$dir/concat"
+  local bin="$dir/bobbycat"
   [ -x "$bin" ] || fail "$bin is not there"
 
   # The build's own environment points at the FFmpeg it linked; the
@@ -79,10 +79,10 @@ host() {
     fail "the binary does not resolve every library from its own folder"
   fi
 
-  say "concat --version"
-  HOME=$(fresh_home) expect_ok "concat --version" 60 "$bin" --version
+  say "bobbycat --version"
+  HOME=$(fresh_home) expect_ok "bobbycat --version" 60 "$bin" --version
 
-  say "concat --smoke"
+  say "bobbycat --smoke"
   local trace
   trace=$(mktemp)
   local tracer=()
@@ -91,14 +91,14 @@ host() {
   else
     echo "no strace: the start-up is run but its file opens are not checked"
   fi
-  HOME=$(fresh_home) expect_ok "concat --smoke" 180 \
+  HOME=$(fresh_home) expect_ok "bobbycat --smoke" 180 \
     xvfb-run -a -s "-screen 0 1920x1080x24" "${tracer[@]}" "$bin" --smoke
   if [ ${#tracer[@]} -gt 0 ]; then
     local cuda
     cuda=$(grep -E 'lib(cuda|nvcuvid|nvidia-encode)\.so' "$trace" || true)
     if [ -n "$cuda" ]; then
       echo "$cuda"
-      fail "concat --smoke tried to load the NVIDIA driver's CUDA or NVENC libraries at start-up"
+      fail "bobbycat --smoke tried to load the NVIDIA driver's CUDA or NVENC libraries at start-up"
     fi
     echo "no CUDA or NVENC library opened at start-up"
   fi
@@ -106,10 +106,10 @@ host() {
   # The export run's clip: two seconds of picture and sound, from the
   # media fixtures. A launch alone never reaches an export, and an export
   # that could not start shipped twice on phones (#747).
-  say "concat --smoke-export"
+  say "bobbycat --smoke-export"
   local clip
   clip=$(cd "$here/../../src/crates/concat-media/fixtures" && pwd)/picture-starts-late.mov
-  HOME=$(fresh_home) expect_ok "concat --smoke-export" 300 \
+  HOME=$(fresh_home) expect_ok "bobbycat --smoke-export" 300 \
     xvfb-run -a -s "-screen 0 1920x1080x24" "$bin" --smoke-export "$clip"
 
   if [ -n "$sde" ]; then

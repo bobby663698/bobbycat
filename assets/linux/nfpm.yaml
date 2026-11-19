@@ -27,20 +27,20 @@ description: |
   with FFmpeg underneath and hardware-accelerated preview and export.
 
 contents:
-  - src: concat
-    dst: /opt/concat/concat
+  - src: bobbycat
+    dst: /opt/concat/bobbycat
     file_info:
       mode: 0755
   - src: lib/*
     dst: /opt/concat/lib/
-  - src: pkg/concat
-    dst: /usr/bin/concat
+  - src: pkg/bobbycat
+    dst: /usr/bin/bobbycat
     file_info:
       mode: 0755
-  - src: pkg/concat.desktop
-    dst: /usr/share/applications/concat.desktop
-  - src: concat.png
-    dst: /usr/share/icons/hicolor/256x256/apps/concat.png
+  - src: pkg/bobbycat.desktop
+    dst: /usr/share/applications/bobbycat.desktop
+  - src: bobbycat.png
+    dst: /usr/share/icons/hicolor/256x256/apps/bobbycat.png
   - src: LICENSE
     dst: /usr/share/doc/concat/LICENSE
   - src: THIRD_PARTY_NOTICES.md

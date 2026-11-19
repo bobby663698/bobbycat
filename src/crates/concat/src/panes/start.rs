@@ -94,30 +94,25 @@ pub fn shown<'a>(
     shown
 }
 
-/// The official site, which the guides and the developer docs are pages of.
-const SITE: &str = "https://concat.standalones.org";
-/// The repository: the code, the issues, the releases.
-pub const REPOSITORY: &str = "https://github.com/jub0t/Concat";
+/// The repository: the docs, the issues, the releases, the discussions.
+/// Every link on the launch screen is a page of it, so the build carries no
+/// address of anybody else's site.
+pub const REPOSITORY: &str = "https://github.com/bobby663698/bobbycat";
 
 /// Where each of the launch screen's links goes, by the name the screen
 /// sends. One table, so a moved page is one line here. Every address is a
-/// page of the website's own content - src/content/guides in its
-/// repository - or the repository's, and None for a name nobody sends.
+/// page of the repository's own content, and None for a name nobody sends.
 /// "shortcuts" is not here: it opens Settings, not a page.
 pub fn link(name: &str) -> Option<String> {
     Some(match name {
-        "guides" => format!("{SITE}/guides/"),
-        "first-edit" => format!("{SITE}/guides/first-edit/"),
-        "report" => format!("{SITE}/guides/report-a-problem/"),
+        "guides" => format!("{REPOSITORY}/tree/main/docs"),
+        "first-edit" => format!("{REPOSITORY}#readme"),
+        "report" => format!("{REPOSITORY}/issues/new"),
         "github" => REPOSITORY.to_owned(),
-        // The gradient card: this version's "What's new" post on the
-        // website's blog, the polished telling of its release notes.
-        "news" => format!(
-            "{SITE}/blog/whats-new-in-{}/",
-            env!("CARGO_PKG_VERSION").replace('.', "-")
-        ),
-        // The invite the README carries.
-        "discord" => "https://discord.gg/DVuPfpXfqP".to_owned(),
+        // The gradient card: this version's release notes.
+        "news" => format!("{REPOSITORY}/releases"),
+        // Community: the repository's discussions.
+        "discord" => format!("{REPOSITORY}/discussions"),
         // The notes for the release this build is, under the tag the
         // release workflow pushes.
         "release-notes" => format!("{REPOSITORY}/releases/tag/v{}", env!("CARGO_PKG_VERSION")),

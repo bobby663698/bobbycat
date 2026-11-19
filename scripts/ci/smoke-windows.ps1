@@ -10,11 +10,11 @@
 #    the folder or one Windows itself provides. A DLL that only happens to
 #    be on this machine - the Visual C++ runtime, DirectML, ONNX Runtime,
 #    which Windows 11 carries a copy of its own - counts as missing.
-# 2. `concat.exe --version` exits 0 with PATH cut down to Windows' own
+# 2. `bobbycat.exe --version` exits 0 with PATH cut down to Windows' own
 #    folders, so every DLL comes from the folder or from System32 - as on
 #    a machine with nothing else installed. It touches no GPU: it proves
 #    the program and every DLL it loads at start load and initialise.
-# 3. `concat.exe --smoke` exits 0 the same way: the start-up runs through
+# 3. `bobbycat.exe --smoke` exits 0 the same way: the start-up runs through
 #    the first frame of the window, then the program leaves. Then
 #    `--smoke-export` makes a project of a fixture clip and exports it.
 # 4. With -Sde, `--version` again under Intel's emulator posing as an Ivy
@@ -34,7 +34,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $bundle = (Resolve-Path $Bundle).Path
-$exe = Join-Path $bundle "concat.exe"
+$exe = Join-Path $bundle "bobbycat.exe"
 if (-not (Test-Path $exe)) { throw "$exe is not there" }
 
 function Say($text) { Write-Host ""; Write-Host "== $text" }
@@ -188,23 +188,23 @@ Write-Host "  every import resolves to the folder or to Windows"
 $bare = @($system, $env:SystemRoot, (Join-Path $system "Wbem"), (Join-Path $system "WindowsPowerShell\v1.0")) -join ";"
 
 # ── 2. --version ───────────────────────────────────────────────────────
-Say "concat.exe --version, with only Windows on the path"
-Expect-Ok "concat.exe --version" $exe @("--version") $bare 60
+Say "bobbycat.exe --version, with only Windows on the path"
+Expect-Ok "bobbycat.exe --version" $exe @("--version") $bare 60
 
 # ── 3. --smoke ─────────────────────────────────────────────────────────
-Say "concat.exe --smoke, with only Windows on the path"
-Expect-Ok "concat.exe --smoke" $exe @("--smoke") $bare 180
+Say "bobbycat.exe --smoke, with only Windows on the path"
+Expect-Ok "bobbycat.exe --smoke" $exe @("--smoke") $bare 180
 
 # ── 3b. --smoke-export ─────────────────────────────────────────────────
 # A project of a two-second clip from the media fixtures, exported through
 # the Export sheet's own messages; exit 0 once the file is written. A
 # launch alone never reaches an export (#747).
-Say "concat.exe --smoke-export, with only Windows on the path"
+Say "bobbycat.exe --smoke-export, with only Windows on the path"
 $clip = (Resolve-Path (Join-Path $PSScriptRoot "..\..\src\crates\concat-media\fixtures\picture-starts-late.mov")).Path
 $exportStarted = Get-Date
 $exportFailed = $null
 try {
-  Expect-Ok "concat.exe --smoke-export" $exe @("--smoke-export", $clip) $bare 300
+  Expect-Ok "bobbycat.exe --smoke-export" $exe @("--smoke-export", $clip) $bare 300
 } catch { $exportFailed = $_ }
 
 # An export that lost its GPU device and finished on the CPU exits 0 - the
@@ -214,7 +214,7 @@ if (-not $exportFailed) {
   $log = Find-Log $exportStarted
   if ($log -and (Select-String -Path $log.FullName -SimpleMatch "going on drawing on the CPU" -Quiet)) {
     Show-Log $exportStarted
-    $exportFailed = "concat.exe --smoke-export: the GPU device was lost and the export finished on the CPU"
+    $exportFailed = "bobbycat.exe --smoke-export: the GPU device was lost and the export finished on the CPU"
   }
 }
 
@@ -279,19 +279,19 @@ if ($exportFailed) { Fail "$exportFailed" }
 
 # ── 4. On an emulated Ivy Bridge ───────────────────────────────────────
 if ($Sde) {
-  Say "concat.exe --version on an emulated Ivy Bridge"
+  Say "bobbycat.exe --version on an emulated Ivy Bridge"
   $sdeExe = (Resolve-Path $Sde).Path
   # The emulator's own folder too: it loads its pieces from beside itself.
   $path = (Split-Path $sdeExe) + ";" + $bare
-  Expect-Ok "concat.exe --version under SDE -ivb" $sdeExe @("-ivb", "--", $exe, "--version") $path 600
+  Expect-Ok "bobbycat.exe --version under SDE -ivb" $sdeExe @("-ivb", "--", $exe, "--version") $path 600
 
   # whisper's CPU kernels, one DLL per CPU generation: ggml loads every
   # one to score it against the CPU before it keeps the best, so the
   # Haswell and Ice Lake DLLs are loaded here too, on a Sandy Bridge - AVX
   # without even F16C, like #318's i7-2600 - which must come out with the
   # sandybridge DLL and no illegal instruction.
-  Say "concat.exe --whisper-cpu on an emulated Sandy Bridge"
-  Expect-Ok "concat.exe --whisper-cpu under SDE -snb" $sdeExe @("-snb", "--", $exe, "--whisper-cpu") $path 600
+  Say "bobbycat.exe --whisper-cpu on an emulated Sandy Bridge"
+  Expect-Ok "bobbycat.exe --whisper-cpu under SDE -snb" $sdeExe @("-snb", "--", $exe, "--whisper-cpu") $path 600
 }
 
 Say "ok"

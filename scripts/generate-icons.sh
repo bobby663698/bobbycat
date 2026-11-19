@@ -5,7 +5,7 @@
 #   scripts/generate-icons.sh [source.png] [output-dir]
 #
 # Defaults:
-#   source     assets/concat_logo_512.png
+#   source     assets/bobbycat_logo_512.png
 #              (a 512px render of assets/new_concat_logo_512_rounded_light_theme.svg)
 #   output-dir assets/icons
 #
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="${1:-$REPO_ROOT/assets/concat_logo_512.png}"
+SRC="${1:-$REPO_ROOT/assets/bobbycat_logo_512.png}"
 OUT="${2:-$REPO_ROOT/assets/icons}"
 SIZES=(512 256 128 64 32 16)
 

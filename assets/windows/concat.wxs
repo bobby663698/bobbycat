@@ -27,8 +27,8 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of BobbyCat is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-    <Icon Id="concat.ico" SourceFile="$(var.Root)\assets\icons\concat.ico" />
-    <Property Id="ARPPRODUCTICON" Value="concat.ico" />
+    <Icon Id="bobbycat.ico" SourceFile="$(var.Root)\assets\icons\bobbycat.ico" />
+    <Property Id="ARPPRODUCTICON" Value="bobbycat.ico" />
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/bobby663698/bobbycat" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
@@ -52,19 +52,19 @@
       <Shortcut Id="StartMenuShortcut"
                 Name="BobbyCat"
                 Description="Video editor"
-                Target="[INSTALLFOLDER]concat.exe"
+                Target="[INSTALLFOLDER]bobbycat.exe"
                 WorkingDirectory="INSTALLFOLDER"
-                Icon="concat.ico" />
+                Icon="bobbycat.ico" />
       <!-- The way in when a graphics driver draws the window as coloured
            squares: it turns off Settings > General > Draw on the GPU,
            which that window hides. -->
       <Shortcut Id="SafeGraphicsShortcut"
                 Name="BobbyCat (safe graphics)"
                 Description="BobbyCat, drawn in software"
-                Target="[INSTALLFOLDER]concat.exe"
+                Target="[INSTALLFOLDER]bobbycat.exe"
                 Arguments="--software"
                 WorkingDirectory="INSTALLFOLDER"
-                Icon="concat.ico" />
+                Icon="bobbycat.ico" />
       <RemoveFolder Id="RemoveShortcutFolder" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\BobbyCat" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
     </Component>
