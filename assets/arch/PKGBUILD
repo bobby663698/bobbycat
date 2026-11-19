@@ -1,10 +1,10 @@
-# Maintainer: noxygalaxy <noxycraftyt@gmail.com>
-pkgname=concat
+# Maintainer: BobbyCat <https://github.com/bobby663698/bobbycat/issues>
+pkgname=bobbycat
 pkgver=${CONCAT_VERSION:?CONCAT_VERSION must be set}
 pkgrel=1
 pkgdesc="Free and open source video editor"
 arch=('x86_64' 'aarch64')
-url="https://github.com/jub0t/Concat"
+url="https://github.com/bobby663698/bobbycat"
 license=('AGPL-3.0-or-later')
 depends=('glibc' 'gtk3' 'fontconfig' 'freetype2' 'libxkbcommon' 'mesa' 'alsa-lib')
 options=('!strip' '!debug')
@@ -13,17 +13,17 @@ source=()
 stage=${CONCAT_STAGE:?CONCAT_STAGE must point at the staged folder}
 
 package() {
-  install -Dm755 "$stage/bobbycat" "$pkgdir/opt/concat/bobbycat"
-  install -d "$pkgdir/opt/concat/lib"
-  cp -a "$stage"/lib/. "$pkgdir/opt/concat/lib/"
+  install -Dm755 "$stage/bobbycat" "$pkgdir/opt/bobbycat/bobbycat"
+  install -d "$pkgdir/opt/bobbycat/lib"
+  cp -a "$stage"/lib/. "$pkgdir/opt/bobbycat/lib/"
 
   install -d "$pkgdir/usr/bin"
-  printf '#!/bin/sh\nexec /opt/concat/bobbycat "$@"\n' > "$pkgdir/usr/bin/bobbycat"
+  printf '#!/bin/sh\nexec /opt/bobbycat/bobbycat "$@"\n' > "$pkgdir/usr/bin/bobbycat"
   chmod 755 "$pkgdir/usr/bin/bobbycat"
   install -Dm644 "$stage/bobbycat.desktop" "$pkgdir/usr/share/applications/bobbycat.desktop"
-  sed -i 's|^Exec=bobbycat|Exec=/opt/concat/bobbycat %U|' "$pkgdir/usr/share/applications/bobbycat.desktop"
+  sed -i 's|^Exec=bobbycat|Exec=/opt/bobbycat/bobbycat %U|' "$pkgdir/usr/share/applications/bobbycat.desktop"
   install -Dm644 "$stage/bobbycat.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/bobbycat.png"
 
-  install -Dm644 "$stage/LICENSE" "$pkgdir/usr/share/licenses/concat/LICENSE"
-  install -Dm644 "$stage/THIRD_PARTY_NOTICES.md" "$pkgdir/usr/share/licenses/concat/THIRD_PARTY_NOTICES.md"
+  install -Dm644 "$stage/LICENSE" "$pkgdir/usr/share/licenses/bobbycat/LICENSE"
+  install -Dm644 "$stage/THIRD_PARTY_NOTICES.md" "$pkgdir/usr/share/licenses/bobbycat/THIRD_PARTY_NOTICES.md"
 }

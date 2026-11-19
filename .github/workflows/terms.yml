@@ -78,14 +78,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          path-to-document: https://github.com/jub0t/Concat/blob/main/CLA.md
+          path-to-document: https://github.com/bobby663698/bobbycat/blob/main/CLA.md
           path-to-signatures: confirmations/terms-4.json
           branch: terms
           allowlist: jub0t,dependabot[bot],github-actions[bot]
           custom-notsigned-prcomment: >-
             Thanks for the pull request. Before it can be merged, each person
-            who wrote it needs to confirm Concat's
-            [contributing terms](https://github.com/jub0t/Concat/blob/main/CLA.md)
+            who wrote it needs to confirm BobbyCat's
+            [contributing terms](https://github.com/bobby663698/bobbycat/blob/main/CLA.md)
             once: your contribution is licensed under the MIT No Attribution
             licence, and every commit is signed off (`git commit -s`). To
             confirm, post a comment with exactly this sentence:

@@ -239,7 +239,7 @@ jobs:
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/Cargo.toml | head -1)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Building Concat $version for ${{ matrix.target }}"
+          echo "Building BobbyCat $version for ${{ matrix.target }}"
 
       # ── Linux ──────────────────────────────────────────────────────────
       # Slint's Skia renderer links fontconfig and freetype; cpal links
@@ -551,27 +551,27 @@ jobs:
           cp "$icons/bobbycat_logo_256.png" "$iconset/icon_256x256.png"
           cp "$icons/bobbycat_logo_512.png" "$iconset/icon_256x256@2x.png"
           cp "$icons/bobbycat_logo_512.png" "$iconset/icon_512x512.png"
-          iconutil -c icns "$iconset" -o "$app/Contents/Resources/Concat.icns"
+          iconutil -c icns "$iconset" -o "$app/Contents/Resources/BobbyCat.icns"
 
           cat > "$app/Contents/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
-            <key>CFBundleName</key><string>Concat</string>
-            <key>CFBundleDisplayName</key><string>Concat</string>
+            <key>CFBundleName</key><string>BobbyCat</string>
+            <key>CFBundleDisplayName</key><string>BobbyCat</string>
             <key>CFBundleIdentifier</key><string>com.bobbycat.editor</string>
             <key>CFBundleVersion</key><string>${VERSION}</string>
             <key>CFBundleShortVersionString</key><string>${VERSION}</string>
             <key>CFBundleExecutable</key><string>bobbycat</string>
-            <key>CFBundleIconFile</key><string>Concat</string>
+            <key>CFBundleIconFile</key><string>BobbyCat</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>LSMinimumSystemVersion</key><string>${MACOSX_DEPLOYMENT_TARGET}</string>
             <key>NSHighResolutionCapable</key><true/>
             <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
             <key>LSApplicationCategoryType</key><string>public.app-category.video</string>
             <key>NSHumanReadableCopyright</key><string>AGPL-3.0-or-later. See THIRD_PARTY_NOTICES.md.</string>
-            <key>NSMicrophoneUsageDescription</key><string>Concat records voiceovers from your microphone.</string>
+            <key>NSMicrophoneUsageDescription</key><string>BobbyCat records voiceovers from your microphone.</string>
           </dict>
           </plist>
           PLIST
@@ -579,13 +579,13 @@ jobs:
           # Every non-system dylib the binary (and those dylibs) load, copied
           # in and re-pointed at @executable_path/../Frameworks.
           dylibbundler -od -b \
-            -x "$app/Contents/MacOS/concat" \
+            -x "$app/Contents/MacOS/bobbycat" \
             -d "$app/Contents/Frameworks" \
             -p @executable_path/../Frameworks
 
           # Nothing outside the bundle may remain: a load path into
           # Homebrew would break on a Mac without it.
-          if otool -L "$app/Contents/MacOS/concat" | grep -E '/opt/homebrew|/usr/local' ; then
+          if otool -L "$app/Contents/MacOS/bobbycat" | grep -E '/opt/homebrew|/usr/local' ; then
             echo "the binary still loads libraries from outside the bundle" >&2
             exit 1
           fi
@@ -595,7 +595,7 @@ jobs:
           # looks for (concat-vision's onnx.rs), and on Apple silicon it is
           # inside the binary. A link here is #333 back: the app closing at
           # launch on every macOS older than the runtime.
-          if otool -L "$app/Contents/MacOS/concat" | grep libonnxruntime ; then
+          if otool -L "$app/Contents/MacOS/bobbycat" | grep libonnxruntime ; then
             echo "the binary links ONNX Runtime at launch" >&2
             exit 1
           fi
@@ -651,7 +651,7 @@ jobs:
               '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
               '<plist version="1.0"><dict><key>com.apple.security.device.audio-input</key><true/></dict></plist>' \
               > "$entitlements"
-            codesign --force --options runtime --timestamp --entitlements "$entitlements" -s "$IDENTITY" "$app/Contents/MacOS/concat"
+            codesign --force --options runtime --timestamp --entitlements "$entitlements" -s "$IDENTITY" "$app/Contents/MacOS/bobbycat"
             codesign --force --options runtime --timestamp --entitlements "$entitlements" -s "$IDENTITY" "$app"
             codesign --verify --deep --strict "$app"
           else
@@ -741,7 +741,7 @@ jobs:
           # The binary must resolve every library from the folder alone.
           # The whole ldd report goes to the public summary when it does
           # not, so the failure names the library instead of just a step.
-          report=$(env -u LD_LIBRARY_PATH ldd "stage/$name/concat" || true)
+          report=$(env -u LD_LIBRARY_PATH ldd "stage/$name/bobbycat" || true)
           if grep -i 'not found' <<<"$report"; then
             {
               echo "### Unresolved libraries: ${{ matrix.target }}"
@@ -828,7 +828,7 @@ jobs:
           docker run --rm --env CONCAT_VERSION="$pkgver" \
             -v "$work:/pkg" -w /pkg "$image" /pkg/build.sh
 
-          mv "$work"/concat-*.pkg.tar.zst "stage/$name.pkg.tar.zst"
+          mv "$work"/bobbycat-*.pkg.tar.zst "stage/$name.pkg.tar.zst"
           rm -rf "$work"
           ls -l stage
 
@@ -852,8 +852,8 @@ jobs:
           # What the packages add over the folder: the launcher, and a
           # desktop entry that names the program by its installed path.
           mkdir -p "$STAGE/pkg"
-          printf '#!/bin/sh\nexec /opt/bobbycat/concat "$@"\n' > "$STAGE/pkg/concat"
-          chmod +x "$STAGE/pkg/concat"
+          printf '#!/bin/sh\nexec /opt/bobbycat/bobbycat "$@"\n' > "$STAGE/pkg/bobbycat"
+          chmod +x "$STAGE/pkg/bobbycat"
           sed 's|^Exec=bobbycat|Exec=/opt/bobbycat/bobbycat %U|' "$STAGE/bobbycat.desktop" > "$STAGE/pkg/bobbycat.desktop"
 
           scripts/ci/fetch.sh "nfpm-$( [ "${{ matrix.arch }}" = x86_64 ] && echo x86_64 || echo arm64 )" nfpm.tar.gz
@@ -868,10 +868,10 @@ jobs:
           # The AppDir: the binary and its lib/ under usr/bin, so the
           # rpath holds; the desktop entry and icon at the root, where
           # the tool wants them; AppRun is the binary.
-          appdir="$PWD/Concat.AppDir"
+          appdir="$PWD/BobbyCat.AppDir"
           rm -rf "$appdir"
           mkdir -p "$appdir/usr/bin" "$appdir/usr/share/icons/hicolor/256x256/apps" "$appdir/usr/share/applications"
-          cp "$STAGE/concat" "$appdir/usr/bin/concat"
+          cp "$STAGE/bobbycat" "$appdir/usr/bin/bobbycat"
           cp -a "$STAGE/lib" "$appdir/usr/bin/lib"
           # The X11 keyboard library the window opens by name at start, the
           # core library under it, and the xcb extension under that: a machine
@@ -893,7 +893,7 @@ jobs:
           cp "$STAGE/bobbycat.png" "$appdir/bobbycat.png"
           cp "$STAGE/bobbycat.png" "$appdir/usr/share/icons/hicolor/256x256/apps/bobbycat.png"
           ln -s bobbycat.png "$appdir/.DirIcon"
-          ln -s usr/bin/concat "$appdir/AppRun"
+          ln -s usr/bin/bobbycat "$appdir/AppRun"
           # The tool and the runtime it puts at the head of the AppImage,
           # both a named release: left to itself the tool downloads the
           # runtime's `continuous` build as it runs.

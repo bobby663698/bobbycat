@@ -126,7 +126,7 @@ jobs:
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/Cargo.toml | head -1)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Building Concat $version for ${{ matrix.target }}"
+          echo "Building BobbyCat $version for ${{ matrix.target }}"
       # The toolchain src/rust-toolchain.toml pins, installed by name, with
       # the phone's standard library.
       - name: The pinned toolchain
@@ -185,7 +185,7 @@ jobs:
           keystore=$RUNNER_TEMP/run.keystore
           keytool -genkeypair -v -keystore "$keystore" -storepass concat -keypass concat \
             -alias concat -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Concat, O=Concat" >/dev/null 2>&1
+            -dname "CN=BobbyCat, O=BobbyCat" >/dev/null 2>&1
           echo "CARGO_APK_RELEASE_KEYSTORE=$keystore" >> "$GITHUB_ENV"
           echo "CARGO_APK_RELEASE_KEYSTORE_PASSWORD=concat" >> "$GITHUB_ENV"
 
@@ -274,7 +274,7 @@ jobs:
       # what a trace's offsets are looked up in, by the BuildId the trace
       # names, which the APK's copy shares. The APK's own copy is checked
       # for having no debug sections, so they never make the download
-      # larger. Not "Concat-*", so a release never publishes it.
+      # larger. Not "BobbyCat-*", so a release never publishes it.
       - name: Keep the engine's symbols
         if: matrix.ship
         env:
@@ -341,7 +341,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir stage
-          cp src/target/release/apk/Concat.apk "stage/Concat-$VERSION-android-${{ matrix.abi }}.apk"
+          cp src/target/release/apk/Concat.apk "stage/BobbyCat-$VERSION-android-${{ matrix.abi }}.apk"
           ls -l stage
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -440,7 +440,7 @@ jobs:
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/Cargo.toml | head -1)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Building Concat $version for aarch64-apple-ios"
+          echo "Building BobbyCat $version for aarch64-apple-ios"
       - name: The pinned toolchain
         id: toolchain
         run: echo "channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' src/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
@@ -520,7 +520,7 @@ jobs:
           set -euo pipefail
           mkdir -p stage payload/Payload
           cp -R src/target/aarch64-apple-ios/release/Concat.app payload/Payload/
-          (cd payload && ditto -c -k --keepParent Payload "../stage/Concat-$VERSION-ios-arm64.ipa")
+          (cd payload && ditto -c -k --keepParent Payload "../stage/BobbyCat-$VERSION-ios-arm64.ipa")
           ls -l stage
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
