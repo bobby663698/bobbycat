@@ -205,9 +205,9 @@ pub fn standing(current: Version, releases: &[Release]) -> Standing {
 pub enum PackageKind {
     /// A macOS disk image with the app in it.
     Dmg,
-    /// The Windows installer, `Concat-<version>-windows-<arch>-setup.exe`.
+    /// The Windows installer, `BobbyCat-<version>-windows-<arch>-setup.exe`.
     Setup,
-    /// The Windows Installer package, `Concat-<version>-windows-<arch>.msi`:
+    /// The Windows Installer package, `BobbyCat-<version>-windows-<arch>.msi`:
     /// the per-machine install an administrator deploys.
     Msi,
     /// A Linux AppImage: one file, started where it lies.
@@ -267,7 +267,7 @@ pub fn installed_as() -> Result<PackageKind, Fixed> {
             linux_kind(
                 std::env::var_os("APPIMAGE").is_some(),
                 std::env::var_os("FLATPAK_ID").is_some(),
-                Path::new("/var/lib/dpkg/info/concat.list").exists(),
+                Path::new("/var/lib/dpkg/info/bobbycat.list").exists(),
                 pacman_has_concat(),
                 rpm_has_concat(),
             )
@@ -325,14 +325,14 @@ fn linux_kind(
     }
 }
 
-/// Whether pacman's database lists the `concat` package: a folder named
-/// `concat-<version>-<release>` under its local store.
+/// Whether pacman's database lists the `bobbycat` package: a folder named
+/// `bobbycat-<version>-<release>` under its local store.
 fn pacman_has_concat() -> bool {
     std::fs::read_dir("/var/lib/pacman/local").is_ok_and(|entries| {
         entries.flatten().any(|entry| {
             let name = entry.file_name();
             let name = name.to_string_lossy();
-            name.strip_prefix("concat-")
+            name.strip_prefix("bobbycat-")
                 .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
         })
     })
