@@ -1,15 +1,15 @@
-# Concat contributing terms
+# BobbyCat contributing terms
 
 **Version 4.0**, for contributions submitted on or after 11 November 2026.
 
-Thank you for contributing to Concat. Concat is owned by one person, who
+Thank you for contributing to BobbyCat. BobbyCat is owned by one person, who
 publishes it under AGPL-3.0-or-later and also licenses it on commercial terms
 (see [`LICENSING.md`](LICENSING.md)). So that both can cover what you send,
 contributions come in under a licence that asks nothing back.
 
 **You license your contribution under the MIT No Attribution licence
 (MIT-0).** You keep your copyright and can do anything you like with your own
-work. Concat's owner, and anyone else, can use it for anything too.
+work. BobbyCat's owner, and anyone else, can use it for anything too.
 
 By submitting a contribution to this project (as a pull request, patch, or any
 other form), you agree to the following.
@@ -18,11 +18,11 @@ other form), you agree to the following.
 
 **"You"** means the individual or legal entity submitting the contribution.
 **"Contribution"** means any work of authorship you intentionally submit for
-inclusion in Concat, including code, documentation, translations, artwork and
+inclusion in BobbyCat, including code, documentation, translations, artwork and
 data. **"Owner"** means Jareer Abdullah (GitHub:
-[@jub0t](https://github.com/jub0t)), and anyone to whom he transfers Concat.
-**"Concat"** means the software in the repository at
-<https://github.com/jub0t/Concat> and anything derived from it.
+[@jub0t](https://github.com/jub0t)), and anyone to whom he transfers BobbyCat.
+**"BobbyCat"** means the software in the repository at
+<https://github.com/bobby663698/bobbycat> and anything derived from it.
 
 ## 2. Licence
 
@@ -30,21 +30,21 @@ You license each Contribution under the MIT No Attribution licence
 (SPDX: `MIT-0`), whose text is at the end of this page.
 
 In plain words: anyone, the Owner included, may use, copy, change, merge,
-publish, distribute, sublicense and sell your Contribution, as part of Concat
+publish, distribute, sublicense and sell your Contribution, as part of BobbyCat
 or apart from it, under any terms, open source or commercial, without naming
 you and without asking again. The licence is perpetual and cannot be
 withdrawn. Nothing in it limits what you do with your own work.
 
 ## 3. Patents
 
-You grant the Owner, and everyone who receives Concat from the Owner, a
+You grant the Owner, and everyone who receives BobbyCat from the Owner, a
 perpetual, worldwide, non-exclusive, royalty-free, irrevocable (except as
 stated below) patent licence to make, have made, use, offer to sell, sell,
 import and otherwise transfer your Contribution, covering every patent claim
 you own or control that is infringed by your Contribution alone or by its
-combination with Concat.
+combination with BobbyCat.
 
-If you institute patent litigation alleging that Concat, or a Contribution
+If you institute patent litigation alleging that BobbyCat, or a Contribution
 incorporated in it, infringes a patent, the patent licences granted to you
 under this agreement terminate.
 
@@ -69,13 +69,13 @@ it, and you also confirm that:
 ## 5. No obligation, no warranty
 
 The Owner is not obliged to use or merge your Contribution, to keep it, or to
-credit you for it; Concat's version history records who submitted what.
+credit you for it; BobbyCat's version history records who submitted what.
 Contributions are provided **as is**, without warranty of any kind, express
 or implied, except for what you confirm in section 4.
 
 ## 6. Not a trademark licence
 
-This agreement grants no rights in the Concat name or logo. See
+This agreement grants no rights in the BobbyCat name or logo. See
 [`TRADEMARK.md`](TRADEMARK.md).
 
 ## 7. Earlier versions

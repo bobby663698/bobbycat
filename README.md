@@ -1,151 +1,94 @@
 <p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/jub0t/Concat@main/assets/concat-mark-dark.png" alt="Concat" width="100" />
+  <img src="assets/icons/bobbycat_logo_512.png" alt="BobbyCat" width="112" />
 </p>
 
-<h1 align="center">Concat</h1>
-<h3 align="center">The free, open-source, cross-platform video editor.</h3>
+<h1 align="center">BobbyCat</h1>
+<h3 align="center">免费、开源、跨平台的视频编辑器</h3>
 
 <div align="center">
 
-<img src="https://cdn.jsdelivr.net/gh/jub0t/Concat@main/assets/editor.png" alt="Concat editor" width="100%" />
-
 <p align="center">
-  <a href="https://github.com/jub0t/Concat/releases"><img src="https://img.shields.io/github/downloads/jub0t/concat/total?style=flat&logo=github&logoColor=F8F8F8&label=Downloads&labelColor=212123&color=0568FD" alt="Total Downloads" /></a>
-  <a href="https://github.com/jub0t/Concat/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jub0t/Concat/ci.yml?style=flat&logo=githubactions&logoColor=F8F8F8&label=Build&labelColor=000000" alt="Build Status" /></a>
-  <a href="https://github.com/jub0t/Concat/releases"><img src="https://img.shields.io/badge/Version-0.2.12-0568FD?style=flat&logo=semver&logoColor=F8F8F8&labelColor=212123" alt="Concat Version 0.2.12" /></a>
-  <a href="https://discord.gg/DVuPfpXfqP"><img src="https://img.shields.io/badge/Discord-Join%20the%20server-5865F2?style=flat&logo=discord&logoColor=F8F8F8&labelColor=000000" alt="Join Concat Discord" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-0568FD?style=flat&logo=gnu&logoColor=F8F8F8&labelColor=212123" alt="License: AGPL-3.0-or-later" /></a>
+  <a href="https://github.com/bobby663698/bobbycat/releases"><img src="https://img.shields.io/github/v/release/bobby663698/bobbycat?style=flat&labelColor=212123&color=0568FD&label=Version" alt="Version" /></a>
+  <a href="https://github.com/bobby663698/bobbycat/releases"><img src="https://img.shields.io/github/downloads/bobby663698/bobbycat/total?style=flat&labelColor=212123&color=0568FD&label=Downloads" alt="Downloads" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-0568FD?style=flat&labelColor=212123" alt="License: AGPL-3.0-or-later" /></a>
+  <a href="https://github.com/bobby663698/bobbycat/discussions"><img src="https://img.shields.io/badge/Discussions-Join-212123?style=flat&labelColor=212123&color=0568FD" alt="Discussions" /></a>
 </p>
-
-<p align="center">
-  <a href="https://www.star-history.com/jub0t/concat"><img src="https://api.star-history.com/badge?repo=jub0t/concat&type=rank" alt="Star History Rank" height="62" /></a>
-  <a href="https://concat.standalones.org/#download"><img src="assets/download_button.svg" alt="Download Concat" width="251" /></a>
-  <a href="https://trendshift.io/repositories/191379?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-191379" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/191379" alt="jub0t%2FConcat | Trendshift" width="250" height="55"/></a>
-</p>
-
-**🇬🇧 English** · [🇩🇪 Deutsch](docs/README.de.md) · [🇪🇸 Español](docs/README.es.md) · [🇫🇷 Français](docs/README.fr.md) · [🇮🇹 Italiano](docs/README.it.md) · [🇳🇱 Nederlands](docs/README.nl.md) · [🇵🇱 Polski](docs/README.pl.md) · [🇧🇷 Português (Brasil)](docs/README.pt-BR.md) · [🇷🇺 Русский](docs/README.ru.md) · [🇺🇦 Українська](docs/README.uk.md) · [🇹🇷 Türkçe](docs/README.tr.md) · [🇦🇿 Azərbaycanca](docs/README.az.md) · [🇭🇷 Hrvatski](docs/README.hr.md) · [🇮🇩 Bahasa Indonesia](docs/README.id.md) · [🇻🇳 Tiếng Việt](docs/README.vi.md) · [🇹🇭 ไทย](docs/README.th.md) · [🇯🇵 日本語](docs/README.ja.md) · [🇰🇷 한국어](docs/README.ko.md) · [🇨🇳 简体中文](docs/README.zh-Hans.md) · [🇹🇼 繁體中文](docs/README.zh-TW.md) · [🇸🇦 العربية](docs/README.ar.md) · [🇮🇱 עברית](docs/README.he.md) · [🇮🇷 فارسی](docs/README.fa.md) · [🇮🇳 हिन्दी](docs/README.hi.md) · [🇵🇰 اردو](docs/README.ur.md) · [🇧🇩 বাংলা](docs/README.bn.md)
-
-## Paid Sponsors
-
-<table width="100%">
-  <tr>
-    <td align="center">
-      <a href="https://proxyon.io/?ref=concat"><img src="https://cdn.jsdelivr.net/gh/jub0t/Concat@main/assets/proxyon_sponsor_logo.png" alt="Proxyon" width="80" /></a><br />
-      <a href="https://proxyon.io/?ref=concat"><b>Proxyon</b></a><br />
-      <sub>Pay-as-you-go proxies for developers<br />Use code <code>JUB0T</code> for 20% off</sub>
-    </td>
-      <td align="center">
-      <a href="mailto:jub0trd@gmail.com"><b>Contact to advertise</b></a><br />
-      <sub>Put your product in front of the people who edit with Concat.<br /><a href="mailto:jub0trd@gmail.com">jub0trd@gmail.com</a></sub>
-    </td>
-  </tr>
-</table>
 
 </div>
 
+## 这是什么
 
-## About
+BobbyCat 是一款完全在本机运行的视频编辑器，覆盖大多数剪辑需要的东西：自动字幕、文字转语音与音色克隆、抠像换背景、关键帧动效、特效与标题、多轨道剪辑、4K 导出。
 
-Concat is a free, open-source video editor for macOS, Windows, Linux and Android. It covers what most edits need: auto-captions, text-to-speech, background removal, keyframe animation, effects and titles, multi-track cutting, 4K export. With none of the catches: no watermark, no account, no subscription, no upload.
+没有水印、没有账号、没有订阅、没有上传。装好就能剪，素材一步都不离开你的硬盘。字幕、配音、抠像要用的模型在设置里下载一次，之后离线可用。
 
-Everything runs on your machine. Install it, drop in footage, cut. The AI models for captions, voices and cutout download once from Settings and work offline after that. Your footage never leaves your disk.
+适合：抖音、Reels、Shorts 竖屏短片，YouTube 长视频，教程与录屏，播客片段，表情包。
 
-**Good for:** TikTok, Reels and Shorts, YouTube videos, tutorials and screen recordings, podcast clips, memes.
+**也面向机器：** 内置 MCP 服务（`bobbycat --mcp`，配置见 [docs/MCP.md](docs/MCP.md)）与 JSON-RPC 接口，脚本和 AI 代理都能直接驱动它剪片。
 
-**Also for machines:** a built-in MCP server for AI agents (`concat --mcp`, [set up](docs/MCP.md)) and a JSON-RPC API for scripts, so they can cut video with it too.
+## 功能
 
-## Highlights
+- 🚫 **无水印、无账号、无付费墙。**
+- 🔒 **100% 本地。** 不上传，断网可用。
+- 💬 **自动字幕。** 本机生成，选模型大小，样式直接落在时间线上。
+- 🗣️ **文字转语音 + 音色克隆。** 桌面端免费本地音色，或用几秒录音克隆任意音色。
+- 🧍 **抠像。** 人物、物体，或者自己刷蒙版。
+- 🎞️ **关键帧。** 位置、缩放、旋转、不透明度、音量、特效参数，自带曲线编辑器。
+- ✨ **100 款特效、滤镜与转场。** 预览里实时看。
+- ✂️ **快速剪辑。** 分割、修剪、波纹、合并、定格、变速，磁吸时间线可选。
+- 🎚️ **多轨道、多时间线。** 画中画与叠加：视频、图片、标题随便叠。混合模式（滤色、相加、正片叠底）、裁切、翻转。
+- 📝 **标题。** 字体、描边、阴影、底板，带预设。
+- 🎙️ **一键修音。** 降噪、人声增强、响度对齐，另有花栗鼠、机器人、电话音。
+- 📤 **导出。** H.264、HEVC、AV1，最高 4K 60、10-bit 色彩。
+- ⚡ **流畅。** 内置代理文件，4K 素材拖动不卡。
+- 🤖 **可脚本化。** 内置 MCP 服务与 JSON-RPC 接口，源码构建另有 gRPC 与命令行工具 `bobbycat-cli`。
+- 🖥️ **Windows、macOS、Linux、Android。** 26 种界面语言，同一套项目文件。
 
-- 🚫 **No watermarks. No account. No paywall.** Ever.
-- 🔒 **100% local.** Nothing uploads. Works offline.
-- 💬 **Auto-captions.** Made on your machine. Pick a model size, get styled captions on the timeline.
-- 🗣️ **Text-to-speech + voice cloning.** A free local voice on the desktop, or any voice from a few seconds of a recording. Phones are getting their own system voice.
-- 🧍 **Background removal.** People, objects, or paint the mask yourself.
-- 🎞️ **Keyframes.** Position, scale, rotation, opacity, volume, effect parameters. Curve editor built in.
-- ✨ **100 effects, filters and transitions.** Live in the preview.
-- ✂️ **Cut fast.** Split, trim, ripple, merge, freeze frame, speed. Magnetic timeline if you want it.
-- 🎚️ **Multi-track, multi-timeline.** Overlays and picture-in-picture: stack video, stills and titles on as many tracks as you like. Several cuts in one project. Blend modes (screen, add, multiply…), crop, flips.
-- 📝 **Titles.** Fonts, stroke, shadow, background plate. Presets to start from.
-- 🎙️ **One-switch voice cleanup.** Denoise, enhance voice, level the loudness. Plus chipmunk, robot, telephone and friends.
-- 📤 **Export.** H.264, HEVC, AV1. Up to 4K 60, 10-bit colour.
-- ⚡ **Fast.** Proxies built in, so 4K scrubs smoothly.
-- 🤖 **Scriptable.** An MCP server built in, so Claude and other AI agents can edit with it ([one line to set up](docs/MCP.md)), and a JSON-RPC API for scripts. A build from source adds gRPC and a command-line tool.
-- 🖥️ **macOS, Windows, Linux, Android.** 26 languages. Same app, same project files.
+## 下载
 
-## Download
+到 **[Releases](https://github.com/bobby663698/bobbycat/releases)** 取对应平台的安装包：
 
-Two ways in:
+| 平台 | 文件 |
+| --- | --- |
+| Windows x86_64 | `BobbyCat-<版本>-windows-x86_64-setup.exe`、`BobbyCat-<版本>-windows-x86_64.msi` |
+| macOS（Intel / Apple silicon） | `.dmg` |
+| Linux x86_64 / ARM | `.deb`、`.rpm`、`.AppImage` |
+| Android | `.apk` |
 
-1. **[The website](https://concat.standalones.org/#download)** hands you the right build for your machine. Start here.
-2. **[GitHub Releases](https://github.com/jub0t/Concat/releases)** has every build for every platform, with installers, packages and checksums. For when you want to pick.
+Windows 构建暂未做代码签名，SmartScreen 会拦一下：**更多信息** › **仍要运行**。macOS 上遇到未签名拦截：
 
-Concat is in **beta**: it works, and it still has edges. [Say so](https://github.com/jub0t/Concat/issues) when you find one.
+```sh
+xattr -dr com.apple.quarantine /Applications/BobbyCat.app
+```
 
-**Platforms**
+## 从源码构建
 
-- ✅ **Windows** · x86_64 (ARM builds are paused, see [#326](https://github.com/jub0t/Concat/issues/326)). A setup and an `.msi`. If SmartScreen stops an unsigned build: **More info** › **Run anyway**
-- ✅ **macOS** · Intel and Apple silicon. If macOS refuses to open an unsigned build: `xattr -dr com.apple.quarantine /Applications/Concat.app`
-- ✅ **Linux** · x86_64 and ARM. `.deb`, `.rpm`, `.AppImage` and an Arch package. Also a Flatpak on **[Flatpark](https://flatpark.org/apps/app.concat.editor/)**, a community Flatpak remote that wraps the x86_64 `.deb` of each release and updates with it
-- ✅ **Android** · phones and tablets
-- ✅ **iOS / iPadOS** · iPhone and iPad, sideloaded
+需要 Rust 1.93 或更新（见 `src/Cargo.toml` 的 `rust-version`）、FFmpeg 7+ 开发库、cmake 和一个 C++ 编译器。
 
-✅ Supported · 🚧 Work in progress · 🧪 To be tested
-
-**System requirements** and the optional model sizes are on [the website](https://concat.standalones.org/guides/system-requirements).
-
-**[Code signing policy](CODE_SIGNING.md)**: why the Windows builds are not signed yet, and what Concat sends over the network (nothing you did not ask for).
-
-## Build from source
-
-You need Rust 1.93 or newer (see `rust-version` in `src/Cargo.toml`), the FFmpeg 7+ development libraries, cmake and a C++ compiler.
-
-- **macOS:** `brew install ffmpeg`
-- **Windows:** from [FFmpeg's Windows downloads](https://ffmpeg.org/download.html#build-windows), take BtbN's `win64-gpl-shared` build (the one CI uses), unpack it and point `FFMPEG_DIR` at it
-- **Linux:** use your distro's FFmpeg if it is version 7 or newer, otherwise use a BtbN `shared` build with `FFMPEG_DIR` like on Windows
-
-Then:
+- **Windows：** 从 [FFmpeg 官方下载页](https://ffmpeg.org/download.html#build-windows) 取 BtbN 的 `win64-gpl-shared` 构建，解压后把 `FFMPEG_DIR` 指向它
+- **macOS：** `brew install ffmpeg`
+- **Linux：** 用发行版自带的 FFmpeg（7 以上），否则同 Windows 用 BtbN `shared` 构建并设 `FFMPEG_DIR`
 
 ```sh
 cd src
-cargo run -p concat          # the editor window
+cargo run -p concat                    # 打开编辑器
+cargo build --profile app -p concat    # 发布版二进制（fat LTO，已 strip）
+cargo test                             # 测试
+cargo fmt --check && cargo clippy --all-targets -- -D warnings
 ```
 
-Other useful commands:
+改了界面文案，跑一次 `python3 scripts/locales.py` 让字符串清单保持同步。
 
-```sh
-cargo build --profile app -p concat   # the shipping binary (fat LTO, stripped)
-cargo test                            # run the test suite
-cargo fmt --check && cargo clippy --all-targets -- -D warnings   # what CI checks
-```
+音效库由 `python3 tools/make_audio.py` 生成（全部为本地合成，CC0-1.0，无第三方素材）。
 
-If you change text the interface shows, run `python3 scripts/locales.py` from the repo root so the string inventory stays in sync. Full details live in [CONTRIBUTING.md](CONTRIBUTING.md).
+## 反馈与讨论
 
-## How to Contribute
+- 提 Bug、要功能：[Issues](https://github.com/bobby663698/bobbycat/issues/new)
+- 用法、作品、想法：[Discussions](https://github.com/bobby663698/bobbycat/discussions)
+- 接口文档：`docs/` 目录，MCP 见 [docs/MCP.md](docs/MCP.md)
 
-> [!IMPORTANT]
-> The best way to contribute is to grab a build from the [Releases](https://github.com/jub0t/Concat/releases) page and use it: find where it breaks, and say where it could be better.
->
-> Ready to write code? [CONTRIBUTING.md](./CONTRIBUTING.md) covers setup, the layout of the tree, the checks to run, and how contributions are licensed. Driving Concat from a script, a service or an agent? [The developer docs](https://concat.standalones.org/docs) cover the Concat API and its transports: JSON-RPC and gRPC; [docs/MCP.md](docs/MCP.md) connects an AI agent over MCP. [This Discussion](https://github.com/jub0t/Concat/discussions/3) is where the project was announced.
-> 
-> Contributors can claim a `@Contributor` role in the Discord server: just ask.
+## 许可
 
-## Star History
-
-<a href="https://www.star-history.com/?repos=jub0t%2Fconcat&type=date&releases=&legend=bottom-right">
- <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=jub0t/concat&type=date&legend=bottom-right" />
-</a>
-
-## Contributors
-
-<a href="https://github.com/jub0t/Concat/graphs/contributors">
-  <img alt="Contributors" src="https://contrib.rocks/image?repo=jub0t/concat">
-</a>
-
-## Licence
-
-- Concat is free software under [AGPL-3.0-or-later](LICENSE).
-- A commercial licence is available for closed-source use; see [LICENSING.md](LICENSING.md).
-
-## DMCA
-
-If you believe something in this repository, its releases, or a package or model it distributes infringes your copyright, email [jub0trd@gmail.com](mailto:jub0trd@gmail.com) with a description of the work you own, a link to where the infringing material appears here, your contact details, a statement that you believe in good faith the use is not authorised by you, your agent, or the law, and a statement, under penalty of perjury, that the notice is accurate and that you are the owner or authorised to act for the owner, signed with your physical or electronic signature; valid notices are acted on promptly, and anyone whose material is removed may send a counter-notice to the same address.
+- 本体以 [AGPL-3.0-or-later](LICENSE) 发布。
+- 闭源商用需要商业授权，见 [LICENSING.md](LICENSING.md)。
+- 内置音效库为本项目自行合成，CC0-1.0。

@@ -1,12 +1,12 @@
-# Concat's log
+# BobbyCat's log
 
-Every run of Concat writes down what it did, in a file on your own computer.
+Every run of BobbyCat writes down what it did, in a file on your own computer.
 Nothing in it is sent anywhere. It is the one thing that lets someone else see
 what happened on your machine, so it is written to be read.
 
 - [Finding and sending a log](#finding-and-sending-a-log), for anyone reporting a problem.
 - [Reading a log](#reading-a-log), for anyone looking at one.
-- [Writing a line](#writing-a-line), for anyone changing Concat's code.
+- [Writing a line](#writing-a-line), for anyone changing BobbyCat's code.
 
 ## Finding and sending a log
 
@@ -15,23 +15,23 @@ Without the app:
 
 | System | Folder |
 |---|---|
-| Windows | `%LOCALAPPDATA%\app.concat.editor\logs` |
-| macOS | `~/Library/Application Support/app.concat.editor/logs` |
-| Linux | `~/.local/share/app.concat.editor/logs` |
+| Windows | `%LOCALAPPDATA%\com.bobbycat.editor\logs` |
+| macOS | `~/Library/Application Support/com.bobbycat.editor/logs` |
+| Linux | `~/.local/share/com.bobbycat.editor/logs` |
 
 On Android, **Settings › About › Share the log** hands this run's file and the
 one before it to the phone's share sheet (and leaves a copy in
-Download/Concat). When the last run closed on its own, the next launch says so
+Download/BobbyCat). When the last run closed on its own, the next launch says so
 and offers the same.
 
 There is one file per run, named for when the run started
 (`concat-20261111-052233.log`, in UTC). The newest ten are kept. When you report
-a problem, attach the file from the run it happened in. If Concat closed on you,
+a problem, attach the file from the run it happened in. If BobbyCat closed on you,
 that is usually the second newest: the newest is the run you opened to find the
 log.
 
 A log is safe to attach to a public issue. Your home folder is written as `~`,
-so your user name is not in it, and Concat never writes down the words of your
+so your user name is not in it, and BobbyCat never writes down the words of your
 project: not captions, not titles, not what a voice was asked to say. It does
 name your files and projects, because "which file" is most of what a log is
 for. Read it before you send it if those names are private.
@@ -41,7 +41,7 @@ the thing again. From a terminal, the `CONCAT_LOG` variable does the same and
 more:
 
 ```text
-CONCAT_LOG=debug                       Concat at debug
+CONCAT_LOG=debug                       BobbyCat at debug
 CONCAT_LOG=debug,concat_media=trace    and one part of it at trace
 CONCAT_LOG=info,wgpu_core=debug        a library underneath, by name
 CONCAT_LOG=all=debug                   everything, the libraries included
@@ -50,8 +50,8 @@ CONCAT_LOG=all=debug                   everything, the libraries included
 ## Reading a log
 
 ```text
-Concat log · 2026-11-11 · times are UTC
-05:22:31.004 INFO  build      Concat 0.2.10 · macos-aarch64 · commit 784021e7d9d7 · optimised build  [concat_host::logs, main]
+BobbyCat log · 2026-11-11 · times are UTC
+05:22:31.004 INFO  build      BobbyCat 0.2.10 · macos-aarch64 · commit 784021e7d9d7 · optimised build  [concat_host::logs, main]
 05:22:31.004 INFO  system     macOS 26.1  [concat_host::logs, main]
 05:22:31.005 INFO  cpu        Apple M5 · 10 threads  [concat_host::logs, main]
 05:22:31.005 INFO  memory     32.00 GB  [concat_host::logs, main]
@@ -66,8 +66,8 @@ From the left, a line is **when** it happened, **how bad** it is, **what it is
 about**, and **what happened**. The brackets at the end say which part of the
 code and which thread said it; you can ignore them unless you are chasing a bug.
 
-- **ERROR**: something you asked for did not happen, or Concat lost something it needs.
-- **WARN**: Concat carried on, but not the way it wanted to.
+- **ERROR**: something you asked for did not happen, or BobbyCat lost something it needs.
+- **WARN**: BobbyCat carried on, but not the way it wanted to.
 - **INFO**: the story of the run: what you did, what the machine is, how each job went.
 - **DEBUG**, **TRACE**: the detail behind the story, off unless asked for.
 
@@ -88,18 +88,18 @@ Things worth knowing:
 
 ### Reading a phone's hang
 
-When Android closes Concat as not responding (an ANR), the next launch on
+When Android closes BobbyCat as not responding (an ANR), the next launch on
 Android 11 and later writes two `last run` warnings: what the system said,
 and under it `the threads of ... when the system gave up on it`, the system's
-own dump of the Java main thread and of every thread standing in Concat's
+own dump of the Java main thread and of every thread standing in BobbyCat's
 library, up to 40 frames each. The window's thread is `android_main`, listed
-first after the main thread. Frames in Concat look like this:
+first after the main thread. Frames in BobbyCat look like this:
 
 ```text
 #06 pc 000000000b739820  libconcat_android.so (BuildId: e21abbfd2b1e...)
 ```
 
-A frame in Concat's library names the offset after `pc`, and the function
+A frame in BobbyCat's library names the offset after `pc`, and the function
 when the trace's unwinder read it. Every phone build in CI keeps the library
 as the artifact `symbols-concat-<version>-aarch64-linux-android` of its "Build for
 phones" run, for 90 days. Download the one for the version in the log's
@@ -109,7 +109,7 @@ phones" run, for 90 days. Download the one for the version in the log's
 scripts/symbolize-android.sh libconcat_android-0.2.12-aarch64-linux-android.so concat-20261115-101500.log
 ```
 
-It names the function of each Concat frame (the library carries no line
+It names the function of each BobbyCat frame (the library carries no line
 tables, which the phone build cannot link with in CI's memory), and refuses a library whose BuildId is not the trace's. Tombstones and
 `adb logcat` crash dumps read the same way.
 
@@ -128,11 +128,11 @@ being able to ask the person. At INFO a run should read as a story:
   scale, audio device. Once, at the start, and again when one changes.
 - **What the person did** that changes something: opened, imported, edited,
   exported, changed a setting. One line each, named as the interface names it.
-- **What Concat decided** about the machine: which GPU, hardware or software
+- **What BobbyCat decided** about the machine: which GPU, hardware or software
   decode, which encoder, which fallback. With the reason when it is not the
   first choice.
 - **How each job went**: one `Op` line with its timings and its result.
-- **What went wrong**, and what Concat did next.
+- **What went wrong**, and what BobbyCat did next.
 
 And what is not: anything per frame, per packet, per pointer move or per
 redraw (that is TRACE); a step inside a job (DEBUG, and `Op` does it for you);
@@ -193,7 +193,7 @@ log::error!("export: stopped at frame {frame} of {frames}: {error}; the file was
 | `voice` | text to speech, voiceover, cloning, splitting a voice from its music |
 | `cutout` `enhance` `stabilize` | each of those jobs |
 | `effects` `fonts` `models` | what is loaded, compiled, downloaded |
-| `network` `update` | the few times Concat goes online |
+| `network` `update` | the few times BobbyCat goes online |
 | `settings` | a setting changed, and to what |
 | `api` | the Remote API and agents: server, clients, calls |
 | `close` | leaving |

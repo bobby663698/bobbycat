@@ -572,7 +572,7 @@ fn keep_in_exports(from: &Path) -> Result<String, String> {
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or(name);
-    Ok(format!("Concat › Exports › {kept}"))
+    Ok(format!("BobbyCat › Exports › {kept}"))
 }
 
 /// `name`, or `name (2)`, `name (3)`... until nothing is overwritten.

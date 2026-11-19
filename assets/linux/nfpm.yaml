@@ -1,4 +1,4 @@
-# Concat's Linux packages: one description for the .deb and the .rpm.
+# BobbyCat's Linux packages: one description for the .deb and the .rpm.
 #
 # Built by build-app.yml with nfpm from the staged folder the AppImage is
 # also made of, so every Linux bundle ships the same files. The program lives
@@ -11,15 +11,15 @@
 #
 #   cd stage/Concat-0.2.12-linux-x86_64
 #   VERSION=0.2.12 NFPM_ARCH=amd64 nfpm package -f ../../assets/linux/nfpm.yaml -p deb -t ..
-name: concat
+name: bobbycat
 arch: ${NFPM_ARCH}
 platform: linux
 version: ${VERSION}
 section: video
 priority: optional
-maintainer: Concat contributors <jub0trd@gmail.com>
-vendor: Concat contributors
-homepage: https://github.com/jub0t/Concat
+maintainer: BobbyCat <bobby663698@users.noreply.github.com>
+vendor: BobbyCat
+homepage: https://github.com/bobby663698/bobbycat
 license: AGPL-3.0-or-later
 description: |
   Free and open source video editor.
@@ -28,11 +28,11 @@ description: |
 
 contents:
   - src: bobbycat
-    dst: /opt/concat/bobbycat
+    dst: /opt/bobbycat/bobbycat
     file_info:
       mode: 0755
   - src: lib/*
-    dst: /opt/concat/lib/
+    dst: /opt/bobbycat/lib/
   - src: pkg/bobbycat
     dst: /usr/bin/bobbycat
     file_info:
@@ -42,9 +42,9 @@ contents:
   - src: bobbycat.png
     dst: /usr/share/icons/hicolor/256x256/apps/bobbycat.png
   - src: LICENSE
-    dst: /usr/share/doc/concat/LICENSE
+    dst: /usr/share/doc/bobbycat/LICENSE
   - src: THIRD_PARTY_NOTICES.md
-    dst: /usr/share/doc/concat/THIRD_PARTY_NOTICES.md
+    dst: /usr/share/doc/bobbycat/THIRD_PARTY_NOTICES.md
 
 # What the binary loads from the system rather than from lib/: the
 # toolkit the file dialogs use, sound, fonts and OpenGL. Named as each

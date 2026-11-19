@@ -1,19 +1,19 @@
-# Contributing to Concat
+# Contributing to BobbyCat
 
-Thanks for being here. Concat is a video editor that runs entirely on the
+Thanks for being here. BobbyCat is a video editor that runs entirely on the
 user's machine, and it gets better mostly through people using it hard and
 reporting what broke.
 
 ## The most valuable thing you can do
 
-Grab a build from the [Releases](https://github.com/jub0t/Concat/releases) page
+Grab a build from the [Releases](https://github.com/bobby663698/bobbycat/releases) page
 and edit a real video with it. Real footage finds what no reading of the
 source does. A good bug report (what you did, what happened, your
 OS, the media you used) is worth more than most patches.
 
 Longer-form discussion lives in
-[the contribution discussion](https://github.com/jub0t/Concat/discussions/3)
-and on [Discord](https://discord.gg/DVuPfpXfqP).
+[the contribution discussion](https://github.com/bobby663698/bobbycat/discussions/3)
+and on [Discord](https://github.com/bobby663698/bobbycat/discussions).
 
 ## Before you write code
 
@@ -75,12 +75,12 @@ around you; the engine avoids cleverness on purpose.
 
 ## Licensing your contribution
 
-Concat is published under **AGPL-3.0-or-later** ([`LICENSE`](LICENSE)) and
+BobbyCat is published under **AGPL-3.0-or-later** ([`LICENSE`](LICENSE)) and
 also licensed on commercial terms by its owner ([`LICENSING.md`](LICENSING.md)).
 
 Contributions come in under the terms in [`CLA.md`](CLA.md): **you license
 your contribution under the MIT No Attribution licence (MIT-0)**. You keep
-your copyright and can use your own work for anything; Concat's owner, and
+your copyright and can use your own work for anything; BobbyCat's owner, and
 anyone else, can use it for anything too, commercial terms included, with no
 credit owed.
 
@@ -110,14 +110,14 @@ Use this header as it is, and don't add a copyright line of your own.
 
 If your patch brings in code you did not write, say so in the PR: what it is,
 where it came from, and its licence. It has to be under a permissive licence
-(MIT, BSD, Apache-2.0, zlib, ISC or similar), because Concat's commercial
+(MIT, BSD, Apache-2.0, zlib, ISC or similar), because BobbyCat's commercial
 builds must be able to carry it too; GPL, AGPL, LGPL and other copyleft code
 cannot be merged. Licence problems are much cheaper to catch before a merge
 than after a release.
 
 ## Trademarks
 
-The code is free to fork. The Concat name and logo are not covered by the AGPL
+The code is free to fork. The BobbyCat name and logo are not covered by the AGPL
 grant; see [`TRADEMARK.md`](TRADEMARK.md). Forks are welcome; please ship them
 under your own name.
 

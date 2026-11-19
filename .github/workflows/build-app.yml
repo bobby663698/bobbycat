@@ -852,9 +852,9 @@ jobs:
           # What the packages add over the folder: the launcher, and a
           # desktop entry that names the program by its installed path.
           mkdir -p "$STAGE/pkg"
-          printf '#!/bin/sh\nexec /opt/concat/concat "$@"\n' > "$STAGE/pkg/concat"
+          printf '#!/bin/sh\nexec /opt/bobbycat/concat "$@"\n' > "$STAGE/pkg/concat"
           chmod +x "$STAGE/pkg/concat"
-          sed 's|^Exec=bobbycat|Exec=/opt/concat/bobbycat %U|' "$STAGE/bobbycat.desktop" > "$STAGE/pkg/bobbycat.desktop"
+          sed 's|^Exec=bobbycat|Exec=/opt/bobbycat/bobbycat %U|' "$STAGE/bobbycat.desktop" > "$STAGE/pkg/bobbycat.desktop"
 
           scripts/ci/fetch.sh "nfpm-$( [ "${{ matrix.arch }}" = x86_64 ] && echo x86_64 || echo arm64 )" nfpm.tar.gz
           mkdir -p nfpm && tar -xzf nfpm.tar.gz -C nfpm

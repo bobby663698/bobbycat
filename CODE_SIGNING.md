@@ -2,7 +2,7 @@
 
 **Windows releases are not code-signed yet.** Windows shows a SmartScreen
 warning before an unsigned program runs (**More info** › **Run anyway**), and
-where Smart App Control is on, it refuses to run it at all. Once Concat has a
+where Smart App Control is on, it refuses to run it at all. Once BobbyCat has a
 signing certificate, every Windows release is signed under this policy.
 
 ## What will be signed
@@ -15,7 +15,7 @@ unsigned libraries is still refused.
 ## How a release is made
 
 - Every released file is built by GitHub Actions from a tagged commit of
-  <https://github.com/jub0t/concat>, by the workflows in
+  <https://github.com/bobby663698/bobbycat>, by the workflows in
   [`.github/workflows`](.github/workflows) (`release.yml`, which calls
   `build-app.yml`). Nothing built on a person's machine is released.
 - A release is built only after the tests pass on the tagged commit, and each
@@ -23,9 +23,9 @@ unsigned libraries is still refused.
 - The workflows and build scripts are part of the source and are reviewed like
   any other change.
 
-## What Concat sends over the network
+## What BobbyCat sends over the network
 
-Concat reaches the network only when you ask it to:
+BobbyCat reaches the network only when you ask it to:
 
 - **Settings › Version** asks GitHub for the list of releases when you open
   it or press **Check for updates**, and installing one downloads it from

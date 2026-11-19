@@ -31,7 +31,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::net::Cause;
 
 /// The repository the mirror lives on.
-pub const REPO: &str = "jub0t/Concat";
+pub const REPO: &str = "bobby663698/bobbycat";
 
 /// The release every model is mirrored on.
 ///
@@ -45,14 +45,14 @@ pub fn mirror(file: &str) -> String {
     format!("https://github.com/{REPO}/releases/download/{RELEASE}/{file}")
 }
 
-/// The Audio page's Concat sounds: the list of them, read the first time
+/// The Audio page's BobbyCat sounds: the list of them, read the first time
 /// the shelf is asked for and never at startup. The schema, and where the
 /// files go, is `docs/AUDIO_LIBRARY.md`.
 pub const SOUNDS_MANIFEST: &str =
-    "https://raw.githubusercontent.com/concatapp/assets/main/audio/manifest.json";
+    "https://raw.githubusercontent.com/bobby663698/bobbycat/main/assets/audio/manifest.json";
 
 /// The repository the sounds live in.
-pub const SOUNDS_REPO: &str = "concatapp/assets";
+pub const SOUNDS_REPO: &str = "bobby663698/bobbycat";
 
 /// The release the sounds are mirrored on, so a file moved in the
 /// repository does not take a sound off the shelf.
@@ -64,7 +64,7 @@ pub const SOUNDS_RELEASE: &str = "audio-v1";
 pub fn sound_sources(file: &str) -> Vec<String> {
     vec![
         format!("https://github.com/{SOUNDS_REPO}/releases/download/{SOUNDS_RELEASE}/{file}"),
-        format!("https://raw.githubusercontent.com/{SOUNDS_REPO}/main/audio/{file}"),
+        format!("https://raw.githubusercontent.com/{SOUNDS_REPO}/main/assets/audio/{file}"),
     ]
 }
 

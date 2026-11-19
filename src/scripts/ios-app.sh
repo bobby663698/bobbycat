@@ -48,8 +48,8 @@ cat > "$app/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Concat</string>
-  <key>CFBundleDisplayName</key><string>Concat</string>
+  <key>CFBundleName</key><string>BobbyCat</string>
+  <key>CFBundleDisplayName</key><string>BobbyCat</string>
   <key>CFBundleIdentifier</key><string>app.concat.editor</string>
   <key>CFBundleVersion</key><string>${version}</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>

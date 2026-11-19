@@ -338,12 +338,12 @@ fn pacman_has_concat() -> bool {
     })
 }
 
-/// Whether the RPM database lists `concat`. Asked of `rpm` itself, and only
+/// Whether the RPM database lists `bobbycat`. Asked of `rpm` itself, and only
 /// where there is a database to ask about.
 fn rpm_has_concat() -> bool {
     Path::new("/var/lib/rpm").exists()
         && Command::new("rpm")
-            .args(["-q", "concat"])
+            .args(["-q", "bobbycat"])
             .output()
             .is_ok_and(|output| output.status.success())
 }
