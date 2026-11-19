@@ -111,15 +111,16 @@ fn main() {
         let icon = "../../../assets/icons/bobbycat.ico";
         println!("cargo:rerun-if-changed={icon}");
         // The file's name and description as Windows shows them in its
-        // properties, and as code signing checks them: "Concat" in every
+        // properties, and as code signing checks them: "BobbyCat" in every
         // build, where the default would be the crate's lower-case name.
         winresource::WindowsResource::new()
             .set_icon(icon)
             .set("ProductName", "BobbyCat")
             .set("FileDescription", "BobbyCat")
+            .set("CompanyName", "BobbyCat")
             .set(
                 "LegalCopyright",
-                "Copyright 2026 Jareer Abdullah, AGPL-3.0-or-later",
+                "Copyright 2026 Jareer Abdullah and BobbyCat contributors, AGPL-3.0-or-later",
             )
             .compile()
             .expect("could not embed the Windows icon");
