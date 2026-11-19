@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "sounds": [
+    {
+      "id": "whoosh-air-short",
+      "name": "Air whoosh, short",
+      "category": "Whoosh",
+      "file": "whoosh-air-short.wav",
+      "duration": 0.42,
+      "bytes": 37088,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: swept band-passed noise",
+      "author": "BobbyCat",
+      "sha256": "21863147de960dbecb8a5a92c0c80efcc5821be990e89d67286bfa5a61d132c3"
+    },
+    {
+      "id": "whoosh-deep-slow",
+      "name": "Deep whoosh",
+      "category": "Whoosh",
+      "file": "whoosh-deep-slow.wav",
+      "duration": 0.85,
+      "bytes": 75014,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: swept band-passed noise",
+      "author": "BobbyCat",
+      "sha256": "2536f580ffe2f6590bc3cb3d972e27a70d36c3dcc047b0dbe4bf3c4f9de1867f"
+    },
+    {
+      "id": "impact-low-thud",
+      "name": "Low thud",
+      "category": "Impact",
+      "file": "impact-low-thud.wav",
+      "duration": 0.55,
+      "bytes": 48554,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: pitch-falling sine plus noise transient",
+      "author": "BobbyCat",
+      "sha256": "bb6b7f26f8bcaf7eba26376d2035bf44050be9dd2bcd14231b0cc5aaa1930632"
+    },
+    {
+      "id": "impact-metal-tick",
+      "name": "Metal tick",
+      "category": "Impact",
+      "file": "impact-metal-tick.wav",
+      "duration": 0.35,
+      "bytes": 30912,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: inharmonic partials with fast decay",
+      "author": "BobbyCat",
+      "sha256": "fe3a78ade148bb4367ce7d715ea517570e5b6d866aced1b23838d3aac0b13d8c"
+    },
+    {
+      "id": "riser-short-tension",
+      "name": "Short riser",
+      "category": "Riser",
+      "file": "riser-short-tension.wav",
+      "duration": 1.25,
+      "bytes": 110294,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: exponential frequency ramp",
+      "author": "BobbyCat",
+      "sha256": "3017a882fad4004a99a9e6e6c1d6b4e07daa9c0c08acc2fc04fe29ba2682fa80"
+    },
+    {
+      "id": "sub-drop-down",
+      "name": "Sub drop",
+      "category": "Riser",
+      "file": "sub-drop-down.wav",
+      "duration": 0.9,
+      "bytes": 79424,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: falling sub sine",
+      "author": "BobbyCat",
+      "sha256": "b138ef069cf0f4e5aec7cd82ce28e4c10a743ed858a34f812828f37d37c82b00"
+    },
+    {
+      "id": "click-ui-soft",
+      "name": "Soft click",
+      "category": "Impact",
+      "file": "click-ui-soft.wav",
+      "duration": 0.05,
+      "bytes": 4454,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: filtered noise burst",
+      "author": "BobbyCat",
+      "sha256": "1f7a4829f9c2ade075b644121abced8c45cba42a19241977e71d60723b704c7c"
+    },
+    {
+      "id": "pop-bubble",
+      "name": "Pop",
+      "category": "Impact",
+      "file": "pop-bubble.wav",
+      "duration": 0.13,
+      "bytes": 11510,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: rising sine blip",
+      "author": "BobbyCat",
+      "sha256": "c322bafc8a614e488d3988583b64e9ebcbd66f4ad0d706766adbb80c93d5a26f"
+    },
+    {
+      "id": "ambience-room-tone",
+      "name": "Room tone",
+      "category": "Ambience",
+      "file": "ambience-room-tone.wav",
+      "duration": 3.0,
+      "bytes": 264644,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: filtered brown noise",
+      "author": "BobbyCat",
+      "sha256": "4efc7289fe8e6a77e5a3be3ed647fdf803b156c3faf9817f23d94b1cb8a286e9"
+    },
+    {
+      "id": "music-pulse-loop",
+      "name": "Pulse loop",
+      "category": "Music",
+      "file": "music-pulse-loop.wav",
+      "duration": 4.0,
+      "bytes": 352844,
+      "license": "CC0-1.0",
+      "source": "BobbyCat synthesiser: chord pulse with kick",
+      "author": "BobbyCat",
+      "sha256": "51abe8b380c151aeedeeb184c45ce25c5758741423c6b85a13bef784f95705b6"
+    }
+  ]
+}
