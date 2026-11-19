@@ -1722,7 +1722,7 @@ impl Studio {
         for dir in tripped {
             if self.tripped_strokes.insert(dir) {
                 log::warn!(
-                    "cutout: skipped a Smart brush stroke: Concat closed while reading it last time, and would again; painting it again reads it"
+                    "cutout: skipped a Smart brush stroke: BobbyCat closed while reading it last time, and would again; painting it again reads it"
                 );
                 self.notify(&t("studio.smartBrushSkipped"), true);
             }
@@ -2442,7 +2442,7 @@ impl Studio {
     /// it read as a property of the cut. Auto is the file's tag, and the
     /// codec's convention where there is none; see
     /// `concat_media::ColorRange::implied`.
-    /// https://github.com/jub0t/Concat/issues/103
+    /// https://github.com/bobby663698/bobbycat/issues/103
     fn media_menu(&self, id: &str) -> Vec<MenuItemData> {
         let Some(item) = self.project().media_by_id(id) else {
             return Vec::new();

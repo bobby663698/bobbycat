@@ -2514,7 +2514,7 @@ mod tests {
         (top, bottom)
     }
 
-    // ── the box: https://github.com/jub0t/Concat/issues/119 ──
+    // ── the box: https://github.com/bobby663698/bobbycat/issues/119 ──
 
     /// A box sized by the style is exactly that size, plate and all, and
     /// the words sit centred inside it.

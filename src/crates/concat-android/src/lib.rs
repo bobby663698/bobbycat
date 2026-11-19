@@ -663,7 +663,7 @@ fn android_main(app: slint::android::AndroidApp) {
     // Directories first: the log file is written into one of them.
     activity::name_directories(&app);
     activity::open_log();
-    log::info!("Concat {} starting", env!("CARGO_PKG_VERSION"));
+    log::info!("BobbyCat {} starting", env!("CARGO_PKG_VERSION"));
     if let Err(error) = slint::android::init_with_event_listener(app.clone(), window_events) {
         // "could not start" right after the topic: the smoke script looks for it.
         log::error!("start: could not start the Android backend: {error}; the app closes");

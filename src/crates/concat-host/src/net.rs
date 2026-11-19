@@ -320,7 +320,7 @@ fn roots() -> rustls::RootCertStore {
         log::debug!("network: the system's root certificates were not all read: {error}");
     }
     let (added, _) = roots.add_parsable_certificates(system.certs);
-    log::debug!("network: {added} of the system's root certificates trusted beside Concat's");
+    log::debug!("network: {added} of the system's root certificates trusted beside BobbyCat's");
     roots
 }
 

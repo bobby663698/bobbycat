@@ -302,7 +302,7 @@ impl ExportPane {
 
     /// The rung of the ladder that is the project's own size: the one
     /// the sheet lets be picked, since an edit exports at the size it was
-    /// cut at. https://github.com/jub0t/Concat/issues/109
+    /// cut at. https://github.com/bobby663698/bobbycat/issues/109
     fn own_rung(studio: &Studio) -> usize {
         let own = Self::own_short(studio);
         Self::ladder(studio)

@@ -993,7 +993,7 @@ impl super::Device {
             // when that allocation fails it allocates again in the first
             // host-visible, host-coherent type, in system memory. Gating on
             // the BAR's budget alone refused a 208-byte buffer on a 2 GB
-            // card with 1.5 GB free (jub0t/Concat#746). Where the preferred
+            // card with 1.5 GB free (bobby663698/bobbycat#746). Where the preferred
             // heap is spent, the request is gated on the heap of that
             // fallback instead.
             let fits = |heap: usize| {
@@ -3081,7 +3081,7 @@ impl crate::Device for super::Device {
             // own memory - what this gate keeps from hanging the driver -
             // is no fuller for it. Counted, it lost the device at the first
             // submit on a card whose BAR other programs shared
-            // (jub0t/Concat#746).
+            // (bobby663698/bobbycat#746).
             if memory_properties.is_bar(i) {
                 continue;
             }

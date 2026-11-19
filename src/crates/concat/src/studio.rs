@@ -326,7 +326,7 @@ fn even(value: u32) -> u32 {
 /// anything else - a decimal is for reading, and export must never be
 /// handed one. The rates cameras and screens run at, from a stop-motion
 /// ten to a game capture's sixty; anything else is typed in as a custom
-/// rate. https://github.com/jub0t/Concat/issues/199
+/// rate. https://github.com/bobby663698/bobbycat/issues/199
 pub const RATES: [(&str, i64, i64); 11] = [
     ("10", 10, 1),
     ("20", 20, 1),
@@ -551,7 +551,7 @@ pub enum Gesture {
     /// the same terms as [`Gesture::TextWidth`] pulls the width. Before
     /// this the two grips fell through to a stretch, and a caption pulled
     /// to fit came out with its glyphs squashed.
-    /// https://github.com/jub0t/Concat/issues/119
+    /// https://github.com/bobby663698/bobbycat/issues/119
     TextHeight {
         clip: String,
         centre: (f64, f64),
@@ -3675,7 +3675,7 @@ mod tests {
     #[test]
     fn home_folder_is_under_home_with_native_separators() {
         let home = std::env::home_dir().expect("a home directory");
-        let folder = std::path::PathBuf::from(home_folder("Desktop/Concat"));
+        let folder = std::path::PathBuf::from(home_folder("Desktop/BobbyCat"));
         assert_eq!(folder, home.join("Desktop").join("BobbyCat"));
         #[cfg(windows)]
         assert!(!folder.to_string_lossy().contains('/'));

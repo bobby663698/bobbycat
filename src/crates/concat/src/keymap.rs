@@ -99,7 +99,7 @@ pub const ACTIONS: &[Action] = &[
     },
     // Shift closes the gap the deletion leaves — the ripple delete every
     // other editor has, on the key they all use for it.
-    // https://github.com/jub0t/Concat/issues/106
+    // https://github.com/bobby663698/bobbycat/issues/106
     Action {
         id: "ripple-delete",
         defaults: &["shift+delete", "shift+backspace"],
@@ -110,7 +110,7 @@ pub const ACTIONS: &[Action] = &[
     },
     // Delete Left and Delete Right, on Q and W: the clip under
     // the playhead loses everything before it (Q) or after it (W).
-    // https://github.com/jub0t/Concat/issues/400
+    // https://github.com/bobby663698/bobbycat/issues/400
     Action {
         id: "delete-left",
         defaults: &["q"],

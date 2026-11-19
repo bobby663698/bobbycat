@@ -149,7 +149,7 @@ define_class!(
     // has no Drop.
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
-    #[name = "ConcatPickDelegate"]
+    #[name = "BobbyCatPickDelegate"]
     struct PickDelegate;
 
     impl PickDelegate {

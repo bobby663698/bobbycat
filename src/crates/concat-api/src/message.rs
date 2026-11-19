@@ -293,7 +293,7 @@ pub struct ExportSpec {
     /// "limited" (16-235, what every player and YouTube expect) or "full"
     /// (0-255, for screen content bound for a PC player that reads the
     /// tag). Limited when absent.
-    /// https://github.com/jub0t/Concat/issues/103
+    /// https://github.com/bobby663698/bobbycat/issues/103
     #[serde(default)]
     pub color_range: Option<String>,
     /// For an HDR timeline: written as HDR, its own HLG or PQ in ten bits

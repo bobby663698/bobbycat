@@ -4,7 +4,7 @@
 // Concat: one change from the published 1.18.1, marked `Concat:` below. A
 // mouse wheel's or a trackpad's scroll (`MotionAction::Scroll`) reached a
 // `todo!()`, and the panic ended the activity on the first turn of the
-// wheel (jub0t/concat#800). It is dispatched as Slint's own
+// wheel (bobby663698/bobbycat#800). It is dispatched as Slint's own
 // `WindowEvent::PointerScrolled`, scaled as the winit backend scales a
 // desktop wheel's line, so a wheel scrolls here as it does on a desk.
 
@@ -447,7 +447,7 @@ impl AndroidWindowAdapter {
                             }
                             InputStatus::Handled
                         }
-                        // Concat: was `todo!()` (jub0t/concat#800).
+                        // Concat: was `todo!()` (bobby663698/bobbycat#800).
                         MotionAction::Scroll => {
                             let (delta_x, delta_y) =
                                 motion_event.pointers().next().map_or((0., 0.), |p| {

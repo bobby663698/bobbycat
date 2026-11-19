@@ -27,7 +27,7 @@ fn main() {
     .expect("the only logger in this process");
     concat_log::catch_panics();
 
-    log::info!("build: Concat 0.2.10 · macos-aarch64 · commit 784021e7d9d7 · optimised build");
+    log::info!("build: BobbyCat 0.2.10 · macos-aarch64 · commit 784021e7d9d7 · optimised build");
     log::info!("system: macOS 26.1");
     log::info!("cpu: Apple M5 · 10 threads");
     log::info!("memory: {}", concat_log::bytes(32 << 30));

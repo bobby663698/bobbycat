@@ -79,7 +79,7 @@ impl Studio {
             }
             let Some(installed) = presets::install_font_file(&self.host.dirs, &path) else {
                 log::warn!(
-                    "fonts: {file_name} could not be copied into Concat's fonts; it is not imported"
+                    "fonts: {file_name} could not be copied into BobbyCat's fonts; it is not imported"
                 );
                 self.notify(&tf("studio.notAFont", &[&path.display()]), true);
                 continue;
@@ -305,7 +305,7 @@ impl Studio {
     /// and the one generated captions are set in: its family, weight,
     /// colours, stroke, shadow and background, never its words. Kept in
     /// the preferences, so it outlives the project.
-    /// https://github.com/jub0t/Concat/issues/224
+    /// https://github.com/bobby663698/bobbycat/issues/224
     pub fn use_title_style_for_new(&mut self) {
         let Some(mut style) = self
             .edit_targets()

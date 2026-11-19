@@ -149,7 +149,7 @@ impl Memory {
             .iter()
             .map(|heap| {
                 format!(
-                    "{head} · {}, {} · size {} · budget {} · Concat uses {}",
+                    "{head} · {}, {} · size {} · budget {} · BobbyCat uses {}",
                     heap.name,
                     heap.kind.words(),
                     figure(heap.size),

@@ -178,11 +178,11 @@ pub(crate) fn closing(how: &str) {
 /// what a packaged GUI build has no console for. Each entry point calls
 /// this on the error before letting it go, so the reason is in the log and
 /// in a dialog, not only in a console that was never there.
-/// https://github.com/jub0t/Concat/issues/135
+/// https://github.com/bobby663698/bobbycat/issues/135
 pub fn report_startup_failure(error: &slint::PlatformError) {
     let error = error.to_string();
     // "could not start" right after the topic: the smoke scripts look for it.
-    log::error!("start: could not start the window: {error}; Concat says so in a dialog and quits");
+    log::error!("start: could not start the window: {error}; BobbyCat says so in a dialog and quits");
     platform::report_startup_failure(&error);
 }
 
@@ -267,13 +267,13 @@ const IDLE_FRAMES: usize = 96 * 1024 * 1024;
 fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint::PlatformError> {
     // What Import and a finished export reach on an iPhone. Android's own
     // crate installs its; iOS runs this crate's binary, so it is here.
-    // https://github.com/jub0t/Concat/issues/332
+    // https://github.com/bobby663698/bobbycat/issues/332
     #[cfg(target_os = "ios")]
     ios::install();
 
     // The interface scale: a percent of the display's own, applied once
     // the window is up and kept through moves between monitors; see
-    // `platform::apply_ui_scale`. https://github.com/jub0t/Concat/issues/320
+    // `platform::apply_ui_scale`. https://github.com/bobby663698/bobbycat/issues/320
     if let Ok(dirs) = concat_host::AppDirs::locate() {
         let percent = prefs::Preferences::load(&dirs)
             .ui_scale
@@ -342,7 +342,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         // the system's terminate, past every close road, and `run` never
         // returns: the project is saved here or not at all. Every other way
         // out has released the session by now, so this does nothing there.
-        // https://github.com/jub0t/Concat/issues/437
+        // https://github.com/bobby663698/bobbycat/issues/437
         || {
             let terminating = std::cell::Cell::new(false);
             // Whether the studio was free to borrow: `stop_exports` borrows it.
@@ -361,7 +361,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
                     terminating.set(true);
                     if let Err(error) = studio.close_project() {
                         log::error!(
-                            "close: saving {} before quitting failed: {error}; Concat quits without it",
+                            "close: saving {} before quitting failed: {error}; BobbyCat quits without it",
                             studio.project_name
                         );
                     }
@@ -494,7 +494,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     // The interface scale: the row on Settings > Appearance reads the index
     // off the Theme global, and the window was already made at the scale the
     // environment asked for above, so this only lines the two up.
-    // https://github.com/jub0t/Concat/issues/320
+    // https://github.com/bobby663698/bobbycat/issues/320
     app.global::<Theme>()
         .set_ui_scale(studio.prefs.scale_index() as i32);
 
@@ -2228,7 +2228,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     // interface grows within the window rather than being clipped by it.
     // Nothing is rebuilt; the window keeps its size on screen. The row
     // reads its value off the Theme global, so that is set here too.
-    // https://github.com/jub0t/Concat/issues/320
+    // https://github.com/bobby663698/bobbycat/issues/320
     app.on_settings_scale_changed({
         move |index| {
             Shell::with(|shell, app| {
@@ -2957,7 +2957,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     // anything else can end the process, and the exit says it failed.
     if let Err(error) = &result {
         log::error!(
-            "close: the window could not run: {error}; Concat quits, and the next launch starts safe"
+            "close: the window could not run: {error}; BobbyCat quits, and the next launch starts safe"
         );
         // The mark stays: the next launch starts safe.
         if let Some(watch) = &startup_mark {
@@ -3066,7 +3066,7 @@ fn stop_exports() {
     }
     if exporter.is_busy() {
         log::warn!(
-            "close: wanted the export stopped before quitting, but it ran on past {}; Concat quits anyway",
+            "close: wanted the export stopped before quitting, but it ran on past {}; BobbyCat quits anyway",
             concat_log::span(EXPORT_PATIENCE)
         );
     }
@@ -3142,7 +3142,7 @@ fn safe_start() -> (Option<concat_host::jobs::Tripwire>, bool) {
         // good after any start that failed. So the line says all three.
         Err(_) if preferences.software_gpu => {
             log::info!(
-                "start: {how} · the setting that draws on the GPU is off (turned off in Settings, by --software, or by Concat 0.2.8 after a start that failed)"
+                "start: {how} · the setting that draws on the GPU is off (turned off in Settings, by --software, or by BobbyCat 0.2.8 after a start that failed)"
             );
         }
         // The launch that set it has said so in `settle_start` already.

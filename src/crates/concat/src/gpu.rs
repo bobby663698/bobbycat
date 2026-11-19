@@ -102,7 +102,7 @@ impl Gpu {
         // Broadwell-era chips do not have - the adapter that comes back is
         // WARP, Windows' software rasteriser. The window still opens on it;
         // see `is_software` and platform.rs for what that changes.
-        // https://github.com/jub0t/Concat/issues/135
+        // https://github.com/bobby663698/bobbycat/issues/135
         let info = adapter.get_info();
         log::info!("gpu: {}", adapter_words(&info));
         let _ = ADAPTER.set(if info.device_type == wgpu::DeviceType::Cpu {
@@ -149,7 +149,7 @@ impl Gpu {
             .say(log::Level::Info, "as the window's device opened");
         // Said in the log when it dies, with wgpu's reason: the one line a
         // report of "the GPU device was lost" needs, which until now there
-        // was none of. https://github.com/jub0t/Concat/issues/223
+        // was none of. https://github.com/bobby663698/bobbycat/issues/223
         // Lost to the memory gates, or refused by them, the figures behind
         // it are said too, once (see `concat_render::memory::ran_out`). The
         // adapter they are read through goes with the device.
@@ -245,7 +245,7 @@ pub fn adapter_words(info: &wgpu::AdapterInfo) -> String {
 /// The adapter's driver as the log names it: the driver and its version
 /// where the API reports them, and "driver unknown" where it does not -
 /// Direct3D 12 reports neither, and an empty "driver )" read as a fault.
-/// https://github.com/jub0t/Concat/issues/223
+/// https://github.com/bobby663698/bobbycat/issues/223
 pub fn driver_of(info: &wgpu::AdapterInfo) -> String {
     let named = [info.driver.trim(), info.driver_info.trim()]
         .into_iter()

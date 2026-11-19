@@ -28,7 +28,7 @@ use concat_media::{EncodeOptions, Encoder, FrameSink, ReaderPool};
 use concat_render::{Compositor, WgpuCompositor, plan_frame};
 
 #[derive(Parser)]
-#[command(name = "concat-cli", version, about = "Concat engine command line")]
+#[command(name = "concat-cli", version, about = "BobbyCat engine command line")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -227,28 +227,28 @@ fn serve(
     let server = concat_server::Server::start(config, concat_api::Api::new)?;
     if let Some(address) = server.json_addr() {
         println!(
-            "Concat API {}: JSON-RPC on {address}",
+            "BobbyCat API {}: JSON-RPC on {address}",
             concat_api::API_VERSION
         );
     }
     if let Some(path) = server.socket_path() {
         println!(
-            "Concat API {}: JSON-RPC on {}",
+            "BobbyCat API {}: JSON-RPC on {}",
             concat_api::API_VERSION,
             path.display()
         );
     }
     if let Some(address) = server.grpc_addr() {
-        println!("Concat API {}: gRPC on {address}", concat_api::API_VERSION);
+        println!("BobbyCat API {}: gRPC on {address}", concat_api::API_VERSION);
     }
     println!(
-        "Concat API {}: token {}",
+        "BobbyCat API {}: token {}",
         concat_api::API_VERSION,
         server.token()
     );
     let roots = server.roots();
     println!(
-        "Concat API {}: writes under {}",
+        "BobbyCat API {}: writes under {}",
         concat_api::API_VERSION,
         if roots.is_empty() {
             "anywhere".to_owned()

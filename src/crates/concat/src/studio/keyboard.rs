@@ -86,7 +86,7 @@ impl Studio {
     /// what came off: the lane it lands on may be a new one, out of view,
     /// and a detach that changed nothing anyone could see read as one that
     /// did nothing. One that cannot happen says why instead of nothing.
-    /// https://github.com/jub0t/Concat/issues/310
+    /// https://github.com/bobby663698/bobbycat/issues/310
     fn detach_audio(&mut self, clip: &Clip) {
         let has_audio = self
             .project()

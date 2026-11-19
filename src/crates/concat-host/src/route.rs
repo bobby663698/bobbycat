@@ -291,7 +291,7 @@ fn system(_url: &str, scheme: &str, host: &str) -> Option<String> {
     let settings = Scutil::parse(&String::from_utf8_lossy(&output.stdout));
     if settings.on("ProxyAutoConfigEnable") {
         log::debug!(
-            "network: this Mac is set to a proxy script ({}), which Concat does not run",
+            "network: this Mac is set to a proxy script ({}), which BobbyCat does not run",
             settings
                 .value("ProxyAutoConfigURLString")
                 .unwrap_or_default()
@@ -516,7 +516,7 @@ mod tests {
     fn a_url_is_read_down_to_its_host() {
         let read = |url| target(url).map(|(scheme, host)| format!("{scheme} {host}"));
         assert_eq!(
-            read("https://github.com/jub0t/Concat/releases"),
+            read("https://github.com/bobby663698/bobbycat/releases"),
             Some("https github.com".into())
         );
         assert_eq!(

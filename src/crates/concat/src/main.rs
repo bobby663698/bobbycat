@@ -58,7 +58,7 @@ fn main() -> Result<(), slint::PlatformError> {
             .unwrap_or_default();
         let _ = concat_host::logs::open_console(None);
         return concat_mcp::run(mode).map_err(|error| {
-            log::error!("api: the MCP server for an agent stopped: {error}; Concat exits");
+            log::error!("api: the MCP server for an agent stopped: {error}; BobbyCat exits");
             slint::PlatformError::Other(error)
         });
     }
@@ -67,7 +67,7 @@ fn main() -> Result<(), slint::PlatformError> {
     concat::open_logging(None);
     // A failure here is the one this binary would otherwise swallow: with
     // no console, the runtime's "Error: ..." on standard error is lost.
-    // https://github.com/jub0t/Concat/issues/135
+    // https://github.com/bobby663698/bobbycat/issues/135
     let launch = launch
         .map_err(slint::PlatformError::Other)
         .inspect_err(concat::report_startup_failure)?;

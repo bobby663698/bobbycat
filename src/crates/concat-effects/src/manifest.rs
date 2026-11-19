@@ -864,7 +864,7 @@ mod tests {
     #[test]
     fn bad_manifests_are_rejected_with_a_reason() {
         rejects(&GOOD.replace("concat.blur", "blur"), "author.name");
-        rejects(&GOOD.replace("concat.blur", "Concat.Blur"), "author.name");
+        rejects(&GOOD.replace("concat.blur", "BobbyCat.Blur"), "author.name");
         rejects(
             &GOOD.replace("intensity = \"radius\"", "intensity = \"sigma\""),
             "intensity",
@@ -920,7 +920,7 @@ mod tests {
         let current = Manifest::parse(&format!("format = {FORMAT}\n{shader}")).expect("parses");
         assert_eq!(current.format, FORMAT);
         assert!(current.scene_linear());
-        rejects(&format!("format = {}\n{GOOD}", FORMAT + 1), "newer Concat");
+        rejects(&format!("format = {}\n{GOOD}", FORMAT + 1), "newer BobbyCat");
         rejects(&format!("format = 0\n{GOOD}"), "format is 0");
         rejects(&format!("format = \"1\"\n{GOOD}"), "format");
     }

@@ -349,7 +349,7 @@ impl Studio {
     /// lands on every one of them as one undo step (#470), which is what a
     /// separate Apply to all button stood in for. Clips on locked lanes are
     /// left out; kinds selected together have no inspector in common.
-    /// https://github.com/jub0t/Concat/issues/224
+    /// https://github.com/bobby663698/bobbycat/issues/224
     pub fn edit_targets(&self) -> Vec<String> {
         if let Some(id) = self.sole_selection() {
             return vec![id];

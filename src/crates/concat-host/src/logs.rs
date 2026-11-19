@@ -96,12 +96,12 @@ fn install(
     }
     match &opened.file {
         Some(path) => log::info!(
-            "log: {} · Concat at {}",
+            "log: {} · BobbyCat at {}",
             path.display(),
             level_name(concat_log::level())
         ),
         None => log::info!(
-            "log: no file this run · Concat at {}",
+            "log: no file this run · BobbyCat at {}",
             level_name(concat_log::level())
         ),
     }

@@ -449,7 +449,7 @@ impl Studio {
         editor.set_selected_count(self.selection.len() as i32);
         // The tray's undo and redo buttons grey out on these; the Edit menu
         // asks the session itself when it opens.
-        // https://github.com/jub0t/Concat/issues/154
+        // https://github.com/bobby663698/bobbycat/issues/154
         let (can_undo, can_redo) = self.session.as_ref().map_or((false, false), |session| {
             (session.can_undo(), session.can_redo())
         });

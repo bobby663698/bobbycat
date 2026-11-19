@@ -60,7 +60,7 @@ const BY_ENTRY: [&str; 3] = ["voiceover", "server", "keybinds"];
 /// percents of the display's own scale. Nothing on the list - and no value
 /// at all - leaves the window at the scale the platform hands it. 110 is
 /// for a 1x desk where 100 reads small and 125 is a size too far.
-/// https://github.com/jub0t/Concat/issues/320
+/// https://github.com/bobby663698/bobbycat/issues/320
 pub const UI_SCALES: [u32; 6] = [100, 110, 125, 150, 175, 200];
 
 /// The workspace as the last session left it: each dock, and the window.
@@ -103,7 +103,7 @@ pub struct Preferences {
     /// display. Settings > Appearance picks it, and it is remembered here
     /// for the window a launch makes; the window that is open is rescaled in
     /// place the moment the choice is made.
-    /// https://github.com/jub0t/Concat/issues/320
+    /// https://github.com/bobby663698/bobbycat/issues/320
     pub ui_scale: Option<u32>,
     /// The chosen transcriber model id, e.g. "base.en".
     pub transcriber_model: Option<String>,
@@ -158,7 +158,7 @@ pub struct Preferences {
     /// leave, on the lane they happen on. Off by default on a desk, because
     /// a gap is sometimes the point; ⇧⌫ ripples either way. Read it through
     /// [`Preferences::magnetic`], which knows the phone's default.
-    /// https://github.com/jub0t/Concat/issues/106
+    /// https://github.com/bobby663698/bobbycat/issues/106
     pub magnetic: bool,
     /// Whether the person has set the magnetic timeline, either way. Every
     /// phone has saved `magnetic: false` without anyone choosing it, so

@@ -287,7 +287,7 @@ impl Studio {
                 // click: nothing moved, and a MoveClips of the clips onto
                 // their own places is still an undo step and still a pass
                 // through the drop's rules, which can put a clip elsewhere.
-                // https://github.com/jub0t/Concat/issues/247
+                // https://github.com/bobby663698/bobbycat/issues/247
                 if moved_any(&moves, |id| self.clip(id)) {
                     self.apply(Command::MoveClips { moves });
                 }
@@ -316,7 +316,7 @@ impl Studio {
                         },
                         delta,
                         // Magnetic: the lane closes behind the edge.
-                        // https://github.com/jub0t/Concat/issues/106
+                        // https://github.com/bobby663698/bobbycat/issues/106
                         ripple: self.prefs.magnetic,
                     });
                     // Trim follow: a magnetic head trim slides the clip back

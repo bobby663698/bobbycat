@@ -80,7 +80,7 @@ pub fn system_facts() -> Vec<(String, String)> {
     let mut facts = vec![
         (
             t("sysinfo.application"),
-            format!("Concat {}", env!("CARGO_PKG_VERSION")),
+            format!("BobbyCat {}", env!("CARGO_PKG_VERSION")),
         ),
         (
             t("sysinfo.build"),
@@ -93,7 +93,7 @@ pub fn system_facts() -> Vec<(String, String)> {
         // The adapter the window and the monitor draw on, and whether it is
         // a GPU at all. A machine that fell back to WARP looks like any
         // other in the window, and the difference was the whole story of
-        // https://github.com/jub0t/Concat/issues/135
+        // https://github.com/bobby663698/bobbycat/issues/135
         (
             t("sysinfo.graphics"),
             crate::gpu::adapter_description().unwrap_or("none").into(),
