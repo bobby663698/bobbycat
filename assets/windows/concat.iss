@@ -33,22 +33,22 @@
 ; One id for the life of the product, so an install over an older one is
 ; an upgrade and not a second copy.
 AppId={{7B1E5C3A-3B9E-4F0B-9C6D-2F1D0C0A0C47}
-AppName=Concat
+AppName=BobbyCat
 AppVersion={#Version}
-AppVerName=Concat {#Version}
-AppPublisher=Concat contributors
-AppPublisherURL=https://github.com/jub0t/Concat
-AppSupportURL=https://github.com/jub0t/Concat/issues
-AppUpdatesURL=https://github.com/jub0t/Concat/releases
-DefaultDirName={autopf}\Concat
-DefaultGroupName=Concat
+AppVerName=BobbyCat {#Version}
+AppPublisher=BobbyCat contributors
+AppPublisherURL=https://github.com/bobby663698/bobbycat
+AppSupportURL=https://github.com/bobby663698/bobbycat/issues
+AppUpdatesURL=https://github.com/bobby663698/bobbycat/releases
+DefaultDirName={autopf}\BobbyCat
+DefaultGroupName=BobbyCat
 DisableProgramGroupPage=yes
 LicenseFile=..\..\LICENSE
 OutputDir={#Out}
-OutputBaseFilename=Concat-{#Version}-windows-{#Suffix}-setup
+OutputBaseFilename=BobbyCat-{#Version}-windows-{#Suffix}-setup
 SetupIconFile=..\icons\concat.ico
 UninstallDisplayIcon={app}\concat.ico
-UninstallDisplayName=Concat
+UninstallDisplayName=BobbyCat
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
