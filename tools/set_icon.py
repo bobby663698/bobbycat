@@ -19,12 +19,27 @@ ICONS = os.path.join(ROOT, "assets", "icons")
 SIZES = (16, 32, 64, 128, 256, 512)
 
 
+def cut_corners(im, thresh=40):
+    """把四角的白底去掉，圆角变透明，任务栏深色背景下才不露白边。"""
+    from PIL import ImageDraw
+    w, h = im.size
+    for xy in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+        ImageDraw.floodfill(im, xy, (0, 0, 0, 0), thresh=thresh)
+    bbox = im.split()[-1].getbbox()
+    return im.crop(bbox) if bbox else im
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         return 1
-    src = sys.argv[1]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    cut = "--cut-corners" in sys.argv
+    src = args[0]
     im = Image.open(src).convert("RGBA")
+    if cut:
+        im = cut_corners(im)
+        print("四角已透明化，内容裁到底边")
     if im.width != im.height:
         side = min(im.size)
         left = (im.width - side) // 2
