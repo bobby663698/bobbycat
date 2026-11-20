@@ -1,0 +1,89 @@
+name: Fast
+
+# Five crates on three platforms, in minutes rather than the forty the full
+# CI takes: the ones a change to the compositor or to the document lands in.
+#
+#   concat-core      the model, the frame, the arithmetic
+#   concat-project   the document, the commands
+#   concat-text      shaping
+#   concat-effects   the shader catalogue
+#   concat-render    the compositors, on wgpu
+#
+# None of them needs a C toolchain, which is the whole reason this job can
+# skip scripts/ci/fetch.sh and every system library the engine job installs.
+# concat-media is the crate that links FFmpeg, concat-speech the one that
+# compiles whisper.cpp, concat-vision the one that links ONNX Runtime - none
+# of those three is here.
+#
+# concat-render's dev-dependencies do include concat-vision, but concat-vision
+# has no default features: `infer = ["dep:ort"]` is what pulls the runtime in,
+# and nothing in this workspace enables it. **Giving concat-vision a default
+# feature that pulls `ort` would quietly turn this job into a forty-minute
+# one** - the fix then is to keep `infer` opt-in, not to bolt a cache onto
+# this file.
+#
+# A workflow of its own rather than a job in ci.yml, so it can land without
+# editing that file and so its duration is measured on its own. The bar it is
+# held to: a pull request that touches concat-render alone should reach a red
+# check inside five minutes on a warm cache. A cold cache takes longer once;
+# measure the warm runs.
+#
+# No `paths:` filter, deliberately: a filter that misses a directory skips the
+# check silently, and a check that sometimes does not run is worse than one
+# that runs when it did not need to.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A pull request's run is superseded by the next push to it. A run on main is
+# the record of whether main was green, so it is left to finish.
+concurrency:
+  group: fast-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  fast:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    # The same budget as a green run on a warm cache, with room for a test
+    # that hangs rather than fails.
+    timeout-minutes: 15
+    env:
+      # No debug info: smaller, faster to link, and nothing reads it here.
+      CARGO_PROFILE_DEV_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The toolchain src/rust-toolchain.toml pins, read from the file rather
+      # than repeated here, so a bump is one edit and not four.
+      - name: The pinned toolchain
+        id: toolchain
+        shell: bash
+        run: echo "channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' src/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (v1), 2026-10-09
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+      # Saved even when the job fails: a cache saved only by a green run is
+      # never saved while the job is red, and every red run then compiles from
+      # nothing.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: src
+          cache-on-failure: true
+      # `cargo test` rather than nextest: installing nextest costs more than
+      # the per-test timeouts are worth at this size, and the suite is small
+      # enough that a hang is visible in the job's own timeout.
+      - name: The tests
+        working-directory: src
+        run: >-
+          cargo test
+          -p concat-core
+          -p concat-project
+          -p concat-text
+          -p concat-effects
+          -p concat-render

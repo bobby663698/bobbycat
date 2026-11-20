@@ -86,6 +86,10 @@ enum Mode {
 ///
 /// This is the path bobbycat draws through: one function per mode, the
 /// result already composited, no fixed-function blend on top of it.
+// The shader compares exactly - `fc == 0.0`, `bc == ba` - and a transcription
+// that swapped those for `<=` would answer differently at the ends the two
+// special branches exist to define. So the comparisons stay as written.
+#[allow(clippy::float_cmp)]
 fn premul(mode: Mode, fc: f32, bc: f32, fa: f32, ba: f32) -> f32 {
     match mode {
         // NormalBlendPreMul: source-over.
@@ -166,6 +170,7 @@ fn premul(mode: Mode, fc: f32, bc: f32, fa: f32, ba: f32) -> f32 {
 /// `B(Cb, Cs)` as the `*BlendStraight` half of each file defines it, in
 /// straight colour - the six being added, which is all this is needed for.
 /// The shader's macros take `(f, b)`; the arguments here are `(cb, cs)`.
+#[allow(clippy::float_cmp)]
 fn straight_blend(mode: Mode, cb: f32, cs: f32) -> f32 {
     let (f, b) = (cs, cb);
     match mode {
@@ -317,14 +322,8 @@ fn the_branches_meet_at_the_half() {
     let at = premul(Mode::HardLight, 0.5, 0.3, 1.0, 1.0);
     let below = premul(Mode::HardLight, 0.5 - 1e-5, 0.3, 1.0, 1.0);
     let above = premul(Mode::HardLight, 0.5 + 1e-5, 0.3, 1.0, 1.0);
-    assert!(
-        (below - at).abs() < 1e-4,
-        "hard light: {below}, {at}, {above}"
-    );
-    assert!(
-        (above - at).abs() < 1e-4,
-        "hard light: {below}, {at}, {above}"
-    );
+    assert!((below - at).abs() < 1e-4, "hard light: {below}, {at}, {above}");
+    assert!((above - at).abs() < 1e-4, "hard light: {below}, {at}, {above}");
 
     let at = premul(Mode::Overlay, 0.6, 0.5, 1.0, 1.0);
     let below = premul(Mode::Overlay, 0.6, 0.5 - 1e-5, 1.0, 1.0);
@@ -335,14 +334,8 @@ fn the_branches_meet_at_the_half() {
     let at = premul(Mode::SoftLight, 0.5, 0.7, 1.0, 1.0);
     let below = premul(Mode::SoftLight, 0.5 - 1e-5, 0.7, 1.0, 1.0);
     let above = premul(Mode::SoftLight, 0.5 + 1e-5, 0.7, 1.0, 1.0);
-    assert!(
-        (below - at).abs() < 1e-4,
-        "soft light: {below}, {at}, {above}"
-    );
-    assert!(
-        (above - at).abs() < 1e-4,
-        "soft light: {below}, {at}, {above}"
-    );
+    assert!((below - at).abs() < 1e-4, "soft light: {below}, {at}, {above}");
+    assert!((above - at).abs() < 1e-4, "soft light: {below}, {at}, {above}");
 }
 
 /// Bright over dark: the two colours sit either side of a half, so overlay
@@ -373,15 +366,9 @@ fn the_discriminating_input_survives_eight_bit_quantisation() {
 #[test]
 fn saturation_is_exact_at_both_ends() {
     let burnt = premul(Mode::ColorBurn, 0.1, 0.3, 1.0, 1.0);
-    assert!(
-        burnt < 1e-6,
-        "a burn past its quotient is not zero: {burnt}"
-    );
+    assert!(burnt < 1e-6, "a burn past its quotient is not zero: {burnt}");
     let dodged = premul(Mode::ColorDodge, 0.9, 0.3, 1.0, 1.0);
-    assert!(
-        (dodged - 1.0).abs() < 1e-6,
-        "a dodge past it is not one: {dodged}"
-    );
+    assert!((dodged - 1.0).abs() < 1e-6, "a dodge past it is not one: {dodged}");
 }
 
 /// CapCut is not the specification, and this is where the two part company.

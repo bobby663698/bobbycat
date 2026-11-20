@@ -1,0 +1,73 @@
+{
+  "version": 2,
+  "media": [
+    {
+      "id": "m1",
+      "path": "media/fixture-picture.mp4",
+      "name": "fixture-picture.mp4",
+      "kind": "video",
+      "duration": 4.0,
+      "width": 1920,
+      "height": 1080,
+      "frameRate": 30,
+      "frameRateFraction": "30/1",
+      "videoCodec": "h264",
+      "hasAudio": true
+    },
+    {
+      "id": "m2",
+      "path": "media/fixture-voice.wav",
+      "name": "fixture-voice.wav",
+      "kind": "audio",
+      "duration": 4.0,
+      "audioCodec": "pcm_s16le",
+      "hasAudio": true
+    }
+  ],
+  "timelines": [
+    {
+      "id": "tl1",
+      "name": "Minimal",
+      "video": {
+        "width": 1920,
+        "height": 1080,
+        "rateNum": 30,
+        "rateDen": 1
+      },
+      "tracks": [
+        { "id": "t1" },
+        { "id": "t2" },
+        { "id": "t3" }
+      ],
+      "clips": [
+        {
+          "id": "c1",
+          "trackId": "t1",
+          "mediaId": "m1",
+          "name": "picture",
+          "kind": "video",
+          "start": 0.0,
+          "duration": 4.0
+        },
+        {
+          "id": "c2",
+          "trackId": "t2",
+          "name": "caption",
+          "kind": "text",
+          "start": 0.0,
+          "duration": 2.5
+        },
+        {
+          "id": "c3",
+          "trackId": "t3",
+          "mediaId": "m2",
+          "name": "voice",
+          "kind": "audio",
+          "start": 0.0,
+          "duration": 4.0
+        }
+      ]
+    }
+  ],
+  "activeTimelineId": "tl1"
+}

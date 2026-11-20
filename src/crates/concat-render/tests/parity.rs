@@ -98,13 +98,7 @@ impl Deltas {
             .pixels()
             .chunks_exact(BYTES_PER_PIXEL)
             .zip(actual.pixels().chunks_exact(BYTES_PER_PIXEL))
-            .map(|(a, b)| {
-                a.iter()
-                    .zip(b)
-                    .map(|(a, b)| a.abs_diff(*b))
-                    .max()
-                    .unwrap_or(0)
-            })
+            .map(|(a, b)| a.iter().zip(b).map(|(a, b)| a.abs_diff(*b)).max().unwrap_or(0))
             .collect();
         Deltas {
             width: expected.width(),
@@ -247,10 +241,7 @@ fn a_flat_blend_stays_within_one_level_of_the_cpu_reference() {
     let expected = CpuCompositor.render(&plan);
     let actual = gpu.render(&plan);
     assert!(
-        actual
-            .pixels()
-            .chunks_exact(BYTES_PER_PIXEL)
-            .all(|px| px[3] == 255),
+        actual.pixels().chunks_exact(BYTES_PER_PIXEL).all(|px| px[3] == 255),
         "the GPU's frame is not opaque"
     );
 
@@ -292,26 +283,14 @@ fn a_rotated_layer_matches_the_cpu_reference_away_from_its_edge() {
     let inside = deltas.measure(1, |x, y| footprint.inside(x, y, 3));
     let score = ssim(&expected, &actual);
     eprintln!("rotated: ssim {score:.4}, {}", whole.report());
-    eprintln!(
-        "rotated, three pixels in from its edge: {}",
-        inside.report()
-    );
+    eprintln!("rotated, three pixels in from its edge: {}", inside.report());
 
-    assert!(
-        score >= 0.98,
-        "rotated: ssim {score:.4}; {}",
-        whole.report()
-    );
+    assert!(score >= 0.98, "rotated: ssim {score:.4}; {}", whole.report());
     // Without this a layer that drew nothing at all would leave nothing to
     // count and pass the assertion below for the wrong reason.
     assert!(
         inside.counted > 0,
         "no pixel is three in from the layer's edge; the case compares nothing"
     );
-    assert_eq!(
-        inside.over,
-        0,
-        "rotated, three pixels in: {}",
-        inside.report()
-    );
+    assert_eq!(inside.over, 0, "rotated, three pixels in: {}", inside.report());
 }
