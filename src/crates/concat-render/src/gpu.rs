@@ -245,6 +245,14 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
 }
 "#;
 
+/// The six blends no `BlendState` can name, in WGSL: overlay, soft light,
+/// hard light, colour burn, colour dodge, linear burn. Kept in its own file
+/// so the formulas read as formulas - one channel function each, then
+/// `blend_composite` switching on the mode number that is a `Blend`'s index
+/// in `Blend::ALL`. Compiled into [`SHADER`] below, so a typo in it is a
+/// test failure rather than a file nobody reads.
+const BLEND_MODES: &str = include_str!("blend_modes.wgsl");
+
 const SHADER: &str = r#"
 struct VsIn {
     @location(0) position: vec2<f32>,
@@ -1659,7 +1667,7 @@ impl WgpuCompositor {
         let budget = pool_budget_for(device.adapter_info().device_type);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("concat compositor"),
-            source: wgpu::ShaderSource::Wgsl(format!("{MASK_WGSL}{SHADER}").into()),
+            source: wgpu::ShaderSource::Wgsl(format!("{MASK_WGSL}{BLEND_MODES}{SHADER}").into()),
         });
 
         let bind_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -1823,6 +1831,23 @@ impl WgpuCompositor {
                         src_factor: BlendFactor::One,
                         dst_factor: BlendFactor::One,
                         operation: BlendOperation::Min,
+                    },
+                    // The six non-linear modes have no fixed-function state:
+                    // they read the ground back and evaluate in the
+                    // fragment stage, which is the next commit. Until then
+                    // they draw as source-over - wrong, but not misdrawn
+                    // as some *other* mode, and CI's parity suite names
+                    // them. Overlay and HardLight are the same arithmetic
+                    // with the predicate swapped, so nothing here may guess.
+                    Blend::Overlay
+                    | Blend::SoftLight
+                    | Blend::HardLight
+                    | Blend::ColorBurn
+                    | Blend::ColorDodge
+                    | Blend::LinearBurn => wgpu::BlendComponent {
+                        src_factor: BlendFactor::One,
+                        dst_factor: BlendFactor::OneMinusSrcAlpha,
+                        operation: BlendOperation::Add,
                     },
                 };
                 device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
