@@ -20,10 +20,12 @@
 //! | `reference.rs`'s six existing arms, while checking visibility | `reference.rs`'s six new arms |
 //! | engine's `PARITY_TABLE.md`, while answering it | - |
 //!
-//! Nothing here touches a compositor yet: `reference.rs`'s `mix()` is still
-//! three-argument, and the half of this file that draws a frame and compares
-//! it waits for `coverage` to be added to that signature. What is here is
-//! arithmetic and the properties arithmetic must have.
+//! This file stays an oracle: arithmetic and the properties arithmetic must
+//! have, with no compositor in it. `reference.rs`'s `mix()` gained its
+//! `coverage` argument in `aad448c`, so the frame-drawing half is no longer
+//! blocked - it lives in the integration branch where all four departments'
+//! work is merged, where an oracle that cannot see the implementation is
+//! the only kind worth having. `parity.rs` remains the sole GPU-side check.
 //!
 //! One deliberate exception is `Add`, which CapCut ships no MixMode package
 //! for at all: it is the fixed-function `plus-lighter` the pipeline already
@@ -290,6 +292,40 @@ fn the_two_paths_agree_at_full_alpha() {
                 (premultiplied - straight).abs() < 1e-5,
                 "{mode:?} at Cb {cb}, Cs {cs}: {premultiplied} not {straight}"
             );
+        }
+    }
+}
+
+/// Every mode over the boundary grid. A division by a zero alpha is
+/// exactly what the shader's `Eps` exists for, and a `NaN` here would
+/// survive into eight bits as a zero-level pixel that looks like a
+/// deliberately dark blend rather than a bug. This is the whole 12 x 4 x
+/// 4 x 3 x 3 space of alpha and colour ends, not a handful of favourites.
+#[test]
+fn every_mode_is_finite_over_the_boundary_grid() {
+    let alphas = [0.0, 0.25, 0.5, 1.0];
+    let colours = [0.0, 0.5, 1.0];
+    for mode in MODES {
+        for fa in alphas {
+            for ba in alphas {
+                for c in colours {
+                    for b in colours {
+                        let co = premul(mode, c * fa, b * ba, fa, ba);
+                        assert!(
+                            co.is_finite(),
+                            "{mode:?} fa {fa} ba {ba} Cs {c} Cb {b}: {co} is not finite"
+                        );
+                        assert!(
+                            co >= -1e-5,
+                            "{mode:?} fa {fa} ba {ba} Cs {c} Cb {b}: {co} is negative"
+                        );
+                        assert!(
+                            co <= 1.0 + 1e-5,
+                            "{mode:?} fa {fa} ba {ba} Cs {c} Cb {b}: {co} exceeds one"
+                        );
+                    }
+                }
+            }
         }
     }
 }
