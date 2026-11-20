@@ -1624,13 +1624,23 @@ export component VideoPanel inherits VerticalLayout {
         root.crop-bottom = root.selected.crop-bottom;
     }
 
+    // The index of an entry is the value of `Blend::ALL[index]`, so this
+    // list's order is load-bearing: it must match concat_core::timeline::Blend
+    // exactly, and every key must exist in all 26 locales. Adding a mode is
+    // three edits - the enum, this array, the locale inventories - never two.
     property <[string]> blends: [
         I18n.t("clipInspector.normal"),
         I18n.t("clipInspector.multiply"),
         I18n.t("clipInspector.screen"),
         I18n.t("clipInspector.add"),
         I18n.t("clipInspector.lighten"),
-        I18n.t("clipInspector.darken")
+        I18n.t("clipInspector.darken"),
+        I18n.t("clipInspector.overlay"),
+        I18n.t("clipInspector.softLight"),
+        I18n.t("clipInspector.hardLight"),
+        I18n.t("clipInspector.colorBurn"),
+        I18n.t("clipInspector.colorDodge"),
+        I18n.t("clipInspector.linearBurn")
     ];
 
     init => { root.seed(); }
