@@ -119,12 +119,19 @@ pub struct Clip {
 
 /// How a layer's colour meets what is beneath it.
 ///
-/// Source-over is the ordinary case. The rest are the fixed-function
+/// Source-over is the ordinary case. The next five are the fixed-function
 /// blends a GPU offers over premultiplied colour, spelled the same way on
 /// the CPU so the two paths agree pixel for pixel: with `s` the layer's
 /// colour times its alpha and `d` the ground, Multiply is `s·d + d(1-a)`,
 /// Screen `s(1-d) + d`, Add `s + d`, Lighten `max(s, d)`, Darken
 /// `min(s, d)`.
+///
+/// The last six are piecewise or non-linear in the *ground*, so no blend
+/// state can name them: the compositor reads the ground back as a texture
+/// and evaluates them in a fragment shader (see
+/// `concat-render/src/blend_modes.wgsl`, whose `mode` numbers are **these
+/// variants' indices in [`Blend::ALL`]** - reordering `ALL` silently
+/// repaints every document that names a mode).
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum Blend {
     /// Source over: the layer covers what is beneath by its alpha.
@@ -140,20 +147,56 @@ pub enum Blend {
     Lighten,
     /// The darker of the two, per channel.
     Darken,
+    /// Multiplies or screens by whether the ground is dark or light, so the
+    /// ground's own detail survives at full strength.
+    Overlay,
+    /// Overlay's gentler cousin: a soft, non-linear dodge or burn of the
+    /// ground, near the identity at mid grey.
+    SoftLight,
+    /// Overlay with the roles swapped: multiplies or screens by whether the
+    /// *layer* is dark or light.
+    HardLight,
+    /// Darkens by dividing, deepening the ground's shadows towards black.
+    ColorBurn,
+    /// Brightens by dividing, blowing the ground's highlights towards white.
+    ColorDodge,
+    /// Darkens by adding: `layer + ground - 1`, clipped at black. The
+    /// straight-line version of Multiply, harder than ColorBurn.
+    LinearBurn,
 }
 
 impl Blend {
     /// Every mode, in menu order.
-    pub const ALL: [Blend; 6] = [
+    ///
+    /// **The index is load-bearing.** `blend_modes.wgsl` switches on these
+    /// numbers, `concat-render` builds one pipeline per slot, and the
+    /// inspector's menu is this array by position. Add at the end only.
+    pub const ALL: [Blend; 12] = [
         Blend::Normal,
         Blend::Multiply,
         Blend::Screen,
         Blend::Add,
         Blend::Lighten,
         Blend::Darken,
+        Blend::Overlay,
+        Blend::SoftLight,
+        Blend::HardLight,
+        Blend::ColorBurn,
+        Blend::ColorDodge,
+        Blend::LinearBurn,
     ];
 
-    /// The mode's name in a document: "normal", "multiply", ...
+    /// The mode's name in a document: "normal", "multiply",
+    /// "soft-light", ...
+    ///
+    /// This is bobbycat's storage spelling, kebab-case, and the whole legal
+    /// value domain of a document's `blend` string; see
+    /// [`Blend::all_names`]. Note what it is *not*: Jianying's own
+    /// `MixMode.json` spells the same modes with underscores as `nameId`
+    /// (`soft_light`), so an exporter must swap `-` for `_`, and the
+    /// interface's translatable labels are a third set entirely, the
+    /// lowerCamelCase keys `clipInspector.softLight` in `locales/*.json`.
+    /// [`Blend::parse`] reads either spelling; `name` writes only this one.
     pub fn name(self) -> &'static str {
         match self {
             Blend::Normal => "normal",
@@ -162,14 +205,35 @@ impl Blend {
             Blend::Add => "add",
             Blend::Lighten => "lighten",
             Blend::Darken => "darken",
+            Blend::Overlay => "overlay",
+            Blend::SoftLight => "soft-light",
+            Blend::HardLight => "hard-light",
+            Blend::ColorBurn => "color-burn",
+            Blend::ColorDodge => "color-dodge",
+            Blend::LinearBurn => "linear-burn",
         }
     }
 
+    /// Every name a document may carry, in menu order - for the document
+    /// layer to validate against rather than keeping a second copy of the
+    /// list that can drift.
+    pub fn all_names() -> impl Iterator<Item = &'static str> {
+        Blend::ALL.into_iter().map(Blend::name)
+    }
+
     /// The mode a document names, Normal for anything unknown.
+    ///
+    /// A name it writes is kebab-case ([`Blend::name`]); it also reads the
+    /// underscored spelling `soft_light`, which is the one Jianying's own
+    /// `MixMode.json` uses for `nameId`, so a file from either side loads.
     pub fn parse(name: &str) -> Blend {
+        let name = name.trim();
         Blend::ALL
             .into_iter()
-            .find(|mode| mode.name() == name.trim())
+            .find(|mode| {
+                let canonical = mode.name();
+                canonical == name || canonical.replace('-', "_") == name
+            })
             .unwrap_or_default()
     }
 }
