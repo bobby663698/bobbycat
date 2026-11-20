@@ -97,15 +97,15 @@ fi
 cat <<'MD'
 ### Download
 
-A self-contained build for every platform BobbyCat ships on.
+Windows, 64-bit:
 
-| | Apple silicon | Intel / x86_64 | arm64 |
-|---|---|---|---|
-| macOS | `macos-arm64.dmg` | `macos-x86_64.dmg` | |
-| Windows | | `windows-x86_64-setup.exe`, `.msi` | |
-| Linux | | `linux-x86_64.deb`, `.rpm`, `x86_64.AppImage` | `linux-aarch64.deb`, `.rpm`, `aarch64.AppImage` |
-| Android | | | `android-arm64.apk` |
-| iOS / iPadOS | | | `ios-arm64.ipa` |
+| File | What it is |
+|---|---|
+| `windows-x86_64-setup.exe` | the installer; installs for the current user, no administrator |
+| `windows-x86_64.msi` | the same, as an MSI, for a domain or a script |
 
-`SHA256SUMS` lists each file's checksum.
+`SHA256SUMS.txt` lists each file's checksum.
+
+Other platforms are built from the same source when asked for; no bundles
+are published for them yet.
 MD
