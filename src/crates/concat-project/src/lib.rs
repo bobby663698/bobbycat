@@ -27,6 +27,8 @@ pub mod commands;
 mod consolidate_tests;
 pub mod doc;
 pub mod editor;
+/// Jianying `mix_mode` resource lookup for the draft exporter.
+pub mod mix_mode;
 pub mod model;
 pub mod placement;
 pub mod runs;
