@@ -34,14 +34,14 @@ use crate::ui::{SoundCardData, VoiceCardData};
 
 /// The prefix of a card id on the Mine shelf.
 const MINE: &str = "mine-";
-/// The prefix of a card id on the Concat shelf.
+/// The prefix of a card id on the BobbyCat shelf.
 const CONCAT: &str = "concat-";
 
-/// The Concat shelf's categories, as the manifest names them; the sidebar
+/// The BobbyCat shelf's categories, as the manifest names them; the sidebar
 /// shows them in the interface's language, after All.
 pub const CATEGORIES: [&str; 5] = ["Whoosh", "Impact", "Riser", "Ambience", "Music"];
 
-/// Where the Concat shelf stands.
+/// Where the BobbyCat shelf stands.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ConcatState {
     /// Not asked for: the shelf offers to load it.

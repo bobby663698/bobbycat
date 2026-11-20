@@ -290,7 +290,7 @@ fn interactive_lane() -> &'static Lane {
     static LANE: std::sync::OnceLock<Lane> = std::sync::OnceLock::new();
     LANE.get_or_init(|| {
         Lane::start(
-            "concat-worker",
+            "bobbycat-worker",
             INTERACTIVE_THREADS,
             Some(INTERACTIVE_SLOW),
             false,
@@ -304,13 +304,13 @@ fn long_lane() -> &'static Lane {
         let cores = std::thread::available_parallelism().map_or(4, |count| count.get());
         let threads = long_threads(cores);
         log::debug!("host: {threads} long-job workers for {cores} hardware threads");
-        Lane::start("concat-long", threads, None, true)
+        Lane::start("bobbycat-long", threads, None, true)
     })
 }
 
 fn save_lane() -> &'static SaveLane {
     static LANE: std::sync::OnceLock<SaveLane> = std::sync::OnceLock::new();
-    LANE.get_or_init(|| SaveLane::start("concat-save"))
+    LANE.get_or_init(|| SaveLane::start("bobbycat-save"))
 }
 
 /// A save waiting on the save lane.
@@ -1305,7 +1305,7 @@ mod lane_tests {
     /// project's save keeps its own turn.
     #[test]
     fn a_waiting_save_is_replaced_by_the_newest_of_its_project() {
-        let lane = super::SaveLane::start("concat-save-test");
+        let lane = super::SaveLane::start("bobbycat-save-test");
         let ran = Arc::new(Mutex::new(Vec::new()));
         let (running, most) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
 
@@ -1357,7 +1357,7 @@ mod lane_tests {
     /// each written, and fewer writes than asks.
     #[test]
     fn saves_asked_for_faster_than_they_write_keep_the_newest() {
-        let lane = super::SaveLane::start("concat-save-stress");
+        let lane = super::SaveLane::start("bobbycat-save-stress");
         let ran = Arc::new(Mutex::new(Vec::new()));
         let (running, most) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
         let keys = ["a", "b", "c"];

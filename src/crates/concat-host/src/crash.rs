@@ -12,7 +12,7 @@
 //! crash goes on to wherever it was going:
 //!
 //! ```text
-//! FATAL [concat-worker-1] crash: SIGSEGV (bad memory access) at 0x10 in libonnxruntime.so.1.28.0+0x1a2b3c
+//! FATAL [bobbycat-worker-1] crash: SIGSEGV (bad memory access) at 0x10 in libonnxruntime.so.1.28.0+0x1a2b3c
 //! FATAL [main] crash: 0xC0000005 EXCEPTION_ACCESS_VIOLATION, reading 0x10, in onnxruntime.dll+0x1a2b3c
 //! ```
 //!

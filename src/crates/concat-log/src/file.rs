@@ -21,6 +21,10 @@
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
+/// What a run's file is named: the app's name, then the instant it opened.
+/// A person looking in the folder sees the program they ran.
+const PREFIX: &str = "bobbycat";
+
 /// How many runs' logs are kept. Ten covers "it did it again yesterday"
 /// without the folder ever being something a person has to think about.
 pub const KEEP: usize = 10;
@@ -89,8 +93,8 @@ impl RunFile {
         let mut last = None;
         for attempt in 1..=9 {
             let name = match attempt {
-                1 => format!("concat-{stamp}.log"),
-                _ => format!("concat-{stamp}-{attempt}.log"),
+                1 => format!("{PREFIX}-{stamp}.log"),
+                _ => format!("{PREFIX}-{stamp}-{attempt}.log"),
             };
             let path = folder.join(name);
             match std::fs::OpenOptions::new()
@@ -216,7 +220,7 @@ fn runs(folder: &Path) -> Vec<PathBuf> {
         .filter(|path| {
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("concat-") && name.ends_with(".log"))
+                .is_some_and(|name| name.starts_with(&format!("{PREFIX}-")) && name.ends_with(".log"))
         })
         .collect()
 }
@@ -318,8 +322,8 @@ mod tests {
     /// ago, nested in quotes.
     #[test]
     fn a_quote_of_the_run_before_is_not_this_runs_error() {
-        let quoted = "12:00:00.000 WARN  last run   concat-20260101-000000.log did not end cleanly (it crashed, was killed, or the machine went down); the last thing that went wrong in it: 11:00:00.000 ERROR export     failed: no encoder  [concat, main]  [concat_host::logs, main]\n";
-        let threads = "12:00:00.100 WARN  last run   the threads of concat-20260101-000000.log when the system gave up on it  [concat_android, main]\n                             \"main\" prio=5 tid=1 Native\n                               native: #00 pc 0000000000001000  /system/lib64/libc.so (abort+12) ERROR here\n";
+        let quoted = "12:00:00.000 WARN  last run   bobbycat-20260101-000000.log did not end cleanly (it crashed, was killed, or the machine went down); the last thing that went wrong in it: 11:00:00.000 ERROR export     failed: no encoder  [concat, main]  [concat_host::logs, main]\n";
+        let threads = "12:00:00.100 WARN  last run   the threads of bobbycat-20260101-000000.log when the system gave up on it  [concat_android, main]\n                             \"main\" prio=5 tid=1 Native\n                               native: #00 pc 0000000000001000  /system/lib64/libc.so (abort+12) ERROR here\n";
         // A run with nothing wrong of its own has no last error...
         assert_eq!(last_error_in(&format!("{quoted}{threads}")), None);
         // ...and one with an error of its own has that one, wherever its
@@ -358,7 +362,7 @@ mod tests {
         let folder = scratch("prune");
         for index in 0..KEEP + 5 {
             std::fs::write(
-                folder.join(format!("concat-2026091{index:02}-000000.log")),
+                folder.join(format!("bobbycat-2026091{index:02}-000000.log")),
                 "x",
             )
             .expect("a log");
@@ -376,11 +380,11 @@ mod tests {
         assert!(left.contains(&"notes.txt".to_owned()));
         let ours: Vec<&String> = left
             .iter()
-            .filter(|name| name.starts_with("concat-"))
+            .filter(|name| name.starts_with("bobbycat-"))
             .collect();
         assert_eq!(ours.len(), KEEP - 1, "{ours:?}");
         // The ones kept are the last ones written.
-        assert!(ours.iter().all(|name| name.as_str() >= "concat-20260906"));
+        assert!(ours.iter().all(|name| name.as_str() >= "bobbycat-20260906"));
         let _ = std::fs::remove_dir_all(&folder);
     }
 
@@ -391,8 +395,8 @@ mod tests {
         let first = RunFile::create(&folder, at, Limits::default()).expect("a file");
         let second = RunFile::create(&folder, at, Limits::default()).expect("another");
         assert_ne!(first.path(), second.path());
-        assert!(first.path().ends_with("concat-20240914-121456.log"));
-        assert!(second.path().ends_with("concat-20240914-121456-2.log"));
+        assert!(first.path().ends_with("bobbycat-20240914-121456.log"));
+        assert!(second.path().ends_with("bobbycat-20240914-121456-2.log"));
         let _ = std::fs::remove_dir_all(&folder);
     }
 
@@ -439,7 +443,7 @@ mod tests {
         let folder = scratch("previous");
         assert_eq!(previous(&folder), None);
         std::fs::write(
-            folder.join("concat-20260101-000000.log"),
+            folder.join("bobbycat-20260101-000000.log"),
             "12:00:00.000 INFO  [main] concat: hello\n12:00:01.000 INFO  [main] concat_log: run ended cleanly after 1.00 s\n",
         )
         .expect("a log");
@@ -449,12 +453,12 @@ mod tests {
 
         // A newer one that stopped mid-sentence, with an error and a crash.
         std::fs::write(
-            folder.join("concat-20260102-000000.log"),
+            folder.join("bobbycat-20260102-000000.log"),
             "12:00:00.000 ERROR [worker] concat_render::gpu: device lost\nFATAL [main] crash: SIGSEGV at 0x10\n",
         )
         .expect("a log");
         let run = previous(&folder).expect("a run");
-        assert!(run.path.ends_with("concat-20260102-000000.log"));
+        assert!(run.path.ends_with("bobbycat-20260102-000000.log"));
         assert!(!run.ended_cleanly);
         assert_eq!(
             run.last_error.as_deref(),
@@ -479,7 +483,7 @@ mod tests {
                 false,
             ),
         ] {
-            std::fs::write(folder.join("concat-20260103-000000.log"), text).expect("a log");
+            std::fs::write(folder.join("bobbycat-20260103-000000.log"), text).expect("a log");
             assert_eq!(previous(&folder).expect("a run").died(), died, "{text}");
         }
 
@@ -488,7 +492,7 @@ mod tests {
         // not a crash - while the same sign-off reporting a failure is not
         // one.
         std::fs::write(
-            folder.join("concat-20260104-000000.log"),
+            folder.join("bobbycat-20260104-000000.log"),
             "08:07:24.151 INFO  [main] concat: close: event loop exited (ok=true)\n",
         )
         .expect("a log");
@@ -498,7 +502,7 @@ mod tests {
         assert!(!run.died());
 
         std::fs::write(
-            folder.join("concat-20260105-000000.log"),
+            folder.join("bobbycat-20260105-000000.log"),
             "08:07:24.151 ERROR [main] concat: close: event loop exited (ok=false)\n",
         )
         .expect("a log");

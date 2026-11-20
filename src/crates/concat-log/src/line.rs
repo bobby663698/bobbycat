@@ -5,8 +5,8 @@
 //!
 //! ```text
 //! 05:22:33.776 INFO  gpu        Apple M5 on Metal  [concat::gpu, main]
-//! 05:23:10.551 INFO  captions   done in 43.2 s · small model · transcribe 40.9 s · 120 captions  [concat_speech::transcribe, concat-worker-2]
-//! 05:23:11.900 ERROR gpu        the compositor's device was lost: the driver stopped answering  [concat_render::gpu, concat-worker-0]
+//! 05:23:10.551 INFO  captions   done in 43.2 s · small model · transcribe 40.9 s · 120 captions  [concat_speech::transcribe, bobbycat-worker-2]
+//! 05:23:11.900 ERROR gpu        the compositor's device was lost: the driver stopped answering  [concat_render::gpu, bobbycat-worker-0]
 //! ```
 //!
 //! Read from the left, a line is when, how bad, what about, and what
