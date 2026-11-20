@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Jareer Abdullah
 
-//! A CapCut draft read into a Concat project (#477).
+//! A CapCut draft read into a BobbyCat project (#477).
 //!
 //! CapCut keeps each draft as a folder of JSON: the edit of each timeline
 //! in a `draft_info.json` (macOS, and every build since the desktop app
@@ -50,8 +50,8 @@ const PLACEHOLDER: &str = "##_draftpath_placeholder_";
 /// CapCut's times are microseconds.
 const MICROS: f64 = 1_000_000.0;
 
-/// A CapCut title's size over Concat's: CapCut's default title, 15, as
-/// Concat's default title, nine hundredths of the frame's height.
+/// A CapCut title's size over BobbyCat's: CapCut's default title, 15, as
+/// BobbyCat's default title, nine hundredths of the frame's height.
 /// Approximate; a title can be resized after.
 const TEXT_SIZE: f64 = 0.09 / 15.0;
 
@@ -535,7 +535,7 @@ impl Reader<'_> {
 
     /// The clip's speed: the segment's, or its speed material's - a curve
     /// when CapCut's is one, its points over the clip's length as
-    /// Concat's are, joined by straight lines.
+    /// BobbyCat's are, joined by straight lines.
     fn speed(&self, segment: &Value, clip: &mut Clip, notes: &mut Notes) {
         let mut speed = segment.get("speed").and_then(Value::as_f64).unwrap_or(1.0);
         if let Some((_, material)) = self.extras(segment).find(|(list, _)| *list == "speeds") {
@@ -584,7 +584,7 @@ impl Reader<'_> {
     }
 
     /// Where the picture sits: CapCut's place is in half the canvas, y
-    /// up; Concat's in the whole frame, y down. Both measure the size over
+    /// up; BobbyCat's in the whole frame, y down. Both measure the size over
     /// the picture fitted inside the frame, and turn clockwise.
     fn place(&self, segment: &Value, clip: &mut Clip) {
         let placed = segment.get("clip");
@@ -610,12 +610,12 @@ impl Reader<'_> {
         clip.flip_v = flipped("vertical");
     }
 
-    /// The keyframes Concat has a property for, eased straight from one
+    /// The keyframes BobbyCat has a property for, eased straight from one
     /// to the next as CapCut's default is.
     fn keys(&self, segment: &Value, clip: &mut Clip, notes: &mut Notes) {
         let length = clip.duration * MICROS;
         let lists = segment.get("common_keyframes").and_then(Value::as_array);
-        // CapCut sizes the two axes apart; Concat sizes both with the
+        // CapCut sizes the two axes apart; BobbyCat sizes both with the
         // scale and pulls the height beyond it. The height's keys wait
         // until the width's are read, since what they become depends on
         // both.
@@ -689,7 +689,7 @@ fn points(list: &Value, length: f64) -> Vec<(f64, f64)> {
         .collect()
 }
 
-/// The height's keys as Concat holds them: a pull of the height beyond
+/// The height's keys as BobbyCat holds them: a pull of the height beyond
 /// the scale, `down / across`, at every instant either axis has a key.
 ///
 /// No height keys is a height that follows the width, as it always did
@@ -754,7 +754,7 @@ fn plain(list: &str) -> String {
 }
 
 /// The crop a video material carries, as its four corners; `None` for the
-/// whole picture or a corner pin Concat's square crop cannot hold.
+/// whole picture or a corner pin BobbyCat's square crop cannot hold.
 fn crop_of(material: &Value) -> Option<Crop> {
     let corners = material.get("crop")?;
     let at = |key: &str| number(Some(corners), key);
@@ -817,7 +817,7 @@ fn title_of(material: &Value) -> Option<TextStyle> {
     let flag = |key: &str| run.and_then(|run| run.get(key)).and_then(Value::as_bool);
     style.italic = flag("italic").unwrap_or(style.italic);
     style.underline = flag("underline").unwrap_or(style.underline);
-    // CapCut's titles are regular unless made bold; Concat's start bold.
+    // CapCut's titles are regular unless made bold; BobbyCat's start bold.
     if run.is_some() {
         style.font_weight = if flag("bold") == Some(true) {
             700.0
@@ -872,7 +872,7 @@ fn hex(rgb: &[Value]) -> Option<String> {
 
 /// The cuts each clip's transition goes over, as `(start, length, package,
 /// name)`. CapCut draws a transition by overlapping the two clips by its
-/// length; Concat keeps a lane's clips end to end and lays the transition
+/// length; BobbyCat keeps a lane's clips end to end and lays the transition
 /// over the cut. So where two overlap, the cut goes in the middle of the
 /// overlap - the incoming clip starts later by half of it, and its in-point
 /// moves by the source that covers - and the transition spans the overlap
@@ -916,7 +916,7 @@ fn cuts(clips: &mut [(Clip, Option<(f64, String)>)]) -> Vec<(f64, f64, &'static 
     placed
 }
 
-/// The Concat package nearest a CapCut transition, by the plain words in
+/// The BobbyCat package nearest a CapCut transition, by the plain words in
 /// its name; a dissolve for anything else, which keeps the cut's timing.
 fn package_for(name: &str) -> &'static str {
     let name = name.to_lowercase();

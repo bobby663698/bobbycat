@@ -6,7 +6,7 @@
 //! the proxy a browser on the same machine is already using. (The smaller
 //! copies of media that playback reads are `proxy.rs`, and unrelated.)
 //!
-//! Concat went straight to the network whatever the machine was set up to
+//! BobbyCat went straight to the network whatever the machine was set up to
 //! do, so a person whose traffic goes through a proxy - a company's
 //! gateway, or a tool like Clash or v2rayN set as the system proxy, which is
 //! how much of mainland China reaches GitHub and Hugging Face at all - saw

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! A package's shader: what it declares, checked and laid out at load.
 //!
@@ -1513,7 +1513,7 @@ fn stitch(
     }
     if !manifest.scene_linear() {
         return Err(
-            "the package is written for format 1, whose pictures this Concat no longer draws: \
+            "the package is written for format 1, whose pictures this BobbyCat no longer draws: \
              a picture package needs `format = 2` (see the package guide)"
                 .to_owned(),
         );

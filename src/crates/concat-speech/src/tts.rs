@@ -4,7 +4,7 @@
 //! Text-to-speech: text in, a narration WAV in the project folder out.
 //!
 //! Two families of voice, one front. **Chatterbox Turbo**, on the desktop,
-//! reads in the voice of a recording - a stock one Concat carries, or the
+//! reads in the voice of a recording - a stock one BobbyCat carries, or the
 //! sound of whatever clip is selected, the narrator's own voice from
 //! footage already in the project - closer to a studio voice, at a
 //! gigabyte and a wait. It runs through ONNX Runtime ([`crate::chatterbox`]).
@@ -110,7 +110,7 @@ const KNOWN_MODELS: &[KnownModel] = &[
 ];
 
 /// Chatterbox's voices. The model has no speakers of its own: its stock
-/// voices are recordings Concat carries (`voices/`, all LibriVox readings
+/// voices are recordings BobbyCat carries (`voices/`, all LibriVox readings
 /// their readers dedicated to the public domain), and the last is a
 /// recording of the caller's choosing.
 ///
@@ -133,7 +133,7 @@ pub const CHATTERBOX_CLONE: i32 = 2099;
 /// The phone's voice: whichever its engine is set to.
 pub const SYSTEM_VOICES: &[(i32, &str)] = &[(3000, "system_default")];
 
-/// The stock recordings Concat carries, by file name.
+/// The stock recordings BobbyCat carries, by file name.
 #[cfg(feature = "chatterbox")]
 const RECORDINGS: &[(&str, &[u8])] = &[
     (
@@ -500,7 +500,7 @@ impl Speech {
         })
     }
 
-    /// Downloads model `id` from Concat's mirror. Blocks for the whole
+    /// Downloads model `id` from BobbyCat's mirror. Blocks for the whole
     /// download: run it on its own thread. The phone's voice has nothing
     /// to download.
     pub fn download_model(
@@ -539,7 +539,7 @@ impl Speech {
     }
 
     /// Removes a downloaded model folder, unless the engine is speaking from
-    /// it. The phone's voice is the phone's, and is not Concat's to remove.
+    /// it. The phone's voice is the phone's, and is not BobbyCat's to remove.
     pub fn delete_model(&self, dirs: &AppDirs, id: &str) -> Result<(), String> {
         if family_of(id) == Family::System {
             return Err("the phone's voice is part of the phone".to_owned());
@@ -727,7 +727,7 @@ impl Speech {
             let cached = engine.as_ref().expect("engine cached above");
             let (chatterbox, accelerated) = (&cached.tts, cached.accelerated);
 
-            // A named voice's recording is one Concat carries; a chosen
+            // A named voice's recording is one BobbyCat carries; a chosen
             // recording is the request's own.
             let recordings = if is_clone(request.voice) {
                 dir.clone()
@@ -798,7 +798,7 @@ impl Speech {
 }
 
 /// What Chatterbox listens to a voice at, and the rate of the recordings
-/// Concat carries.
+/// BobbyCat carries.
 #[cfg_attr(not(feature = "chatterbox"), allow(dead_code))]
 const REFERENCE_RATE: u32 = 24_000;
 
@@ -1116,7 +1116,7 @@ mod tests {
     }
 
     /// The phone's voice is offered only where a phone handed one over,
-    /// and is never Concat's to download or remove.
+    /// and is never BobbyCat's to download or remove.
     #[test]
     fn the_phones_voice_is_offered_only_with_a_phone() {
         assert!(
@@ -1169,7 +1169,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// Every stock voice Concat carries is written out beside the models and
+    /// Every stock voice BobbyCat carries is written out beside the models and
     /// reads as ten seconds of someone talking.
     #[cfg(feature = "chatterbox")]
     #[test]

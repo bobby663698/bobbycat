@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Desktop launch arguments, kept separate from the window and engine.
 
@@ -14,17 +14,17 @@ pub enum Launch {
     /// The window, on the launch screen or on the project it names.
     Normal(Option<PathBuf>),
     /// The window on the launch screen, drawn in software from now on: what
-    /// the Start menu's "Concat (safe graphics)" runs, for a driver that
+    /// the Start menu's "BobbyCat (safe graphics)" runs, for a driver that
     /// draws the window as coloured squares, where Settings' GPU switch
     /// cannot be seen to be turned off (#389, #242, #449).
     Software,
-    /// Serve the Concat API to an AI agent as an MCP server on standard
+    /// Serve the BobbyCat API to an AI agent as an MCP server on standard
     /// input and output, with no window: what an agent's configuration
     /// names (docs/MCP.md). The mode, when given: through the window's
     /// server, on its own, or whichever is there; `CONCAT_MCP_MODE`
     /// otherwise, and `auto` without that.
     Mcp(Option<concat_mcp::Mode>),
-    /// Print the Concat API's whole contract as JSON Schema and exit:
+    /// Print the BobbyCat API's whole contract as JSON Schema and exit:
     /// every method, its reply, every edit command, event and error. What
     /// a developer generates a client from, and what the docs are built
     /// from, so both describe this very build.

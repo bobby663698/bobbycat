@@ -189,7 +189,7 @@ fn default_wgpu_surface_factory(
     }
 }
 
-/// Concat: the Android backend asks for the wgpu surface by name once a wgpu
+/// BobbyCat: the Android backend asks for the wgpu surface by name once a wgpu
 /// feature is on, and wgpu on Android is Vulkan alone. A phone with no
 /// Vulkan driver wgpu can use - and the API 30 emulator - got no window at
 /// all, and the app closed as it opened. So the wgpu surface is tried
@@ -203,7 +203,7 @@ fn android_wgpu_30_or_opengl_surface_factory(
     size: PhysicalWindowSize,
     requested_graphics_api: Option<RequestedGraphicsAPI>,
 ) -> Result<Box<dyn Surface>, PlatformError> {
-    // Concat's safe start: the last launch of this build died while
+    // BobbyCat's safe start: the last launch of this build died while
     // starting, so Vulkan is not tried at all. A driver that crashes on its
     // first frame, rather than refusing the surface, gets past the fall
     // back below and kills every launch.
@@ -549,7 +549,7 @@ impl SkiaRenderer {
     pub fn default_wgpu_30(context: &SkiaSharedContext) -> Self {
         Self::new_with_surface_factory(
             context,
-            // Concat: on Android, OpenGL ES when wgpu's Vulkan opens nothing.
+            // BobbyCat: on Android, OpenGL ES when wgpu's Vulkan opens nothing.
             #[cfg(target_os = "android")]
             android_wgpu_30_or_opengl_surface_factory,
             #[cfg(not(target_os = "android"))]

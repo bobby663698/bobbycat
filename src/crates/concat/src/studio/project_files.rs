@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 //! Projects: opening, saving, recents and templates.
 
 use super::*;
@@ -68,7 +68,7 @@ impl Studio {
         // project is closed first, as a close would - saved, its folder let
         // go, its jobs stopped. Swapping the session alone dropped what the
         // last autosave had not written yet and kept the old folder locked
-        // against every other Concat for the rest of the run. A save that
+        // against every other BobbyCat for the rest of the run. A save that
         // fails keeps it open and the other one shut.
         if let Some(open) = self
             .session
@@ -224,7 +224,7 @@ impl Studio {
                     );
                 }
                 // Parts of the file this build cannot read - from a newer
-                // Concat, or damaged - are kept in it unchanged, and the
+                // BobbyCat, or damaged - are kept in it unchanged, and the
                 // person told once, after the other notices of this open.
                 let unread = self
                     .session
@@ -260,7 +260,7 @@ impl Studio {
                         self.warn(&notice);
                     }
                 }
-                // Voiceovers still recording when Concat last let this
+                // Voiceovers still recording when BobbyCat last let this
                 // project go without them - a crash, a quit without saving
                 // - go back in Media.
                 crate::panes::voiceover::recover_lost_takes(self, saved);

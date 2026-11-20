@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Rendering a timeline to a file.
 //!
@@ -1824,7 +1824,7 @@ fn drawn_on<T>(
     if strict && left_out {
         return Err(
             "this frame has effects or HDR that cannot be drawn now: the graphics \
-             device was lost, and previews are drawn on the CPU without them until Concat \
+             device was lost, and previews are drawn on the CPU without them until BobbyCat \
              restarts"
                 .to_owned(),
         );

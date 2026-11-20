@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The manifest: what a package declares about itself.
 //!
@@ -16,7 +16,7 @@ use crate::Error;
 /// The package format this build reads: the shape of the manifest, the
 /// template and expression syntax, and the shader's contract with the
 /// compositor. Bumped when any of those changes in a way an older build
-/// could not read, so a package written for a newer Concat says so rather
+/// could not read, so a package written for a newer BobbyCat says so rather
 /// than failing in the shader compiler.
 ///
 /// Format 2 is the scene-linear contract: the shader samples the working
@@ -533,8 +533,8 @@ impl Manifest {
         }
         if self.format > FORMAT {
             return Err(self.invalid(format!(
-                "written for package format {}, and this Concat reads up to {FORMAT}: \
-                 a newer Concat is needed",
+                "written for package format {}, and this BobbyCat reads up to {FORMAT}: \
+                 a newer BobbyCat is needed",
                 self.format
             )));
         }

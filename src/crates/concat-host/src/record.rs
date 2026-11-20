@@ -655,7 +655,7 @@ impl WavWriter {
 /// file: a take cut off by a crash says only what was written by its last
 /// checkpoint - nothing at all, in its first second - though the samples
 /// after it are on disk all the same. Whether the file holds any sound; an
-/// error for a file that is not a take as Concat writes them, which is
+/// error for a file that is not a take as BobbyCat writes them, which is
 /// left as it is.
 pub fn repair(path: &Path) -> Result<bool, String> {
     use std::io::Read;

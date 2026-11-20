@@ -635,7 +635,7 @@ impl Backend {
         match self {
             #[cfg(target_vendor = "apple")]
             Self::Metal => unsafe { metal::make_metal_surface(gr_context, texture) },
-            // Concat: the window, and only the window, takes the desk's
+            // BobbyCat: the window, and only the window, takes the desk's
             // ClearType settings; a texture rendered to may be composited
             // anywhere, where LCD coverage would fringe.
             #[cfg(target_family = "windows")]

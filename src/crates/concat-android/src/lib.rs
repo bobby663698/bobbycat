@@ -316,7 +316,7 @@ mod picker {
 /// The export writes into the app's own folder, which on a phone nothing
 /// but the app can open: not the gallery, not a file manager (#280,
 /// #147). So once a file is written the Java moves it into the phone's
-/// Movies, under Concat, through the media store, and the sheet names
+/// Movies, under BobbyCat, through the media store, and the sheet names
 /// that folder from the start. A phone older than Android 10 has no
 /// media store an app can write through without a permission; there the
 /// file stays where it was written, and the sheet says so.
@@ -356,7 +356,7 @@ mod publisher {
         });
     }
 
-    /// `ConcatFiles.publishedFolder`: "Movies/Concat", or nothing.
+    /// `ConcatFiles.publishedFolder`: "Movies/BobbyCat", or nothing.
     fn published_folder(app: &AndroidApp) -> jni::errors::Result<Option<String>> {
         super::java::with_class(app, |env, _activity, class| {
             let answer = env
@@ -393,7 +393,7 @@ mod publisher {
     }
 
     /// `ConcatFiles.publishDocument`: the file's path under the phone's
-    /// storage once it is in Download/Concat, or why it could not be moved.
+    /// storage once it is in Download/BobbyCat, or why it could not be moved.
     fn publish_document(app: &AndroidApp, path: &Path, mime: &str) -> Result<String, String> {
         answer(super::java::with_class(app, |env, activity, class| {
             let path = env.new_string(path.to_string_lossy())?;
@@ -599,7 +599,7 @@ mod log_file {
                 }
                 // A hang's threads as the system found them, one entry
                 // under the line above: what the window was doing instead
-                // of answering, frames in Concat's library as offsets in
+                // of answering, frames in BobbyCat's library as offsets in
                 // it (docs/LOGGING.md, "Reading a phone's hang").
                 if let Some(threads) = threads.as_deref().filter(|text| !text.trim().is_empty()) {
                     log::warn!(
@@ -625,7 +625,7 @@ mod log_file {
 /// `poll_events`, which holds the same lock for reading for as long as an
 /// event is handled - and an event is where a job starts. Called from
 /// Export, the window's thread waited on itself for good, and Android
-/// closed Concat as not responding (#747, #786, #760, #744; 0.2.10 and
+/// closed BobbyCat as not responding (#747, #786, #760, #744; 0.2.10 and
 /// 0.2.11, since #695). Off that thread it is no better: a writer waiting
 /// there blocks the next read the window's thread takes inside its event.
 /// The Java posts to the activity's thread and returns.

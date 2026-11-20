@@ -299,7 +299,7 @@ pub enum SavedDock {
 }
 
 /// Deeper than any arrangement a person builds by hand; a file claiming
-/// more is not one Concat wrote.
+/// more is not one BobbyCat wrote.
 const SAVED_DEPTH: usize = 24;
 
 fn pane_name(kind: PaneKind) -> &'static str {

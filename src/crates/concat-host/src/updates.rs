@@ -352,7 +352,7 @@ fn rpm_has_concat() -> bool {
 /// hash to.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Package {
-    /// Its file name, `Concat-0.2.5-macos-arm64.dmg`.
+    /// Its file name, `BobbyCat-0.2.5-macos-arm64.dmg`.
     pub file: String,
     /// Where to fetch it.
     pub url: String,
@@ -640,7 +640,7 @@ pub fn relaunch() -> Result<(), String> {
 /// read only at launch - drawing on the GPU or in software - takes hold.
 /// The caller saves, closes the project and quits; the new process opens
 /// it once this one has let go of its lock. A Mac's app is started from
-/// its bundle, so the Dock shows the one Concat; a build from the tree,
+/// its bundle, so the Dock shows the one BobbyCat; a build from the tree,
 /// Linux and Windows start the executable itself. Nothing on a phone.
 pub fn restart(project: Option<&Path>) -> Result<(), String> {
     if cfg!(any(target_os = "android", target_os = "ios")) {

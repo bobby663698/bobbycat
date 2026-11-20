@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
-// Concat: one change from the published 1.18.1, marked `Concat:` below. A
+// BobbyCat: one change from the published 1.18.1, marked `BobbyCat:` below. A
 // mouse wheel's or a trackpad's scroll (`MotionAction::Scroll`) reached a
 // `todo!()`, and the panic ended the activity on the first turn of the
 // wheel (bobby663698/bobbycat#800). It is dispatched as Slint's own
@@ -447,7 +447,7 @@ impl AndroidWindowAdapter {
                             }
                             InputStatus::Handled
                         }
-                        // Concat: was `todo!()` (bobby663698/bobbycat#800).
+                        // BobbyCat: was `todo!()` (bobby663698/bobbycat#800).
                         MotionAction::Scroll => {
                             let (delta_x, delta_y) =
                                 motion_event.pointers().next().map_or((0., 0.), |p| {
@@ -649,7 +649,7 @@ fn pointer_logical_position(
     PhysicalPosition::new(x as i32 - offset.x, y as i32 - offset.y).to_logical(scale_factor)
 }
 
-/// Concat: a scroll's axes as the logical pixels a `PointerScrolled` moves
+/// BobbyCat: a scroll's axes as the logical pixels a `PointerScrolled` moves
 /// by. Android gives a wheel's notch as 1.0 on `AXIS_VSCROLL` (positive away
 /// from the person) and on `AXIS_HSCROLL` (positive to the right); winit
 /// gives a desktop wheel's notch as a line, positive away and to the left,

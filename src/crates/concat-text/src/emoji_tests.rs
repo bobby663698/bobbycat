@@ -1040,7 +1040,7 @@ fn glyphs_of(fonts: &Fonts, text: &str) -> usize {
 /// picture. One the face did not join is its parts, each drawn: a flag
 /// from a face with no flags is its two letters, set in the title's fill.
 /// Apple's face has all four, so there each must be one glyph and in
-/// colour. Concat joining what any face offers is also settled with an
+/// colour. BobbyCat joining what any face offers is also settled with an
 /// assembled face, in `a_sequence_the_face_joins_draws_as_one_picture`.
 #[test]
 fn emoji_sequences_draw_as_one_picture() {
@@ -1082,7 +1082,7 @@ fn emoji_sequences_draw_as_one_picture() {
             // as the face has them: Windows' face sets a family's three
             // people close together, each a picture (3 glyphs, 1.59 em on
             // Server 2022), and gives a flag as its two letters. Which of
-            // the two is the face's business; what is Concat's is that
+            // the two is the face's business; what is BobbyCat's is that
             // nothing is dropped and nothing is invented.
             let characters = sequence.chars().count();
             assert!(

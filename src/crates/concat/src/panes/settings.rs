@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The settings sheet: the preferences, the two model lists, and the API
 //! server's switch.
@@ -81,7 +81,7 @@ pub enum SettingsMsg {
     ModelRemove(String),
     /// A failed download's way round: open the model's first source in
     /// the browser, which the network may let through where it did not
-    /// let Concat ...
+    /// let BobbyCat ...
     ModelOpenLink(String),
     /// ... and install the file that browser saved, once it is picked.
     ModelChooseFile(String),
@@ -1108,7 +1108,7 @@ fn fixed_note(why: Fixed) -> String {
 /// session. Now a failed save starts nothing and quits nothing: the window
 /// stays up with `close_project`'s reason, and the bundle already on disk
 /// can be started by hand.
-/// Saves, quits and starts Concat again on `project`; see
+/// Saves, quits and starts BobbyCat again on `project`; see
 /// `updates::restart`. A save that fails keeps the window, as any close.
 pub(crate) fn restart(project: Option<std::path::PathBuf>) {
     quit_for_switch("restarting for a setting", move || {
@@ -1120,7 +1120,7 @@ pub(crate) fn restart(project: Option<std::path::PathBuf>) {
     });
 }
 
-/// Closes the window to make way for another start of Concat - `how`, as
+/// Closes the window to make way for another start of BobbyCat - `how`, as
 /// [`crate::closing`] says it - and runs `after` once the project is saved.
 fn quit_for_switch(how: &'static str, after: impl FnOnce() + Send + 'static) {
     on_ui(move |studio, app, models| {

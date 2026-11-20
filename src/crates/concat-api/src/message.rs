@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! What crosses the API boundary: a [`Request`] in, a [`Response`] out,
 //! and [`Event`]s along the way.
@@ -345,7 +345,7 @@ pub enum Reply {
 pub struct VersionInfo {
     /// [`API_VERSION`].
     pub api_version: String,
-    /// The Concat build.
+    /// The BobbyCat build.
     pub concat: String,
     /// Where this machine keeps recents, templates and models.
     pub dirs: Dirs,

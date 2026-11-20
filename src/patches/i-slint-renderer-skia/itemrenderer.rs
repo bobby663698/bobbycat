@@ -996,7 +996,7 @@ impl<'a> LayerRenderer<'a> for SkiaItemRenderer<'a> {
             skia_safe::ColorType::RGBA8888,
             skia_safe::AlphaType::Premul,
         );
-        // Concat: a layer starts transparent and is composited later, so its
+        // BobbyCat: a layer starts transparent and is composited later, so its
         // text is greyscale; with no props it would inherit the window's
         // subpixel order and fringe where the layer is drawn.
         self.canvas.new_surface(&image_info, Some(&skia_safe::SurfaceProps::default()))
@@ -1102,7 +1102,7 @@ impl GlyphRenderer for SkiaItemRenderer<'_> {
             return;
         };
         let mut font = skia_safe::Font::from_typeface(type_face, font_size.get());
-        // Concat: glyphs sit on whole pixels on a low-density screen. Skia's
+        // BobbyCat: glyphs sit on whole pixels on a low-density screen. Skia's
         // subpixel positioning puts a stem between two pixels and the
         // rasteriser smears it over both, which on a 1x Windows desk read as
         // blurred text (bobby663698/bobbycat#278); on a high-density screen the

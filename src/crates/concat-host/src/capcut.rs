@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Jareer Abdullah
 
-//! Importing a CapCut draft as a new Concat project (#477).
+//! Importing a CapCut draft as a new BobbyCat project (#477).
 //!
 //! The file half of `concat_project::capcut`: where CapCut keeps its
 //! drafts, what makes a folder one, reading a draft's timelines, and
 //! writing the project they make into a folder of its own. The draft is
 //! only ever read. A CapCut folder may be synced to CapCut's cloud and is
-//! CapCut's to manage, so nothing of Concat's is written into it.
+//! CapCut's to manage, so nothing of BobbyCat's is written into it.
 
 use std::path::{Path, PathBuf};
 

@@ -130,7 +130,7 @@ pub(crate) fn topic<'a>(target: &'a str, body: &'a str) -> (&'a str, &'a str) {
 }
 
 /// One word for where a line came from: the module's own name for one of
-/// Concat's (`concat_media::hardware` is `hardware`, `concat_export` is
+/// BobbyCat's (`concat_media::hardware` is `hardware`, `concat_export` is
 /// `export`), and the crate for anything else (`wgpu_hal::dx12` is
 /// `wgpu_hal`), since a library's module names mean nothing to the reader.
 fn place(target: &str) -> &str {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The tools: which API method or edit command each one is, and what an
 //! agent is told about it.
@@ -67,7 +67,7 @@ pub enum Action {
         /// The command's `op`.
         op: &'static str,
     },
-    /// `version`, with how this server reaches Concat added.
+    /// `version`, with how this server reaches BobbyCat added.
     Version,
     /// `project.get`, summarised.
     TimelineRead,

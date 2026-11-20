@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
-//! The document model: what a Concat project *is*.
+//! The document model: what a BobbyCat project *is*.
 //!
 //! Times are `f64` seconds here because that is what the on-disk format
 //! stores, and the documents that exist freeze the format. The conversion
@@ -2512,7 +2512,7 @@ impl Default for TextStyle {
     fn default() -> Self {
         Self {
             content: "Your text".to_owned(),
-            // The face Concat ships (`concat_text::BUNDLED_FAMILY`), so a
+            // The face BobbyCat ships (`concat_text::BUNDLED_FAMILY`), so a
             // title made without one - by the API, a template, the agent -
             // is drawn in it everywhere rather than in a fallback.
             font_family: "Hanken Grotesk".to_owned(),

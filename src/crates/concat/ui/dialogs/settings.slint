@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 import { I18n } from "../i18n.slint";
 import { Theme } from "../theme/theme.slint";
@@ -91,12 +91,12 @@ export struct SettingsData {
     shares-log: bool,
     /// the magnetic timeline: deleting and trimming close the gap
     magnetic: bool,
-    /// where model downloads look first: automatic, Concat's mirror,
+    /// where model downloads look first: automatic, BobbyCat's mirror,
     /// hf-mirror.com, the original source, a custom URL
     download-source: int,
     /// the base URL of a custom source
     download-base: string,
-    /// the Concat API served on a socket while the window is open
+    /// the BobbyCat API served on a socket while the window is open
     server-enabled: bool,
     /// the two halves of "127.0.0.1:7420"
     server-host: string,
@@ -365,7 +365,7 @@ component ModelRow inherits Rectangle {
 
         // A download that failed says why under the name, and - when the
         // model is one file - offers the way round a network that lets the
-        // browser through and not Concat: fetch it there, then hand the
+        // browser through and not BobbyCat: fetch it there, then hand the
         // file over. Download stays the retry.
         if root.model.problem != "" && !root.model.downloading && !root.model.installed: VerticalLayout {
             padding-left: 26px;
@@ -939,7 +939,7 @@ export component SettingsDialog inherits Sheet {
                 // most days; Debug and Everything are for when a report
                 // asks, and the file grows faster for them. CONCAT_LOG in
                 // the environment overrides this for one run.
-                // https://github.com/jub0t/Concat/issues/223
+                // https://github.com/bobby663698/bobbycat/issues/223
                 DialogSection {
                     ruled: false;
                     title: I18n.t("settings.logLevel");
@@ -994,7 +994,7 @@ export component SettingsDialog inherits Sheet {
                 // Off, a delete leaves its hole and a trim moves one edge.
                 // On, the lane closes up behind either - the magnetic
                 // timeline of the mainstream editors, asked for in
-                // https://github.com/jub0t/Concat/issues/106
+                // https://github.com/bobby663698/bobbycat/issues/106
                 DialogSection {
                     ruled: false;
                     title: I18n.t("common.magneticTimeline");
@@ -1047,7 +1047,7 @@ export component SettingsDialog inherits Sheet {
                 // Off, the window and the compositor draw in software:
                 // slower, but out of the way of a graphics driver that
                 // closes the app. A launch that dies while starting turns
-                // it off by itself. Read when Concat starts. Only where
+                // it off by itself. Read when BobbyCat starts. Only where
                 // there is a software rasteriser: WARP, lavapipe.
                 if root.data.gpu-switchable: DialogSection {
                     ruled: false;
@@ -1071,7 +1071,7 @@ export component SettingsDialog inherits Sheet {
                 padding-top: 10px;
 
                 // The interface scale: how much larger than the display's own
-                // scale the window is drawn. Most of Concat was built on a
+                // scale the window is drawn. Most of BobbyCat was built on a
                 // small laptop and reads small on a large screen, which is
                 // what this row is for. First on the page: it changes the
                 // size of everything else on it.
@@ -1085,7 +1085,7 @@ export component SettingsDialog inherits Sheet {
                 // anyway. The backend takes it as a multiplier rather than as
                 // a property, so Rust hands the window a scale-factor event
                 // to apply it (lib.rs, `on_settings_scale_changed`).
-                // https://github.com/jub0t/Concat/issues/320
+                // https://github.com/bobby663698/bobbycat/issues/320
                 if !root.phone: DialogSection {
                     ruled: false;
                     first: true;

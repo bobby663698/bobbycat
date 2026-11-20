@@ -4,7 +4,7 @@
 //! A GPU's memory as its driver tells it: every heap's size, the budget
 //! the driver gives this process in it, and what the process uses of it.
 //!
-//! Every device Concat opens on Direct3D 12 or Vulkan carries wgpu's memory
+//! Every device BobbyCat opens on Direct3D 12 or Vulkan carries wgpu's memory
 //! gates ([`crate::gpu::MEMORY_BUDGET`]): a texture or buffer is refused as
 //! out of memory once the driver's budget is 95% spent, and the device is
 //! lost at 99%. They stopped full 8 GB cards hanging exports (#223, #297).
@@ -25,7 +25,7 @@
 //!   card, shared by every program, whose budget of 88-120 MB is likely
 //!   true. The allocator puts such a buffer in system memory when the
 //!   window is full; the published gate refused it instead, and lost the
-//!   device over the window at the next submit (#746). Concat's copy of
+//!   device over the window at the next submit (#746). BobbyCat's copy of
 //!   wgpu-hal (src/patches/wgpu-hal) gates such a buffer on the heap it
 //!   would land in, and leaves the window out of the loss gate.
 //! - **Direct3D 12** asks `QueryVideoMemoryInfo` for the local segment
@@ -529,12 +529,12 @@ mod tests {
             lines,
             vec![
                 "gpu: memory of NVIDIA GeForce MX150 (Vulkan) as the window's device opened · \
-                 heap 0, on the card · size 2.00 GB · budget 1.50 GB · Concat uses 90.0 MB",
+                 heap 0, on the card · size 2.00 GB · budget 1.50 GB · BobbyCat uses 90.0 MB",
                 "gpu: memory of NVIDIA GeForce MX150 (Vulkan) as the window's device opened · \
-                 heap 1, in system memory · size 8.00 GB · budget unknown · Concat uses 30.0 MB",
+                 heap 1, in system memory · size 8.00 GB · budget unknown · BobbyCat uses 30.0 MB",
                 "gpu: memory of NVIDIA GeForce MX150 (Vulkan) as the window's device opened · \
                  heap 2, the CPU's window onto the card (BAR) · size 246.0 MB · budget 114.6 MB · \
-                 Concat uses 131.4 MB",
+                 BobbyCat uses 131.4 MB",
             ]
         );
         let none = Memory {

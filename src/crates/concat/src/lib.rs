@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
-//! Concat's editor window, in Slint.
+//! BobbyCat's editor window, in Slint.
 //!
 //! This file is the wiring: it starts the engine's services, builds the
 //! window, and binds every callback the `.slint` tree exposes to the state
@@ -431,7 +431,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         };
         studio.notify(&notice, false);
     } else if platform::no_graphics_driver() {
-        // The machine's own state, not a choice: what makes Concat slow
+        // The machine's own state, not a choice: what makes BobbyCat slow
         // here, and what fixes it, said once.
         studio.notify(&i18n::t("start.noGraphicsDriver"), false);
     }
@@ -1692,13 +1692,13 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
             state.handle(Msg::Sounds(SoundsMsg::Shown(on)));
         }));
         // Voices: Text to speech on the voice or style clicked.
-        // Concat's own sounds: the list asked for by a click, never at
+        // BobbyCat's own sounds: the list asked for by a click, never at
         // startup.
         sounds.on_load_concat(on_window!(|state| {
-            state.handle(Msg::Sounds(SoundsMsg::LoadConcat));
+            state.handle(Msg::Sounds(SoundsMsg::LoadBobbyCat));
         }));
         sounds.on_concat_category_changed(on_window!(|state, index: i32| {
-            state.handle(Msg::Sounds(SoundsMsg::ConcatCategory(index)));
+            state.handle(Msg::Sounds(SoundsMsg::BobbyCatCategory(index)));
         }));
         sounds.on_voice_open(on_window!(|state, id: SharedString| {
             state.open_voice(id.as_str());
@@ -3125,7 +3125,7 @@ fn safe_start() -> (Option<concat_host::jobs::Tripwire>, bool) {
         "drawing in software"
     };
     match std::env::var("CONCAT_GPU") {
-        // Set before Concat started: it wins over the setting either way.
+        // Set before BobbyCat started: it wins over the setting either way.
         Ok(value) if value.trim().eq_ignore_ascii_case("software") => {
             log::info!("start: {how} · CONCAT_GPU=software was set in the environment");
         }
@@ -3138,7 +3138,7 @@ fn safe_start() -> (Option<concat_host::jobs::Tripwire>, bool) {
             }
         }
         // The setting does not record who turned it off: the switch in
-        // Settings, `--software`, or Concat 0.2.8, which turned it off for
+        // Settings, `--software`, or BobbyCat 0.2.8, which turned it off for
         // good after any start that failed. So the line says all three.
         Err(_) if preferences.software_gpu => {
             log::info!(
@@ -3206,7 +3206,7 @@ pub fn draw_in_software() {
 /// Metal device is a static whose destructor asserts that every Metal
 /// buffer was freed, and the model a caption loaded stays loaded for the
 /// rest of the run - so a quit after any transcription died of SIGABRT in
-/// `exit`, and macOS said Concat had quit unexpectedly. macOS ends an app
+/// `exit`, and macOS said BobbyCat had quit unexpectedly. macOS ends an app
 /// that way itself when it opts into sudden termination.
 ///
 /// And on Android, which Rust does not count as Linux. There `exit`

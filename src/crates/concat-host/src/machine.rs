@@ -28,7 +28,7 @@ pub fn system() -> String {
 }
 
 /// One line about the CPU: its name where the system says it, how many
-/// threads it runs, and which of the instruction sets the libraries Concat
+/// threads it runs, and which of the instruction sets the libraries BobbyCat
 /// links care about it has - the ones a build for a newer CPU than the
 /// one it is on dies over.
 pub fn cpu() -> String {

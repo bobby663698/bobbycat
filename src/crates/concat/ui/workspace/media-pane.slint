@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 import { I18n } from "../i18n.slint";
 import { Theme, Fmt, Glyph, Icon, Payload, Tip } from "../primitives/primitives.slint";
@@ -1854,7 +1854,7 @@ export component MediaPane inherits Rectangle {
     /// goes into the library while it is.
     changed tab => { Sounds.shown(root.tab == 8); }
     /// The Audio page's shelf: 0 = Mine, 10 = Voices, 11 = Styles. 1 was
-    /// Concat's own sounds, off the page until their list is published (#60).
+    /// BobbyCat's own sounds, off the page until their list is published (#60).
     property <int> audio-category;
     property <bool> sounds-open: true;
     property <bool> voices-open: true;

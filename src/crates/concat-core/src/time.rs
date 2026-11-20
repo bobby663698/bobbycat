@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Exact rational time.
 //!
 //! Video editing is frame-accurate arithmetic on rates that are not
 //! representable in binary floating point. 29.97 fps is really 30000/1001, and
 //! an `f64` accumulator drifts: after an hour of adding `1.0 / 29.97` you are
-//! visibly off. So every timestamp in Concat is a [`Rational`] number of
+//! visibly off. So every timestamp in BobbyCat is a [`Rational`] number of
 //! **seconds**, and conversions to `f64` happen only at the edges - display,
 //! and arguments handed to FFmpeg.
 //!
@@ -37,7 +37,7 @@ const fn gcd(mut a: u128, mut b: u128) -> u128 {
 /// An exact rational number, always stored in lowest terms with a positive
 /// denominator.
 ///
-/// Used throughout Concat to mean *seconds* unless a doc comment says otherwise.
+/// Used throughout BobbyCat to mean *seconds* unless a doc comment says otherwise.
 ///
 /// Arithmetic is performed in `i128` and reduced before being stored back into
 /// `i64`. That is enough headroom for any realistic timeline; a value that

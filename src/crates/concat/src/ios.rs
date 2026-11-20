@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The iPhone's ways in and out: the system's pickers for Import, and
 //! Photos for a finished export.
@@ -553,7 +553,7 @@ fn adopt(from: &Path, name: &str) -> Option<PathBuf> {
 
 /// Moves a written document - a subtitle file - into Documents/Exports,
 /// beside the exported videos, under its own name or `name (2)` where that
-/// is taken; and answers with where Files shows it: On My iPhone, Concat,
+/// is taken; and answers with where Files shows it: On My iPhone, BobbyCat,
 /// Exports.
 fn keep_in_exports(from: &Path) -> Result<String, String> {
     let home = std::env::home_dir().ok_or("no home folder to keep it in")?;

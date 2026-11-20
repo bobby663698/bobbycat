@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Media as the window sees it: what a file is, its waveform, its
 //! filmstrip, a project's poster - and the caches beside the project that
@@ -141,7 +141,7 @@ impl MediaSummary {
     }
 }
 
-/// Extensions Concat is willing to treat as stills.
+/// Extensions BobbyCat is willing to treat as stills.
 const IMAGE_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff", "avif", "heic", "heif", "gif", "svg",
     "svgz",

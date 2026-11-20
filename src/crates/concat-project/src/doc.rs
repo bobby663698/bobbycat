@@ -48,7 +48,7 @@ use crate::model::{Clip, ColorSpace, MediaItem, Project, Timeline, VideoSettings
 /// them defaults, so a version 1 document reads unchanged. But 0.2.8 and
 /// older, which read version 1, open a version 2 document and drop what
 /// they do not know, and their next autosave deletes it. They refuse a
-/// version 2 document whole ("saved by a newer Concat"), which keeps it
+/// version 2 document whole ("saved by a newer BobbyCat"), which keeps it
 /// intact.
 pub const DOCUMENT_VERSION: u64 = 2;
 

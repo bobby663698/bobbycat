@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The one GPU device the window and the engine share.
 //!
@@ -67,7 +67,7 @@ impl Gpu {
             flags: concat_render::gpu::instance_flags(),
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         };
-        // FXC, never wgpu's default `Auto`: Concat ships no dxcompiler.dll,
+        // FXC, never wgpu's default `Auto`: BobbyCat ships no dxcompiler.dll,
         // so `Auto` loads whichever one Windows finds on PATH - Obsidian's or
         // another Electron app's - and a build that does not match wgpu, or
         // needs instructions the CPU lacks, kills the process at the first

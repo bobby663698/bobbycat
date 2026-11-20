@@ -881,13 +881,13 @@ pub struct TranscribeRequest {
 struct LoadedModel {
     id: String,
     /// Loaded for the GPU; the measurement in the tests also runs one on
-    /// the CPU, which is what most machines that run Concat have.
+    /// the CPU, which is what most machines that run BobbyCat have.
     gpu: bool,
     context: WhisperContext,
 }
 
 /// How a run decodes. [`Recipe::SHIPPED`] is what the app runs. The
-/// measurement in the tests also runs [`Recipe::BEFORE`], how Concat
+/// measurement in the tests also runs [`Recipe::BEFORE`], how BobbyCat
 /// decoded until the Indonesian report - greedy, the language heard from
 /// the file's first thirty seconds, every second of the sound - so what
 /// each change is worth can be measured again and not taken on trust.
@@ -985,7 +985,7 @@ impl Transcriber {
         })
     }
 
-    /// Streams one model from Concat's mirror into the models folder. Blocks
+    /// Streams one model from BobbyCat's mirror into the models folder. Blocks
     /// for the whole download: run it on its own thread.
     ///
     /// Written to `<file>.part` and renamed at the end: a download killed
@@ -1028,9 +1028,9 @@ impl Transcriber {
 
     /// What model `id` is called as a file, and every address a download
     /// of it tries, in order: for a person whose network lets their
-    /// browser through and not Concat, who can fetch the first in the
+    /// browser through and not BobbyCat, who can fetch the first in the
     /// browser and hand the file to [`concat_host::models::supply`] under
-    /// that name. `None` for a model Concat does not know.
+    /// that name. `None` for a model BobbyCat does not know.
     pub fn model_sources(id: &str) -> Option<(String, Vec<String>)> {
         known(id)?;
         let file = model_archive(id);

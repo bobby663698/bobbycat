@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! What the window asks of the platform it runs on.
 //!
@@ -422,12 +422,12 @@ pub const MACOS: bool = cfg!(target_os = "macos");
 
 /// Set when the start found only a software adapter (Microsoft Basic
 /// Render Driver, llvmpipe) though nothing asked for one: the machine has
-/// no graphics driver Concat can draw with. A safe start's or the
+/// no graphics driver BobbyCat can draw with. A safe start's or the
 /// person's own CONCAT_GPU=software is not this; those have notices of
 /// their own.
 static NO_DRIVER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// Whether this machine has no graphics driver Concat can use, so
+/// Whether this machine has no graphics driver BobbyCat can use, so
 /// everything draws on the processor (see [`select_backend`]): the window
 /// says so once at the start, with what fixes it, rather than leaving a
 /// slow editor unexplained. Never on a phone, which always has its GPU.
@@ -785,7 +785,7 @@ pub fn pick_folder(title: &str, start: &str) -> Option<PathBuf> {
 
 /// Where a folder dialog asked to start at `start` can open: `start`
 /// itself, or the nearest folder above it that exists. A new project's
-/// default, `<Desktop>/Concat`, is not made until the first project is, and
+/// default, `<Desktop>/BobbyCat`, is not made until the first project is, and
 /// GNOME's chooser (Nautilus, behind the portal) fails on a folder that is
 /// not there, where GTK's quietly opens elsewhere.
 /// https://github.com/bobby663698/bobbycat/issues/331
@@ -898,7 +898,7 @@ pub fn install_file_picker(picker: FilePicker) {
 /// [`install_export_publisher`].
 #[cfg(any(target_os = "android", target_os = "ios"))]
 pub struct ExportPublisher {
-    /// Where the files go, as the phone names it: "Movies/Concat".
+    /// Where the files go, as the phone names it: "Movies/BobbyCat".
     pub folder: String,
     /// Moves the file there and answers with its path under the phone's
     /// storage, or with why it could not, leaving the file where it was.
@@ -906,7 +906,7 @@ pub struct ExportPublisher {
     pub publish: Box<dyn Fn(&std::path::Path) -> Result<String, String> + Send + Sync>,
     /// The same for a small file that is not a video - a subtitle file -
     /// with its MIME type: moved to where the phone's file manager shows
-    /// it (Android's Download/Concat, the iPhone's Files), never over
+    /// it (Android's Download/BobbyCat, the iPhone's Files), never over
     /// another file, and answered with where, as the person would look
     /// for it.
     pub publish_document:
@@ -1065,7 +1065,7 @@ pub fn microphone_allowed() -> bool {
 }
 
 /// Where a finished export ends up on this device when that is not the
-/// folder the export writes into: a phone's "Movies/Concat". None on a
+/// folder the export writes into: a phone's "Movies/BobbyCat". None on a
 /// desktop, and on a phone too old to be asked, where the file stays where
 /// the sheet says.
 pub fn published_folder() -> Option<&'static str> {

@@ -3,7 +3,7 @@
 
 //! SVG, which FFmpeg cannot draw.
 //!
-//! FFmpeg reads an SVG only through librsvg, which no build of Concat
+//! FFmpeg reads an SVG only through librsvg, which no build of BobbyCat
 //! links; without it the file opened as a picture with no size, and the
 //! import said "video stream has no usable size". The SVG is drawn once
 //! with resvg - already in the build, through Slint - into a PNG in the

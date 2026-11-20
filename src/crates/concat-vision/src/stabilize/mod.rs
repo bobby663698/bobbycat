@@ -3,7 +3,7 @@
 
 //! Taking the camera's shake out of a picture.
 //!
-//! Done the way Premiere's Warp Stabilizer and Concat's own cutout are:
+//! Done the way Premiere's Warp Stabilizer and BobbyCat's own cutout are:
 //! analysed once, cached, applied live. In four parts:
 //!
 //! - [`track`]: the camera's movement between two frames, measured. Good

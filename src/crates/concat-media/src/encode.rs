@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Writing RGBA frames back out to a file.
 
@@ -56,7 +56,7 @@ pub enum VideoCodec {
     /// web page or OBS, a small fraction of ProRes' size. Eight bits.
     Vp9Alpha,
     /// MPEG-4 Part 2, by FFmpeg's own encoder: never an export's, only the
-    /// working copies Concat writes for itself on a desktop - a proxy, a
+    /// working copies BobbyCat writes for itself on a desktop - a proxy, a
     /// reversed clip's pieces. Every FFmpeg build carries it, it loads no
     /// driver, and it decodes in about two thirds of H.264's time; at
     /// x264's quality its files are about half as large again, twice on
@@ -65,7 +65,7 @@ pub enum VideoCodec {
 }
 
 impl VideoCodec {
-    /// The codec Concat writes its own working copies in, a proxy and a
+    /// The codec BobbyCat writes its own working copies in, a proxy and a
     /// reversed clip's pieces: MPEG-4 on a desktop, and on a phone H.264,
     /// which its chip encodes for nothing where MPEG-4 would be its CPU's.
     pub const WORKING: VideoCodec = if cfg!(any(target_os = "android", target_os = "ios")) {
@@ -164,7 +164,7 @@ impl VideoCodec {
     /// phone's does not. No hardware encoder here
     /// takes an alpha layer.
     ///
-    /// H.264 and HEVC are the platform's alone: Concat carries no encoder
+    /// H.264 and HEVC are the platform's alone: BobbyCat carries no encoder
     /// of its own for either, so their patent pools are the platform's
     /// business, as is the encoders' licence. On macOS VideoToolbox, which
     /// falls back to Apple's software encoder on a Mac without the chip.
@@ -3545,7 +3545,7 @@ mod tests {
     /// Three bands, opaque red, half-transparent green and clear, written
     /// in each alpha codec and read back: the alpha survives, and so does
     /// the colour where there is some to see. The decoder's side is the
-    /// import of a Concat overlay back into a project - ProRes' alpha comes
+    /// import of a BobbyCat overlay back into a project - ProRes' alpha comes
     /// through its own decoder, VP9's through libvpx (#429). A codec whose
     /// encoder this FFmpeg does not link is skipped.
     #[test]

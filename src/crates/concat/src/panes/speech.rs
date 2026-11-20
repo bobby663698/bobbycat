@@ -41,7 +41,7 @@ use crate::panes::settings::installed;
 use crate::studio::Studio;
 use crate::ui::{NewVoiceData, SpeechSheetData};
 
-/// The default Chatterbox voice: Elizabeth, the first recording Concat
+/// The default Chatterbox voice: Elizabeth, the first recording BobbyCat
 /// carries.
 const DEFAULT_CHATTERBOX_VOICE: i32 = 2000;
 /// The phone's voice: whichever its engine is set to.
@@ -50,7 +50,7 @@ const DEFAULT_SYSTEM_VOICE: i32 = 3000;
 /// slider runs over; 1 is the voice's own.
 const SPEEDS: (f32, f32) = (0.5, 2.0);
 
-/// A style a voice can be read in: a few of the audio effects Concat ships,
+/// A style a voice can be read in: a few of the audio effects BobbyCat ships,
 /// laid on the speech clip once it lands, where they stay as ordinary
 /// effects to change or take off. Original looks of the effects alone -
 /// no one's voice, no character's name. The Audio page's card carries

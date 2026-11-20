@@ -129,7 +129,7 @@ const DATA_FOLDERS: [&str; 10] = [
     "logs",           // logs.rs
     "audio",          // sounds.rs: the Audio page's own sounds; see `library`
     "voices",         // voices.rs: saved cloned voices; see `library`
-    "sounds",         // sounds.rs: Concat's sounds, downloaded on first use
+    "sounds",         // sounds.rs: BobbyCat's sounds, downloaded on first use
 ];
 
 /// Moves what an older build kept under `from` - Windows kept models and

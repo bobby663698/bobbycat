@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Jareer Abdullah
 
-//! Which lines are written: a level for Concat's own crates, one for the
+//! Which lines are written: a level for BobbyCat's own crates, one for the
 //! crates underneath, and any number of exceptions by module.
 //!
 //! The split is the point. At Debug, wgpu, naga, Slint and fontdb bury a
 //! run in lines nobody asked for, so "show me more" has to mean more of
-//! what Concat says about itself; the libraries stay at warnings unless
+//! what BobbyCat says about itself; the libraries stay at warnings unless
 //! they are named. `CONCAT_LOG` spells all of it:
 //!
 //! ```text
-//! CONCAT_LOG=debug                       Concat's crates at debug
+//! CONCAT_LOG=debug                       BobbyCat's crates at debug
 //! CONCAT_LOG=debug,concat_media=trace    and one of them at trace
 //! CONCAT_LOG=info,wgpu_core=debug        a library, by name
 //! CONCAT_LOG=all=debug                   everything, libraries included
@@ -23,7 +23,7 @@ use log::LevelFilter;
 /// What a run writes down; see the module.
 #[derive(Debug)]
 pub struct Filter {
-    /// Concat's own crates. The one level that changes while a run goes
+    /// BobbyCat's own crates. The one level that changes while a run goes
     /// on - Settings has a picker for it - hence the atomic.
     own: AtomicUsize,
     /// Every other crate.
@@ -31,7 +31,7 @@ pub struct Filter {
     /// Exceptions, longest module path first, so the most exact one that
     /// matches is the one that decides.
     rules: Vec<(String, LevelFilter)>,
-    /// Whether a level for Concat's crates was named outright, which is
+    /// Whether a level for BobbyCat's crates was named outright, which is
     /// what makes a run's environment outrank the remembered setting.
     named: bool,
 }
@@ -86,17 +86,17 @@ impl Filter {
         (filter, skipped)
     }
 
-    /// Whether the spec named a level for Concat's own crates.
+    /// Whether the spec named a level for BobbyCat's own crates.
     pub fn named(&self) -> bool {
         self.named
     }
 
-    /// The level Concat's own crates are written at.
+    /// The level BobbyCat's own crates are written at.
     pub fn own(&self) -> LevelFilter {
         from_usize(self.own.load(Ordering::Relaxed))
     }
 
-    /// Sets the level Concat's own crates are written at.
+    /// Sets the level BobbyCat's own crates are written at.
     pub fn set_own(&self, level: LevelFilter) {
         self.own.store(level as usize, Ordering::Relaxed);
     }
@@ -127,7 +127,7 @@ impl Filter {
     }
 }
 
-/// Whether a target is one of Concat's own crates.
+/// Whether a target is one of BobbyCat's own crates.
 fn own(target: &str) -> bool {
     target.starts_with("concat")
 }

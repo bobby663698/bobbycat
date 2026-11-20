@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The small things every linked-FFmpeg module needs: one-time
 //! initialisation, error conversion, timestamp arithmetic and the display
@@ -213,7 +213,7 @@ use libc::localeconv;
 /// reads the decimal point the current `LC_NUMERIC` names. Under one that
 /// writes decimals with a comma, every such value is refused and the graph
 /// fails with "Invalid argument": a clip at any speed but 1x decoded to
-/// nothing (#762). Concat never sets the locale itself; this undoes it
+/// nothing (#762). BobbyCat never sets the locale itself; this undoes it
 /// whoever did. One `localeconv` read when nothing is wrong. On Windows
 /// the program and FFmpeg's DLLs share the UCRT's one locale, so setting
 /// it here sets it for them. Android's and iOS's C libraries take the
@@ -241,14 +241,14 @@ pub(crate) fn keep_c_numbers() -> bool {
             log::warn!(
                 target: "ffmpeg",
                 "this process's number format had been switched to {found:?} for decimals by \
-                 something loaded into Concat, and could not be set back: FFmpeg will refuse \
+                 something loaded into BobbyCat, and could not be set back: FFmpeg will refuse \
                  every fractional value"
             );
         } else {
             log::warn!(
                 target: "ffmpeg",
                 "this process's number format had been switched to {found:?} for decimals by \
-                 something loaded into Concat; set back, since FFmpeg would refuse every \
+                 something loaded into BobbyCat; set back, since FFmpeg would refuse every \
                  fractional value"
             );
         }

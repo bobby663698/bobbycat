@@ -7,7 +7,7 @@
 //! The voice is DeepFilterNet 3's (Hendrik Schröter, MIT or Apache-2.0,
 //! weights included; `assets/deepfilternet3`): a speech enhancer two million
 //! weights strong, run here on the CPU at a hundred times the speed of the
-//! sound on one core of an M5 and well above it on any machine Concat runs
+//! sound on one core of an M5 and well above it on any machine BobbyCat runs
 //! on, phones included. Everything else is the recording less that voice,
 //! sample for sample, so voice and background played together at their
 //! own levels are the recording, and either alone is what the clip's

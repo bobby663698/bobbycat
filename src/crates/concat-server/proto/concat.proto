@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 Jareer Abdullah
 
-// The Concat API over gRPC.
+// The BobbyCat API over gRPC.
 //
 // This is an envelope, not a second contract. The methods, their params
 // and their replies are the API's own and travel as the JSON text the
@@ -12,7 +12,7 @@ syntax = "proto3";
 
 package concat.v1;
 
-service Concat {
+service BobbyCat {
   // One call, one response.
   rpc Call (Request) returns (Response);
   // Every event from every job, for as long as the stream is open. Each

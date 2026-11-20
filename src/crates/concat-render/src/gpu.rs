@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The wgpu compositor.
 //!
@@ -372,9 +372,9 @@ const WORK_FALLBACK: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 /// frame a software adapter draws at 8K.
 pub const DEVICE_WAIT: std::time::Duration = std::time::Duration::from_secs(30);
 
-/// The instance flags every device Concat opens is made with: wgpu's
+/// The instance flags every device BobbyCat opens is made with: wgpu's
 /// defaults less indirect-call validation, which builds a compute pipeline
-/// as each device opens to check indirect draws Concat never makes. On an
+/// as each device opens to check indirect draws BobbyCat never makes. On an
 /// Intel Iris Pro Mac that pipeline met an internal compiler error, and on
 /// a GCN Radeon under OpenCore Legacy Patcher a `-std=metal3.2` the
 /// compiler refused; either way the device was lost as it opened and no
@@ -414,14 +414,14 @@ fn warp_shaders_optimised() -> bool {
     })
 }
 
-/// How near its memory budget a device lets Concat go, as Firefox ships it
+/// How near its memory budget a device lets BobbyCat go, as Firefox ships it
 /// to every Windows user of WebGPU: past 95% a texture or buffer is refused
 /// with an out-of-memory error, which a composite catches and an export
 /// answers on the next device; past 99% the device is lost, which the
 /// export answers the same way. Without them an 8 GB card shared by the
 /// window, the decoders and an export at 4K lost its device in the driver
 /// (#223) or hung with no loss reported at all (#297). Only Direct3D 12
-/// and Vulkan read them, and on Vulkan as Concat's copy of wgpu-hal reads
+/// and Vulkan read them, and on Vulkan as BobbyCat's copy of wgpu-hal reads
 /// them: a buffer the CPU writes is gated on the heap it will land in, not
 /// the BAR it would prefer, and the BAR is left out of the loss gate (see
 /// `crate::memory` and src/patches/README.md). Every device says the
@@ -1366,7 +1366,7 @@ impl WgpuCompositor {
             memory_budget_thresholds: memory_budget(),
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         };
-        // FXC, never wgpu's default `Auto`: Concat ships no dxcompiler.dll,
+        // FXC, never wgpu's default `Auto`: BobbyCat ships no dxcompiler.dll,
         // so `Auto` loads whichever one Windows finds on PATH - Obsidian's or
         // another Electron app's - and a build that does not match wgpu, or
         // needs instructions the CPU lacks, kills the process at the first
@@ -1394,7 +1394,7 @@ impl WgpuCompositor {
                 };
             let info = adapter.get_info();
             // A GPU's rung that finds only Windows' software renderer - a
-            // machine with no driver Concat can use - leaves it to the
+            // machine with no driver BobbyCat can use - leaves it to the
             // software rung, which compiles its shaders the way that
             // renderer survives (see `rung_flags`).
             if cfg!(windows) && !software && info.device_type == wgpu::DeviceType::Cpu {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! The engine's services, started once, and the bridge between their
 //! threads and the window's.
@@ -53,7 +53,7 @@ pub struct Host {
     /// The restoration model, and the enhanced copies it writes.
     pub enhancers: Arc<concat_host::Enhancers>,
     pub reversers: Arc<concat_host::Reversers>,
-    /// The Concat API on a socket, while the Automation page has it on. Its
+    /// The BobbyCat API on a socket, while the Automation page has it on. Its
     /// own sessions, apart from the window's: a caller edits projects of
     /// its own, never the one on screen, which `open_projects` keeps it
     /// from opening; the export slot is shared, so one export at a time

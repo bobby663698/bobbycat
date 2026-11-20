@@ -24,7 +24,7 @@
 //! stops it and keeps it, and so does closing the project, quitting or
 //! opening another: the take lands in the project it was recorded for
 //! before that project is saved and let go. A take a project lost all the
-//! same - Concat closed by a crash, or quit without saving - is still in
+//! same - BobbyCat closed by a crash, or quit without saving - is still in
 //! its audio folder, and goes back in Media the next time it opens.
 
 use std::path::{Path, PathBuf};

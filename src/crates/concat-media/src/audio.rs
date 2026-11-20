@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Planning and running the audio mix.
 //!
@@ -661,7 +661,7 @@ fn opus_encoder() -> Result<(&'static str, Sample)> {
 
 /// The AAC encoder to mix into and the samples it takes: the platform's
 /// own where FFmpeg wraps one - Apple's AudioToolbox, Windows' Media
-/// Foundation - whose makers license AAC, so Concat carries no encoder of
+/// Foundation - whose makers license AAC, so BobbyCat carries no encoder of
 /// its own for it there; FFmpeg's elsewhere, a Linux system's. A phone's
 /// is Android's own, outside FFmpeg (see `android_aac`). Both platform
 /// encoders here take 16-bit samples.

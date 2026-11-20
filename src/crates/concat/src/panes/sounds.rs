@@ -43,7 +43,7 @@ pub const CATEGORIES: [&str; 5] = ["Whoosh", "Impact", "Riser", "Ambience", "Mus
 
 /// Where the BobbyCat shelf stands.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum ConcatState {
+pub enum BobbyCatState {
     /// Not asked for: the shelf offers to load it.
     #[default]
     Idle,
@@ -55,7 +55,7 @@ pub enum ConcatState {
     Offline,
 }
 
-/// What to do with a Concat sound once it has arrived.
+/// What to do with a BobbyCat sound once it has arrived.
 #[derive(Clone, Debug)]
 pub enum Then {
     /// Play it.
@@ -80,15 +80,15 @@ pub enum SoundsMsg {
     /// Whether a library is showing the page, so a drop of sound files on
     /// the window goes into the library rather than the bin.
     Shown(bool),
-    /// "Load Concat sounds", or Refresh: the manifest fetched.
-    LoadConcat,
+    /// "Load BobbyCat sounds", or Refresh: the manifest fetched.
+    LoadBobbyCat,
     /// The manifest's worker is done: the list, none yet, or why not.
-    ConcatLoaded(Result<Option<Catalogue>, String>),
-    /// A category of the Concat shelf picked: 0 All, then [`CATEGORIES`].
-    ConcatCategory(i32),
-    /// A Concat sound's download, how far.
+    BobbyCatLoaded(Result<Option<Catalogue>, String>),
+    /// A category of the BobbyCat shelf picked: 0 All, then [`CATEGORIES`].
+    BobbyCatCategory(i32),
+    /// A BobbyCat sound's download, how far.
     Fetching(String, f32),
-    /// A Concat sound's download is done.
+    /// A BobbyCat sound's download is done.
     Fetched(String, Result<PathBuf, String>),
 }
 
@@ -101,10 +101,10 @@ pub struct SoundsPane {
     pub shown: bool,
     /// A sound import running.
     pub importing: bool,
-    /// Concat's sounds, once the manifest has been read, and where the
+    /// BobbyCat's sounds, once the manifest has been read, and where the
     /// shelf stands.
     pub catalogue: Catalogue,
-    pub concat: ConcatState,
+    pub concat: BobbyCatState,
     /// The category shown: 0 All, then a row of [`CATEGORIES`].
     pub category: usize,
     /// Downloads running, by card: how far, and what to do once in.
@@ -128,9 +128,9 @@ impl SoundsPane {
         SoundsPane {
             library: Library::open(dirs),
             concat: if catalogue.is_some() {
-                ConcatState::Ready
+                BobbyCatState::Ready
             } else {
-                ConcatState::Idle
+                BobbyCatState::Idle
             },
             catalogue: catalogue.unwrap_or_default(),
             dirs: Some(dirs.clone()),
@@ -143,43 +143,43 @@ impl SoundsPane {
     pub fn update(&mut self, msg: SoundsMsg, studio: &mut Studio) {
         match msg {
             SoundsMsg::Shown(on) => self.shown = on,
-            SoundsMsg::LoadConcat => {
+            SoundsMsg::LoadBobbyCat => {
                 let Some(dirs) = self.dirs.clone() else {
                     return;
                 };
-                if self.concat == ConcatState::Loading {
+                if self.concat == BobbyCatState::Loading {
                     return;
                 }
-                if self.concat != ConcatState::Ready {
-                    self.concat = ConcatState::Loading;
+                if self.concat != BobbyCatState::Ready {
+                    self.concat = BobbyCatState::Loading;
                 }
                 crate::host::spawn_long(
                     move || sounds::fetch_catalogue(&dirs),
                     |studio, _, _, result| {
-                        studio.handle(Msg::Sounds(SoundsMsg::ConcatLoaded(result)));
+                        studio.handle(Msg::Sounds(SoundsMsg::BobbyCatLoaded(result)));
                     },
                 );
             }
-            SoundsMsg::ConcatLoaded(result) => match result {
+            SoundsMsg::BobbyCatLoaded(result) => match result {
                 Ok(Some(catalogue)) => {
                     self.catalogue = catalogue;
-                    self.concat = ConcatState::Ready;
+                    self.concat = BobbyCatState::Ready;
                 }
-                Ok(None) => self.concat = ConcatState::Soon,
+                Ok(None) => self.concat = BobbyCatState::Soon,
                 Err(error) => {
                     log::warn!(
                         "network: wanted BobbyCat's sound list and could not fetch it: {error}; the Audio page shows what it had, or says it is offline"
                     );
                     // A list already on screen stays: the refresh failed,
                     // not the shelf.
-                    if self.concat != ConcatState::Ready {
-                        self.concat = ConcatState::Offline;
+                    if self.concat != BobbyCatState::Ready {
+                        self.concat = BobbyCatState::Offline;
                     } else {
                         studio.notify(&t("sounds.offline"), true);
                     }
                 }
             },
-            SoundsMsg::ConcatCategory(index) => {
+            SoundsMsg::BobbyCatCategory(index) => {
                 self.category = (index.max(0) as usize).min(CATEGORIES.len());
             }
             SoundsMsg::Fetching(card, done) => {
@@ -295,7 +295,7 @@ impl SoundsPane {
     }
 
     /// The name and the file a card stands for, when it is on disk: a
-    /// sound of the user's own, or one of Concat's already downloaded.
+    /// sound of the user's own, or one of BobbyCat's already downloaded.
     pub fn file_of(&self, card: &str) -> Option<(String, PathBuf)> {
         if let Some(sound) = self.listed(card) {
             let path = sounds::cached_file(self.dirs.as_ref()?, sound);
@@ -316,12 +316,12 @@ impl SoundsPane {
         Some((sound.name.clone(), sound.duration))
     }
 
-    /// The Concat sound a card names.
+    /// The BobbyCat sound a card names.
     fn listed(&self, card: &str) -> Option<&sounds::Listed> {
         self.catalogue.get(card.strip_prefix(CONCAT)?)
     }
 
-    /// Downloads a Concat sound on a worker, then does `then` with it. A
+    /// Downloads a BobbyCat sound on a worker, then does `then` with it. A
     /// second ask while it comes only changes what is done with it.
     pub fn fetch(&mut self, card: &str, then: Then) {
         let (Some(sound), Some(dirs)) = (self.listed(card).cloned(), self.dirs.clone()) else {
@@ -352,7 +352,7 @@ impl SoundsPane {
         );
     }
 
-    /// The Concat shelf's rows, narrowed to the category picked.
+    /// The BobbyCat shelf's rows, narrowed to the category picked.
     pub fn concat_rows(&self) -> Vec<SoundCardData> {
         let category = self
             .category
@@ -550,7 +550,7 @@ impl Studio {
         if let Some((name, path)) = self.sounds.file_of(card) {
             self.place_sound(&name, &path, track_id, start);
         } else {
-            // One of Concat's not downloaded yet: it lands where it was
+            // One of BobbyCat's not downloaded yet: it lands where it was
             // dropped once it is in.
             self.sounds.fetch(card, Then::Place(track_id, start));
         }

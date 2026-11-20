@@ -4,12 +4,12 @@
 //! Where a downloadable model is fetched from, and what proves it arrived
 //! whole.
 //!
-//! Concat carries no weights in its bundle: a cutout network, a Chatterbox
+//! BobbyCat carries no weights in its bundle: a cutout network, a Chatterbox
 //! voice and a whisper model together outweigh the editor many times over,
 //! and most people never ask for all three. Each is fetched the first time a
 //! feature needs one.
 //!
-//! Every model Concat offers is mirrored onto a release of its own
+//! Every model BobbyCat offers is mirrored onto a release of its own
 //! repository, and the mirror is what a download asks for first. Upstream -
 //! the third party the mirror was filled from - is the second try and
 //! nothing more: a model the editor offers should not stop existing because
@@ -40,7 +40,7 @@ pub const REPO: &str = "bobby663698/bobbycat";
 /// in `models/manifest.toml`; the check script enforces that.
 pub const RELEASE: &str = "models-v1";
 
-/// Where `file` is mirrored: Concat's own release.
+/// Where `file` is mirrored: BobbyCat's own release.
 pub fn mirror(file: &str) -> String {
     format!("https://github.com/{REPO}/releases/download/{RELEASE}/{file}")
 }
@@ -89,10 +89,10 @@ pub fn hf_mirror(url: &str) -> Option<String> {
 /// preference is where to look first, never the only place to look.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum SourcePreference {
-    /// Concat's mirror, then Hugging Face, then upstream, then hf-mirror.
+    /// BobbyCat's mirror, then Hugging Face, then upstream, then hf-mirror.
     #[default]
     Auto,
-    /// Concat's own release first.
+    /// BobbyCat's own release first.
     Mirror,
     /// hf-mirror.com first: for mainland China, where GitHub's downloads
     /// crawl and huggingface.co needs a VPN, and hf-mirror.com does not.
@@ -251,7 +251,7 @@ fn record_failure(file: &str, failure: Option<Failure>) {
 }
 
 /// Hands [`fetch`] a copy of `file` the person downloaded themselves - in
-/// a browser the network lets through when it does not let Concat - for
+/// a browser the network lets through when it does not let BobbyCat - for
 /// the next fetch of that file to install instead of downloading.
 ///
 /// It is held to the same digest as a download, so a wrong file is

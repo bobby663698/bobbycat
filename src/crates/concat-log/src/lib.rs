@@ -3,7 +3,7 @@
 
 //! What a run writes down about itself.
 //!
-//! A packaged editor has no terminal, and Concat sends nothing anywhere: the
+//! A packaged editor has no terminal, and BobbyCat sends nothing anywhere: the
 //! file a run leaves in the person's own data folder is the only account of
 //! it there will ever be, and the one thing a report of "it stopped" can
 //! bring with it. So that file is written to be read by whoever opens it -
@@ -21,12 +21,12 @@
 //!   keeps its newest ten runs.
 //! - **Shareable.** The home folder in a path is written `~`, so a log can
 //!   be attached to a public issue without the person's name in it.
-//! - **Adjustable.** Concat's crates have one level and the libraries
+//! - **Adjustable.** BobbyCat's crates have one level and the libraries
 //!   underneath another, and any module can be named ([`Filter`]).
 //!
 //! Everything goes through the `log` facade: a crate writes `log::warn!`
 //! and neither knows nor cares what is on the other end, and so does every
-//! library Concat is built on.
+//! library BobbyCat is built on.
 
 mod clock;
 mod console;
@@ -143,7 +143,7 @@ pub fn duplicate() -> Option<std::fs::File> {
     state.file.as_ref()?.duplicate()
 }
 
-/// The level Concat's own crates are written at.
+/// The level BobbyCat's own crates are written at.
 pub fn level() -> log::LevelFilter {
     LOGGER
         .get()
@@ -156,7 +156,7 @@ pub fn level_was_named() -> bool {
     LOGGER.get().is_some_and(|logger| logger.filter.named())
 }
 
-/// Sets the level Concat's own crates are written at for the rest of the
+/// Sets the level BobbyCat's own crates are written at for the rest of the
 /// run, and says so. The libraries underneath stay where they were.
 pub fn set_level(level: log::LevelFilter) {
     let Some(logger) = LOGGER.get() else {

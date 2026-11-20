@@ -238,7 +238,7 @@ mod platform {
         }
     }
 
-    /// Where the faulting instruction is, on the targets Concat ships to.
+    /// Where the faulting instruction is, on the targets BobbyCat ships to.
     #[allow(unused_variables)]
     unsafe fn program_counter(context: *mut c_void) -> Option<usize> {
         if context.is_null() {

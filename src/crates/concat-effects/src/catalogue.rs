@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Packages, and the catalogue that holds them.
 //!
@@ -202,11 +202,11 @@ impl Package {
         };
         // A picture is drawn by its shader on the GPU, in light: a picture
         // package written for format 1, or one that is an FFmpeg chain, is
-        // one this Concat no longer draws. Sound is still FFmpeg's.
+        // one this BobbyCat no longer draws. Sound is still FFmpeg's.
         if manifest.effect.kind.is_visual() {
             if !manifest.scene_linear() {
                 return Err(invalid(
-                    "a picture package written for format 1, which this Concat no longer \
+                    "a picture package written for format 1, which this BobbyCat no longer \
                      draws: it needs `format = 2` and a shader (see the package guide)"
                         .to_owned(),
                 ));

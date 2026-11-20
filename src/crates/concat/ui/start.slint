@@ -1534,7 +1534,7 @@ component Glow inherits Rectangle {
     background: @radial-gradient(circle, root.tint 0%, root.tint.with-alpha(0.55) 34%, root.tint.with-alpha(0) 70%);
 }
 
-// What is new in Concat, as a card of warm light: orange running into
+// What is new in BobbyCat, as a card of warm light: orange running into
 // rose, magenta and a deep violet, with the line in large white type over
 // it. Its own colours in either theme - it is a picture, not a surface -
 // and a press opens the post that tells the rest.
@@ -1889,7 +1889,7 @@ component NarrowHome inherits Rectangle {
     in property <string> version;
     /// A phone: no folder picker, so no Open; projects live in the app's
     /// own folder, which the page already lists. See platform::pick_folder.
-    /// https://github.com/jub0t/Concat/issues/222
+    /// https://github.com/bobby663698/bobbycat/issues/222
     in property <bool> phone;
     in property <bool> capcut;
 
@@ -2204,7 +2204,7 @@ export component NewProjectDialog inherits Modal {
     /// A phone: no folder picker, so no Open and no Choose - projects live
     /// in the app's own folder, which the page already lists, and the
     /// location is shown rather than typed. See platform::pick_folder.
-    /// https://github.com/jub0t/Concat/issues/222
+    /// https://github.com/bobby663698/bobbycat/issues/222
     in property <bool> phone;
     property <bool> narrow: root.width < 680px;
     /// A project needs somewhere to go. Everything else has a default.

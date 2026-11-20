@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Finding the masks a cutout is made of.
 //!
@@ -382,7 +382,7 @@ impl Cutouts {
 /// Streams a model into `file`, by way of a `.part` beside it, reporting
 /// every couple of megabytes and stopping when `cancel` is set.
 ///
-/// Concat's own mirror first, the upstream it was filled from second: see
+/// BobbyCat's own mirror first, the upstream it was filled from second: see
 /// [`crate::models`]. Whichever answers, the bytes are checked against the
 /// digest the table carries before anything is renamed into place, so a
 /// truncated or substituted file never becomes an installed model.

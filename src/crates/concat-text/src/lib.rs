@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah and Concat contributors
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
 
 //! Titles as pixels.
 //!
@@ -419,7 +419,7 @@ pub const BASE_FONTS: [&[u8]; 41] = [
 /// sixteen. Japanese and Traditional Chinese read in the Simplified face's
 /// forms where the regions differ; a machine's own font for them comes
 /// first.
-pub const NOTO_SANS_CJK_SC: &[u8] = include_bytes!("../fonts/NotoSansCJKsc-Concat.otf");
+pub const NOTO_SANS_CJK_SC: &[u8] = include_bytes!("../fonts/NotoSansCJKsc-BobbyCat.otf");
 
 /// Noto Sans Arabic UI 2.011, for Arabic, Persian and Urdu: the UI cut,
 /// whose ascent and descent fit a line of Latin, where Noto Sans Arabic's
@@ -427,27 +427,27 @@ pub const NOTO_SANS_CJK_SC: &[u8] = include_bytes!("../fonts/NotoSansCJKsc-Conca
 /// Naskh-like forms, not Nastaliq; every Urdu letter is there. From
 /// https://github.com/notofonts/arabic/releases/download/NotoSansArabicUI-v2.011/NotoSansArabicUI-v2.011.zip
 /// (SHA-256 f775ee259557195721466e99ec0316bbcd897f0429e25955f5d9582ca1202ce7).
-pub const NOTO_SANS_ARABIC_UI: &[u8] = include_bytes!("../fonts/NotoSansArabicUI-Concat.ttf");
+pub const NOTO_SANS_ARABIC_UI: &[u8] = include_bytes!("../fonts/NotoSansArabicUI-BobbyCat.ttf");
 
 /// Noto Sans Hebrew 3.001. From
 /// https://github.com/notofonts/hebrew/releases/download/NotoSansHebrew-v3.001/NotoSansHebrew-v3.001.zip
 /// (SHA-256 df0a71814b4e63644cf40fcc4529111b61266b7a2dafbe95068b29a7520cc3cb).
-pub const NOTO_SANS_HEBREW: &[u8] = include_bytes!("../fonts/NotoSansHebrew-Concat.ttf");
+pub const NOTO_SANS_HEBREW: &[u8] = include_bytes!("../fonts/NotoSansHebrew-BobbyCat.ttf");
 
 /// Noto Sans Devanagari 2.007, for Hindi. From
 /// https://github.com/notofonts/devanagari/releases/download/NotoSansDevanagari-v2.007/NotoSansDevanagari-v2.007.zip
 /// (SHA-256 820c7da45b1e63562cb41c0a8cac5d9a4202312043a3a040ed1325857ef469b1).
-pub const NOTO_SANS_DEVANAGARI: &[u8] = include_bytes!("../fonts/NotoSansDevanagari-Concat.ttf");
+pub const NOTO_SANS_DEVANAGARI: &[u8] = include_bytes!("../fonts/NotoSansDevanagari-BobbyCat.ttf");
 
 /// Noto Sans Bengali 3.011. From
 /// https://github.com/notofonts/bengali/releases/download/NotoSansBengali-v3.011/NotoSansBengali-v3.011.zip
 /// (SHA-256 2aca24bf71665e66c32e14862ee58857dd8b8b07b6321ec7c96f3121ad6683b1).
-pub const NOTO_SANS_BENGALI: &[u8] = include_bytes!("../fonts/NotoSansBengali-Concat.ttf");
+pub const NOTO_SANS_BENGALI: &[u8] = include_bytes!("../fonts/NotoSansBengali-BobbyCat.ttf");
 
 /// Noto Sans Thai 2.002, the loopless face Thai interfaces are set in.
 /// From https://github.com/notofonts/thai/releases/download/NotoSansThai-v2.002/NotoSansThai-v2.002.zip
 /// (SHA-256 af889cc673fc714060ce5e4e088fbad32aa4c0571a19958efeaff128a22da485).
-pub const NOTO_SANS_THAI: &[u8] = include_bytes!("../fonts/NotoSansThai-Concat.ttf");
+pub const NOTO_SANS_THAI: &[u8] = include_bytes!("../fonts/NotoSansThai-BobbyCat.ttf");
 
 /// A face for each script the base fonts have no glyphs for, which every
 /// title falls back on after the machine's own fonts: a caption in Thai,
@@ -462,7 +462,7 @@ pub const NOTO_SANS_THAI: &[u8] = include_bytes!("../fonts/NotoSansThai-Concat.t
 /// ```text
 /// pyftsubset <face>-Regular.ttf --unicodes=<block>,U+0020-007E,U+00A0-00FF,U+2000-206F,U+25CC \
 ///     --text-file=<every locale's characters> --layout-features='*' --no-hinting \
-///     --notdef-outline --name-IDs=0,1,2,3,4,5,6,13,14 --output-file=<face>-Concat.ttf
+///     --notdef-outline --name-IDs=0,1,2,3,4,5,6,13,14 --output-file=<face>-BobbyCat.ttf
 /// ```
 ///
 /// The licences are `fonts/LICENSE-<face>.txt`. The window registers the

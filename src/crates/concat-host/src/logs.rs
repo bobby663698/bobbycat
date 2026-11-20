@@ -157,14 +157,14 @@ pub fn catch_panics() {
     concat_log::catch_panics();
 }
 
-/// The level `CONCAT_LOG` names for Concat's own crates, when it names one:
+/// The level `CONCAT_LOG` names for BobbyCat's own crates, when it names one:
 /// a run's own ask, over the one the Settings sheet remembers.
 pub fn environment_level() -> Option<log::LevelFilter> {
     let (filter, _) = concat_log::Filter::parse(&std::env::var(LEVEL_VARIABLE).unwrap_or_default());
     filter.named().then(|| filter.own())
 }
 
-/// The level Concat's own crates are written at.
+/// The level BobbyCat's own crates are written at.
 pub fn level() -> log::LevelFilter {
     concat_log::level()
 }
@@ -172,7 +172,7 @@ pub fn level() -> log::LevelFilter {
 /// Sets the level for the rest of the run - the Settings sheet's choice,
 /// or the remembered one applied at launch - and says so in the log.
 ///
-/// The level is Concat's own: what the app says about what it is doing,
+/// The level is BobbyCat's own: what the app says about what it is doing,
 /// for whoever is chasing a bug with it. The crates underneath - wgpu,
 /// naga, Slint, fontdb, the decoders - stay at warnings and errors
 /// whatever the sheet says, since at Debug they bury a run in lines

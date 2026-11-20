@@ -282,7 +282,7 @@ impl MemoryProperties {
         &self.heap_usage[0..count]
     }
 
-    /// Concat: whether heap `index` is the BAR - a device-local heap that
+    /// BobbyCat: whether heap `index` is the BAR - a device-local heap that
     /// only host-visible memory types live on, beside a larger device-local
     /// heap that is the card's own. With resizable BAR, or on an integrated
     /// GPU, the card's one heap carries host-visible types too and is not
@@ -986,7 +986,7 @@ impl super::Device {
             let i = ty.heap_index as usize;
             let heap_usage = memory_properties.heap_usage()[i];
             let heap_budget = memory_properties.heap_budget()[i];
-            // Concat: the heap the allocation lands in, not only the one it
+            // BobbyCat: the heap the allocation lands in, not only the one it
             // prefers. For `CpuToGpu` gpu-allocator prefers a type that is
             // device-local as well as host-visible - on a card without
             // resizable BAR, the 256 MB BAR heap every program shares - and
@@ -3074,7 +3074,7 @@ impl crate::Device for super::Device {
             let heap_usage = memory_properties.heap_usage()[i];
             let heap_budget = memory_properties.heap_budget()[i];
 
-            // Concat: a spent BAR is not a device to lose. Only buffers the
+            // BobbyCat: a spent BAR is not a device to lose. Only buffers the
             // CPU writes go there, and gpu-allocator puts those in system
             // memory once it is full (see
             // `error_if_would_oom_on_resource_allocation`), so the card's

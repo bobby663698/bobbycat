@@ -43,7 +43,7 @@ unsafe fn wrap_dx12_texture(
     )
 }
 
-// Concat: the window's text is drawn with ClearType, as every other program
+// BobbyCat: the window's text is drawn with ClearType, as every other program
 // on a Windows desk is, when the desk has it on (bobby663698/bobbycat#278). Greyscale
 // coverage on a 1x screen reads soft and grey beside the system's own text;
 // LCD coverage triples the horizontal resolution a stem is drawn at.
@@ -139,7 +139,7 @@ pub unsafe fn import_dx12_texture(
 ) -> Option<skia_safe::Image> {
     unsafe {
         let color_space = super::sampled_texture_color_space(&texture);
-        // Concat: a texture whose memory ran out has no Direct3D resource
+        // BobbyCat: a texture whose memory ran out has no Direct3D resource
         // behind it, and the card's out-of-memory unwrapped that into a
         // crash (#802). No picture this frame instead; the next one asks
         // again.
