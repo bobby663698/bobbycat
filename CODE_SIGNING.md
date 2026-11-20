@@ -21,6 +21,21 @@ trusted.
 
 ## Free trusted signing, when the project is accepted
 
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate
+by [SignPath Foundation](https://signpath.org/). That is the plan this project
+applies to; while the application is open, releases are signed with the
+self-signed certificate described above.
+
+The responsibilities SignPath Foundation asks a project to name:
+
+| 角色 | 谁 | 做什么 |
+|---|---|---|
+| Author | 仓库提交者 | 改代码 |
+| Reviewer | 仓库提交者 | 审每个非提交者的 pull request |
+| Approver | 仓库提交者 | 每次签名请求点通过 |
+
+All members use MFA on both GitHub and SignPath.
+
 [SignPath.io](https://signpath.io/) signs open-source projects for free, and
 its certificate chains to a CA Windows already trusts — nothing to install on
 the user's side, and no prompt on first run. The repository already carries
