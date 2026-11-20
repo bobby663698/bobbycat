@@ -1,0 +1,68 @@
+# Signs a build's Windows files with SignPath.io's free plan for open
+# source: the signature chains to a CA Windows already trusts, and the
+# certificate belongs to SignPath Foundation rather than to this project.
+#
+# Run by hand once the project is accepted (https://signpath.io/, the
+# Foundation plan) and these are set in the repository's secrets and
+# variables:
+#
+#   secret  SIGNPATH_API_TOKEN         the token from SignPath's user page
+#   var     SIGNPATH_ORGANIZATION_ID   the organization's id
+#   var     SIGNPATH_PROJECT_SLUG       bobbycat
+#   var     SIGNPATH_POLICY_SLUG         release-signing
+#   var     SIGNPATH_ARTIFACT_CONFIG    the slug of the zip configuration
+#
+# The unsigned files come from a finished run of Build app (its
+# windows-x86_64 artifact); the signed ones come back as an artifact here.
+name: Sign (Windows, SignPath)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run id of Build app whose windows artifact to sign"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Fetch the unsigned artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh run download "${{ inputs.run_id }}" \
+            --repo "${{ github.repository }}" \
+            --name windows-x86_64 --dir unsigned
+          (cd unsigned && zip -r ../unsigned.zip .)
+          ls -l unsigned.zip
+
+      - name: Upload it for SignPath to take
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-for-signpath
+          path: unsigned.zip
+
+      - name: Submit to SignPath
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG }}
+          github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64-signed
+          path: signed/*

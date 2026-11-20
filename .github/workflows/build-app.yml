@@ -1139,6 +1139,30 @@ jobs:
         shell: pwsh
         run: Remove-Item -Force -DeleteKey "Cert:\CurrentUser\My\$env:SIGNING_THUMBPRINT"
 
+      # What each file in the release is, so a download can be checked
+      # without trusting the connection it came over.
+      - name: Checksums
+        if: matrix.platform != 'windows'
+        run: |
+          set -euo pipefail
+          cd stage
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -printf '%f\n' | sort |
+            while read -r f; do sha256sum "$f"; done > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Checksums (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $lines = Get-ChildItem "stage" -File | Where-Object { $_.Name -ne "SHA256SUMS.txt" } |
+            Sort-Object Name | ForEach-Object {
+              $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+              "$h  $($_.Name)"
+            }
+          $lines | Set-Content "stage\SHA256SUMS.txt" -Encoding ascii
+          Get-Content "stage\SHA256SUMS.txt"
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BobbyCat-${{ matrix.platform }}-${{ matrix.arch }}
