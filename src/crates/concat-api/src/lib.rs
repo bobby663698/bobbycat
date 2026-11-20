@@ -606,8 +606,13 @@ impl Api {
         projects::list(&self.dirs.config)
     }
 
-    /// [`Request::ProjectSave`].
+    /// [`Request::ProjectSave`]. The document lands in the project's own
+    /// folder, so a save is confined the way a create is, and
+    /// [`Api::close`] with `save` set - which comes through here - is
+    /// confined with it. Opening confines nothing: reads stay open by
+    /// path, only writes are held to the roots.
     pub fn save(&mut self, path: &str, name: Option<&str>) -> Result<(), ApiError> {
+        self.writable(path)?;
         self.session_mut(path)?.save(name).map_err(ApiError::failed)
     }
 
@@ -1710,6 +1715,32 @@ mod tests {
                 .as_str()
                 .is_some_and(|written| written.ends_with("first.png"))
         );
+    }
+
+    /// A project a caller can open but not write to: `open` confines
+    /// nothing, so a folder outside the roots still opens and still reads,
+    /// but the save that would land in it is refused. Closing without
+    /// saving is fine - nothing is written.
+    #[test]
+    fn saving_a_project_outside_the_roots_is_refused() {
+        let (mut api, scratch, _events) = api();
+        // Made before the roots are named, so it lies outside them.
+        let path = project(&mut api, &scratch, "Elsewhere");
+        let allowed = scratch.path().join("allowed");
+        std::fs::create_dir_all(&allowed).expect("allowed");
+        api.restrict_writes_to(vec![allowed]);
+        // Reading is not confined: the same project still answers.
+        ok(api.dispatch(Request::ProjectGet { path: path.clone() }));
+        let refused = err(api.dispatch(Request::ProjectSave {
+            path: path.clone(),
+            name: None,
+        }));
+        assert_eq!(refused.code, ErrorCode::Refused, "{}", refused.message);
+        // The folder is untouched by the refusal.
+        ok(api.dispatch(Request::ProjectClose {
+            path,
+            save: false,
+        }));
     }
 
     #[test]
