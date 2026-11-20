@@ -1484,20 +1484,11 @@ global Learn {
         name: "shortcuts", glyph: Glyph.keyboard, external: false,
         title: I18n.t("start.keyboardShortcuts"), note: I18n.t("start.keyboardShortcutsNote"),
     };
-    out property <LearnItem> code: {
-        name: "github", glyph: Glyph.github, external: true,
-        title: "GitHub", note: I18n.t("start.githubNote"),
-    };
-    out property <LearnItem> chat: {
-        name: "discord", glyph: Glyph.chat, external: true,
-        title: I18n.t("start.discussions"), note: I18n.t("start.discordNote"),
-    };
-    out property <LearnItem> report: {
-        name: "report", glyph: Glyph.bug, external: true,
-        title: I18n.t("start.reportProblem"), note: I18n.t("start.reportProblemNote"),
-    };
-    out property <[LearnItem]> desk: [docs, keys, code, chat, report];
-    out property <[LearnItem]> phone: [docs, code, chat, report];
+    // The first screen carries the two doors a person uses while the
+    // program is open. The repository, the discussion board and the bug
+    // tracker are on the release page, not here.
+    out property <[LearnItem]> desk: [docs, keys];
+    out property <[LearnItem]> phone: [docs];
 }
 
 // The learn cards as a grid of rows, for the wide page under the projects
@@ -1610,6 +1601,13 @@ component NewsCard inherits Pressable {
 // row, the projects, and - once the column is wide enough to spare it - a
 // learn-and-community panel beside the projects rather than under them,
 // so it is in view without a scroll and the projects keep the width.
+// The wide page: a desk's window, from 1000px across to a 4K screen.
+//
+// One hero panel holds everything that starts something: the greeting,
+// the line under it, the create row, and - at the end of the row, on a
+// window wide enough to spare the width - what is new in this version.
+// The projects take the full width under it, and the two ways into the
+// manual close the page as a pair of cards.
 component WideHome inherits Rectangle {
     in property <[RecentProjectData]> recents;
     in property <int> recents-total;
@@ -1632,22 +1630,26 @@ component WideHome inherits Rectangle {
     callback link(name: string);
 
     /// The margin the page keeps from the window's edges.
-    property <length> pad: Math.max(24px, Math.min(64px, root.width / 18));
-    property <length> pad-top: Math.max(28px, Math.min(72px, root.height / 12));
-    property <length> content-w: Math.min(root.width - 2 * root.pad, 1360px);
-    /// Room for the learn panel beside the projects.
-    property <bool> aside: root.content-w >= 1100px;
-    property <length> aside-w: root.content-w >= 1280px ? 360px : 330px;
-    property <length> aside-gap: 40px;
-    property <length> main-w: root.aside ? root.content-w - root.aside-w - root.aside-gap
-        : root.content-w;
+    property <length> pad: Math.max(24px, Math.min(56px, root.width / 20));
+    property <length> pad-top: Math.max(28px, Math.min(56px, root.height / 15));
+    property <length> content-w: Math.min(root.width - 2 * root.pad, 1400px);
+    /// Room for the news card at the end of the hero.
+    property <bool> aside: root.content-w >= 1000px;
+    property <length> aside-w: root.content-w >= 1300px ? 360px : 330px;
+    property <length> hero-pad: root.content-w >= 1200px ? 36px : 28px;
+    property <length> hero-h: root.aside ? 288px : 252px;
+    /// The column the words and the verbs stand in, inside the hero.
+    property <length> left-w: root.aside
+        ? root.content-w - root.aside-w - 2 * root.hero-pad - 24px
+        : root.content-w - 2 * root.hero-pad;
     /// The create row shares its width by weight - New a third again as
     /// wide as the others - and not by what its words would like, so a
     /// longer line on one tile does not shoulder the others aside.
     property <int> extra-tiles: root.capcut ? 1 : 0;
-    property <length> tile-unit: (root.main-w - (1 + root.extra-tiles) * 14px)
+    property <length> tile-unit: (root.left-w - (1 + root.extra-tiles) * 12px)
         / (2.3 + root.extra-tiles);
     property <bool> searchable: root.recents-total > 8;
+    property <length> learn-w: (root.content-w - 14px) / 2;
 
     flick := Flickable {
         content-width: self.width;
@@ -1658,85 +1660,128 @@ component WideHome inherits Rectangle {
             x: (flick.width - self.width) / 2;
             y: root.pad-top;
             width: root.content-w;
-            height: Math.max(main.preferred-height,
-                root.aside ? side.y + side-body.preferred-height : 0px);
+            height: stack.preferred-height;
 
-            main := VerticalLayout {
-                x: 0;
-                y: 0;
-                width: root.main-w;
-                height: self.preferred-height;
-                alignment: start;
+            stack := VerticalLayout {
+                width: parent.width;
+                spacing: 0px;
 
-                // ── the greeting ─────────────────────────────────────
-                // Its own width, not the column's, so the gradient runs
-                // across the words and not across empty space after them.
-                HorizontalLayout {
-                    alignment: start;
-                    Text {
-                        text: root.recents-total == 0
-                            ? I18n.t("start.welcome")
-                            : I18n.t("start.welcomeBack");
-                        // The one display-sized line in the app, set the
-                        // way the website sets its headline: medium weight,
-                        // tight tracking, the ink running into the accent.
-                        color: @linear-gradient(90deg, Theme.fg 0%, Theme.fg 25%, Theme.accent.mix(Theme.fg, 0.6) 100%);
-                        font-size: Math.max(40px, Math.min(60px, root.main-w / 16));
-                        font-weight: 500;
-                        letter-spacing: -1.6px;
-                        max-width: root.main-w;
-                        wrap: word-wrap;
+                // ── the hero ─────────────────────────────────────────
+                // One surface for the first screen: the greeting and the
+                // verbs on it, the news at its end, and the accent's light
+                // running in from the corners rather than a flat fill.
+                hero := Rectangle {
+                    height: root.hero-h;
+                    border-radius: 30px;
+                    background: Theme.launch-panel;
+                    border-width: 1px;
+                    border-color: Theme.line;
+                    clip: true;
+
+                    Glow {
+                        x: root.content-w - 420px;
+                        y: -260px;
+                        width: 640px;
+                        height: self.width;
+                        tint: Theme.accent.with-alpha(0.30);
+                    }
+
+                    Glow {
+                        x: -200px;
+                        y: root.hero-h - 240px;
+                        width: 440px;
+                        height: self.width;
+                        tint: Theme.accent.with-alpha(0.10);
+                    }
+
+                    VerticalLayout {
+                        x: root.hero-pad;
+                        y: root.hero-pad;
+                        width: root.left-w;
+                        spacing: 0px;
+
+                        Text {
+                            text: root.recents-total == 0
+                                ? I18n.t("start.welcome")
+                                : I18n.t("start.welcomeBack");
+                            // The one display-sized line in the app, set the
+                            // way the website sets its headline: medium
+                            // weight, tight tracking, the ink running into
+                            // the accent.
+                            color: @linear-gradient(90deg, Theme.fg 0%, Theme.fg 30%, Theme.accent.mix(Theme.fg, 0.55) 100%);
+                            font-size: Math.max(32px, Math.min(44px, root.left-w / 13));
+                            font-weight: 500;
+                            letter-spacing: -1.4px;
+                            width: root.left-w;
+                            wrap: word-wrap;
+                        }
+
+                        Rectangle { height: 10px; }
+
+                        Text {
+                            text: root.recents-total == 0
+                                ? I18n.t("start.welcomeNote")
+                                : I18n.t("start.welcomeBackNote");
+                            color: Theme.fg-muted;
+                            font-size: Theme.fs-lg;
+                            width: root.left-w;
+                            wrap: word-wrap;
+                        }
+
+                        Rectangle { height: 24px; }
+
+                        // ── create ───────────────────────────────────
+                        HorizontalLayout {
+                            height: 84px;
+                            spacing: 12px;
+
+                            CreateTile {
+                                width: root.tile-unit * 1.3;
+                                height: 84px;
+                                primary: true;
+                                glyph: Glyph.plus;
+                                title: I18n.t("start.newProject");
+                                note: I18n.t("start.newProjectNote");
+                                enabled: !root.busy;
+                                clicked => { root.compose(); }
+                            }
+
+                            CreateTile {
+                                width: root.tile-unit;
+                                height: 84px;
+                                glyph: Glyph.folder;
+                                title: I18n.t("start.openProject");
+                                note: I18n.t("start.openProjectNote");
+                                enabled: !root.busy;
+                                clicked => { root.open(); }
+                            }
+
+                            if root.capcut: CreateTile {
+                                width: root.tile-unit;
+                                height: 84px;
+                                glyph: Glyph.import;
+                                title: I18n.t("start.importCapcut");
+                                note: I18n.t("start.importCapcutNote");
+                                enabled: !root.busy;
+                                clicked => { root.import-capcut(); }
+                            }
+                        }
+                    }
+
+                    // ── what is new, in the hero's end ───────────────
+                    if root.aside: NewsCard {
+                        x: root.content-w - root.aside-w - root.hero-pad;
+                        y: root.hero-pad;
+                        width: root.aside-w;
+                        height: root.hero-h - 2 * root.hero-pad;
+                        compact: true;
+                        title: I18n.t1("start.whatsNew", root.version);
+                        note: I18n.t("start.newsNote");
+                        clicked => { root.link("news"); }
                     }
                 }
 
-                Rectangle { height: 12px; }
-
-                Text {
-                    text: root.recents-total == 0
-                        ? I18n.t("start.welcomeNote")
-                        : I18n.t("start.welcomeBackNote");
-                    color: Theme.fg-muted;
-                    font-size: Theme.fs-xl;
-                    wrap: word-wrap;
-                }
-
-                Rectangle { height: 28px; }
-
-                // ── create ───────────────────────────────────────────
-                create-row := HorizontalLayout {
-                    height: 92px;
-                    spacing: 14px;
-
-                    CreateTile {
-                        width: root.tile-unit * 1.3;
-                        primary: true;
-                        glyph: Glyph.plus;
-                        title: I18n.t("start.newProject");
-                        note: I18n.t("start.newProjectNote");
-                        enabled: !root.busy;
-                        clicked => { root.compose(); }
-                    }
-
-                    CreateTile {
-                        width: root.tile-unit;
-                        glyph: Glyph.folder;
-                        title: I18n.t("start.openProject");
-                        note: I18n.t("start.openProjectNote");
-                        enabled: !root.busy;
-                        clicked => { root.open(); }
-                    }
-
-                    if root.capcut: CreateTile {
-                        width: root.tile-unit;
-                        glyph: Glyph.import;
-                        title: I18n.t("start.importCapcut");
-                        note: I18n.t("start.importCapcutNote");
-                        enabled: !root.busy;
-                        clicked => { root.import-capcut(); }
-                    }
-                }
-
-                Rectangle { height: 44px; }
+                Rectangle { height: 40px; }
 
                 // ── the projects ─────────────────────────────────────
                 SectionHead {
@@ -1747,7 +1792,7 @@ component WideHome inherits Rectangle {
                     // Past a page of them: by the time there are more
                     // than a screen holds, the eye is not a search.
                     if root.searchable: SearchField {
-                        width: Math.min(260px, root.main-w * 0.32);
+                        width: Math.min(260px, root.content-w * 0.3);
                         text: root.query;
                         placeholder: I18n.t("start.searchProjects");
                         edited(text) => { root.search-edited(text); }
@@ -1787,78 +1832,27 @@ component WideHome inherits Rectangle {
                     revealed(path) => { root.reveal-recent(path); }
                 }
 
-                // ── learn, under the projects ────────────────────────
-                if !root.aside: VerticalLayout {
-                    padding-top: 48px;
-                    spacing: 16px;
+                // ── the manual, as two cards ─────────────────────────
+                // Only what a person needs while the program is open:
+                // the guide, and the keys. The other doors - the
+                // repository, the discussion board - belong to the release
+                // page, not to the first screen.
+                Rectangle { height: 44px; }
 
-                    NewsCard {
-                        height: 176px;
-                        compact: true;
-                        title: I18n.t1("start.whatsNew", root.version);
-                        note: I18n.t("start.newsNote");
-                        clicked => { root.link("news"); }
-                    }
-
-                    SectionHead {
-                        height: 34px;
-                        text: I18n.t("start.learnAndCommunity");
-                    }
-
-                    LearnGrid {
-                        items: Learn.desk;
-                        link(name) => { root.link(name); }
-                    }
-
+                SectionHead {
+                    height: 30px;
+                    text: I18n.t("start.learnAndCommunity");
                 }
-            }
 
-            // ── learn, beside the projects ───────────────────────────
-            // From the create row down, so its top lines up with the
-            // first thing that can be pressed.
-            news := NewsCard {
-                x: root.main-w + root.aside-gap;
-                y: create-row.y;
-                width: root.aside-w;
-                height: self.width * 0.62;
-                visible: root.aside;
-                enabled: root.aside;
-                title: I18n.t1("start.whatsNew", root.version);
-                note: I18n.t("start.newsNote");
-                clicked => { root.link("news"); }
-            }
+                Rectangle { height: 14px; }
 
-            side := Rectangle {
-                x: root.main-w + root.aside-gap;
-                y: news.y + news.height + 16px;
-                width: root.aside-w;
-                height: side-body.preferred-height;
-                visible: root.aside;
-                border-radius: 28px;
-                background: Theme.launch-panel;
-
-                side-body := VerticalLayout {
-                    padding: 8px;
-                    padding-top: 16px;
-                    spacing: 2px;
-
-                    HorizontalLayout {
-                        padding-left: 10px;
-                        Text {
-                            text: I18n.t("start.learnAndCommunity");
-                            color: Theme.fg;
-                            font-size: Theme.fs-xl;
-                            font-weight: Theme.weight-title;
-                        }
-                    }
-
-                    Rectangle { height: 8px; }
-
+                HorizontalLayout {
+                    height: 66px;
+                    spacing: 14px;
                     for item in Learn.desk: LearnCard {
-                        height: 58px;
-                        flat: true;
+                        width: root.learn-w;
+                        height: 66px;
                         item: item;
-                        enabled: root.aside;
                         clicked => { root.link(item.name); }
                     }
                 }
