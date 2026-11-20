@@ -182,7 +182,9 @@ pub(crate) fn closing(how: &str) {
 pub fn report_startup_failure(error: &slint::PlatformError) {
     let error = error.to_string();
     // "could not start" right after the topic: the smoke scripts look for it.
-    log::error!("start: could not start the window: {error}; BobbyCat says so in a dialog and quits");
+    log::error!(
+        "start: could not start the window: {error}; BobbyCat says so in a dialog and quits"
+    );
     platform::report_startup_failure(&error);
 }
 

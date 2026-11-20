@@ -13,7 +13,7 @@
 //! set AGENT_MODEL=deepseek-chat
 //! ```
 
-use concat_agent::{chat, Endpoint, Message};
+use concat_agent::{Endpoint, Message, chat};
 use std::io::Write;
 
 fn main() {
@@ -49,7 +49,11 @@ fn main() {
 
     match result {
         Ok(reply) => {
-            println!("\n\n[{} 字符 / {} 字节]", reply.chars().count(), reply.len());
+            println!(
+                "\n\n[{} 字符 / {} 字节]",
+                reply.chars().count(),
+                reply.len()
+            );
         }
         Err(error) => {
             eprintln!("\n失败: {error}");

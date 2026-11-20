@@ -220,7 +220,9 @@ fn runs(folder: &Path) -> Vec<PathBuf> {
         .filter(|path| {
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with(&format!("{PREFIX}-")) && name.ends_with(".log"))
+                .is_some_and(|name| {
+                    name.starts_with(&format!("{PREFIX}-")) && name.ends_with(".log")
+                })
         })
         .collect()
 }

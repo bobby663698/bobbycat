@@ -239,7 +239,10 @@ fn serve(
         );
     }
     if let Some(address) = server.grpc_addr() {
-        println!("BobbyCat API {}: gRPC on {address}", concat_api::API_VERSION);
+        println!(
+            "BobbyCat API {}: gRPC on {address}",
+            concat_api::API_VERSION
+        );
     }
     println!(
         "BobbyCat API {}: token {}",

@@ -83,7 +83,11 @@ impl Endpoint {
     }
 
     /// A gateway or a local server: anything that copies the OpenAI shape.
-    pub fn custom(name: impl Into<String>, base: impl Into<String>, model: impl Into<String>) -> Self {
+    pub fn custom(
+        name: impl Into<String>,
+        base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
         Self {
             name: name.into(),
             base: base.into(),
@@ -122,7 +126,8 @@ impl Default for Config {
 impl Config {
     /// The endpoint in use, if any.
     pub fn active_endpoint(&self) -> Option<&Endpoint> {
-        self.endpoints.get(self.active.min(self.endpoints.len().saturating_sub(1)))
+        self.endpoints
+            .get(self.active.min(self.endpoints.len().saturating_sub(1)))
     }
 
     /// The endpoint in use, mutably.
@@ -143,8 +148,7 @@ impl Config {
         }
         let text = std::fs::read_to_string(&path)
             .map_err(|e| Error::Config(format!("{}: {e}", path.display())))?;
-        serde_json::from_str(&text)
-            .map_err(|e| Error::Config(format!("{}: {e}", path.display())))
+        serde_json::from_str(&text).map_err(|e| Error::Config(format!("{}: {e}", path.display())))
     }
 
     /// Write the config back, creating the folder if needed.
@@ -155,8 +159,7 @@ impl Config {
                 .map_err(|e| Error::Config(format!("{}: {e}", dir.display())))?;
         }
         let text = serde_json::to_string_pretty(self)?;
-        std::fs::write(&path, text)
-            .map_err(|e| Error::Config(format!("{}: {e}", path.display())))
+        std::fs::write(&path, text).map_err(|e| Error::Config(format!("{}: {e}", path.display())))
     }
 }
 

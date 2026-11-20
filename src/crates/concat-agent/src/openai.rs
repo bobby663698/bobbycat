@@ -5,7 +5,7 @@
 //! changes is `base` and `model`.
 
 use crate::{Endpoint, Error, Message, Role};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::io::BufReader;
 
 pub fn stream(
@@ -13,10 +13,7 @@ pub fn stream(
     messages: &[Message],
     sink: &mut dyn FnMut(&str),
 ) -> Result<String, Error> {
-    let url = format!(
-        "{}/chat/completions",
-        endpoint.base.trim_end_matches('/')
-    );
+    let url = format!("{}/chat/completions", endpoint.base.trim_end_matches('/'));
 
     let msgs: Vec<Value> = messages
         .iter()
@@ -43,7 +40,10 @@ pub fn stream(
     }
 
     let resp = ureq::post(&url)
-        .set("Authorization", &format!("Bearer {}", endpoint.resolve_key()))
+        .set(
+            "Authorization",
+            &format!("Bearer {}", endpoint.resolve_key()),
+        )
         .set("Content-Type", "application/json")
         .set("Accept", "text/event-stream")
         .send_string(&body.to_string())?;

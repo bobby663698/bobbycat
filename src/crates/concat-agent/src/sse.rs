@@ -21,7 +21,10 @@ pub struct Sse<R> {
 
 impl<R: BufRead> Sse<R> {
     pub fn new(reader: R) -> Self {
-        Self { reader, line: Vec::with_capacity(256) }
+        Self {
+            reader,
+            line: Vec::with_capacity(256),
+        }
     }
 
     /// The next event's payload, or `None` at end of stream.

@@ -7,7 +7,7 @@
 //! is a 400.
 
 use crate::{Endpoint, Error, Message, Role};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::io::BufReader;
 
 /// Anthropic rejects a request without `max_tokens`; this is the ceiling it
@@ -32,9 +32,7 @@ pub fn stream(
                 system.push_str(&m.content);
             }
             Role::User => turns.push(json!({ "role": "user", "content": m.content })),
-            Role::Assistant => {
-                turns.push(json!({ "role": "assistant", "content": m.content }))
-            }
+            Role::Assistant => turns.push(json!({ "role": "assistant", "content": m.content })),
         }
     }
 
