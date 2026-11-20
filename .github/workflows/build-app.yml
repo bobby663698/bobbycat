@@ -1133,11 +1133,22 @@ jobs:
           Remove-Item -Recurse -Force "stage\$name"
 
       # The signing certificate out of the user's store again, whether the
-      # steps above passed or not.
+      # steps above passed or not. Remove-Item's -DeleteKey is not in every
+      # PowerShell, so the store is opened and the certificate taken out by
+      # hand; the key container goes with certutil, and may already be gone.
       - name: Forget the certificate (Windows)
         if: always() && matrix.platform == 'windows' && env.SIGNING_THUMBPRINT != ''
         shell: pwsh
-        run: Remove-Item -Force -DeleteKey "Cert:\CurrentUser\My\$env:SIGNING_THUMBPRINT"
+        run: |
+          $ErrorActionPreference = "Continue"
+          $store = [Security.Cryptography.X509Certificates.X509Store]::new("My", "CurrentUser")
+          $store.Open("ReadWrite")
+          foreach ($c in @($store.Certificates | Where-Object { $_.Thumbprint -eq $env:SIGNING_THUMBPRINT })) {
+            $store.Remove($c)
+          }
+          $store.Close()
+          certutil -user -delkey $env:SIGNING_THUMBPRINT 2>$null | Out-Null
+          Write-Host "certificate forgotten"
 
       # What each file in the release is, so a download can be checked
       # without trusting the connection it came over.
