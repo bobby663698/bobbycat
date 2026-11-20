@@ -19,10 +19,11 @@
 //!
 //! # Three boundaries this crate draws
 //!
-//! **It decides, it does not transport.** Nothing here spawns a process,
-//! reads a pipe or writes a frame. `concat-plugin` answers "may this be
-//! done"; the loader that asks is the next batch's work. That keeps the
-//! policy testable without a child process and without a clock.
+//! **It decides, and it starts the process.** The policy modules answer
+//! "may this be done" without a child process and without a clock;
+//! [`loader`] is the one place that starts the program and checks that the
+//! thing on the other end of the pipe speaks the same protocol. Keeping
+//! the two apart leaves the policy testable on its own.
 //!
 //! **It names codes, it does not own numbers.** Every refusal here carries
 //! a stable string code (`path.escape`, `plugin.denied`) and no JSON-RPC
@@ -38,6 +39,9 @@
 //! path check is what keeps the host's authority from becoming the
 //! plugin's authority.
 
+/// The child-process loader: spawn a plugin and complete the two-frame
+/// `hello` / `ready` handshake over its standard streams.
+pub mod loader;
 /// The plugin's own declaration: what it is called, what it asks for, and
 /// whether this build's API version can run it at all.
 pub mod manifest;
