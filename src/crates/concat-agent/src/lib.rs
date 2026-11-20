@@ -65,19 +65,25 @@ impl From<std::io::Error> for Error {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
+    /// Instructions the host sets before the conversation.
     System,
+    /// Something the person typed.
     User,
+    /// Something the model answered.
     Assistant,
 }
 
 /// One turn on the wire.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
+    /// Who produced this turn.
     pub role: Role,
+    /// The text of the turn.
     pub content: String,
 }
 
 impl Message {
+    /// A system instruction before the conversation.
     pub fn system(content: impl Into<String>) -> Self {
         Self {
             role: Role::System,
@@ -85,6 +91,7 @@ impl Message {
         }
     }
 
+    /// A turn from the person.
     pub fn user(content: impl Into<String>) -> Self {
         Self {
             role: Role::User,
@@ -92,6 +99,7 @@ impl Message {
         }
     }
 
+    /// A turn from the model.
     pub fn assistant(content: impl Into<String>) -> Self {
         Self {
             role: Role::Assistant,

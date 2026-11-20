@@ -68,11 +68,11 @@ pub fn stream(
             return Err(Error::Protocol(err.to_string()));
         }
 
-        if let Some(delta) = v["choices"][0]["delta"]["content"].as_str() {
-            if !delta.is_empty() {
-                out.push_str(delta);
-                sink(delta);
-            }
+        if let Some(delta) = v["choices"][0]["delta"]["content"].as_str()
+            && !delta.is_empty()
+        {
+            out.push_str(delta);
+            sink(delta);
         }
     }
 

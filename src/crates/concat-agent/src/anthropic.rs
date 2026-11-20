@@ -70,11 +70,11 @@ pub fn stream(
 
         match v["type"].as_str().unwrap_or_default() {
             "content_block_delta" => {
-                if let Some(text) = v["delta"]["text"].as_str() {
-                    if !text.is_empty() {
-                        out.push_str(text);
-                        sink(text);
-                    }
+                if let Some(text) = v["delta"]["text"].as_str()
+                    && !text.is_empty()
+                {
+                    out.push_str(text);
+                    sink(text);
                 }
             }
             "message_stop" => break,

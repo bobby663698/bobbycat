@@ -35,9 +35,12 @@ pub struct Endpoint {
     pub key_env: Option<String>,
     /// Default model for this endpoint.
     pub model: String,
+    /// Which wire format this endpoint speaks.
     pub flavour: Flavour,
+    /// Sampling temperature, when the endpoint accepts one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
+    /// Cap on generated tokens, when the endpoint accepts one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<u32>,
 }
@@ -46,16 +49,16 @@ impl Endpoint {
     /// The key to send: the environment's if `key_env` names one that is set,
     /// otherwise the stored one.
     pub fn resolve_key(&self) -> String {
-        if let Some(var) = &self.key_env {
-            if let Ok(v) = std::env::var(var) {
-                if !v.is_empty() {
-                    return v;
-                }
-            }
+        if let Some(var) = &self.key_env
+            && let Ok(v) = std::env::var(var)
+            && !v.is_empty()
+        {
+            return v;
         }
         self.key.clone()
     }
 
+    /// An endpoint preset for OpenAI.
     pub fn openai(key: impl Into<String>) -> Self {
         Self {
             name: "OpenAI".into(),
@@ -69,6 +72,7 @@ impl Endpoint {
         }
     }
 
+    /// An endpoint preset for Anthropic.
     pub fn anthropic(key: impl Into<String>) -> Self {
         Self {
             name: "Anthropic".into(),
@@ -104,11 +108,13 @@ impl Endpoint {
 /// Everything the assistant pane remembers between runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// Every endpoint the user has configured.
     #[serde(default)]
     pub endpoints: Vec<Endpoint>,
     /// Index into `endpoints`; clamped on load.
     #[serde(default)]
     pub active: usize,
+    /// Instructions sent before every conversation.
     #[serde(default)]
     pub system_prompt: String,
 }
