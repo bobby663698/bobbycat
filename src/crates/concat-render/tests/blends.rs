@@ -440,3 +440,109 @@ fn soft_light_differs_from_the_specification_below_a_quarter_ground() {
         }
     }
 }
+
+/// The integration half. Only here - on the branch where every department's
+/// work is merged - can the oracle be held against a real frame, because
+/// only here does the CPU compositor implement all twelve modes. The oracle
+/// above never imports `concat_render`, and this module never changes it:
+/// one file, two halves, one of which can see the implementation and one
+/// of which cannot.
+#[cfg(test)]
+mod against_the_compositor {
+    use std::sync::Arc;
+
+    use concat_core::frame::{BYTES_PER_PIXEL, Frame};
+    use concat_core::timeline::Blend;
+    use concat_render::{
+        Compositor, CpuCompositor, FramePlan, PlannedLayer, detached_clip,
+    };
+
+    use super::*;
+
+    fn blend_of(mode: Mode) -> Blend {
+        match mode {
+            Mode::Normal => Blend::Normal,
+            Mode::Multiply => Blend::Multiply,
+            Mode::Screen => Blend::Screen,
+            Mode::Add => Blend::Add,
+            Mode::Lighten => Blend::Lighten,
+            Mode::Darken => Blend::Darken,
+            Mode::Overlay => Blend::Overlay,
+            Mode::SoftLight => Blend::SoftLight,
+            Mode::HardLight => Blend::HardLight,
+            Mode::ColorBurn => Blend::ColorBurn,
+            Mode::ColorDodge => Blend::ColorDodge,
+            Mode::LinearBurn => Blend::LinearBurn,
+        }
+    }
+
+    /// Two flat full-frame layers: an opaque ground and an `opacity` layer
+    /// over it. Every pixel is the same, so the first one is the sample.
+    fn frame(mode: Mode, cb: u8, cs: u8, opacity: f32) -> Frame {
+        let mut ground = Frame::transparent(4, 4);
+        ground.fill([cb, cb, cb, 255]);
+        let mut over = Frame::transparent(4, 4);
+        over.fill([cs, cs, cs, 255]);
+        let ground = PlannedLayer::picture(detached_clip(), Arc::new(ground));
+        let mut layer = PlannedLayer::picture(detached_clip(), Arc::new(over));
+        layer.blend = blend_of(mode);
+        layer.opacity = opacity;
+        let plan = FramePlan {
+            layers: vec![ground, layer],
+            ..FramePlan::empty(4, 4)
+        };
+        CpuCompositor.render(&plan)
+    }
+
+    fn first(frame: &Frame) -> [u8; BYTES_PER_PIXEL] {
+        let px = frame.pixels().chunks_exact(BYTES_PER_PIXEL).next().unwrap();
+        [px[0], px[1], px[2], px[3]]
+    }
+
+    /// The six new modes at full alpha: the frame the CPU draws must land
+    /// within one stored level of the closed form. One level is what eight
+    /// bits costs; two would be a formula that disagreed.
+    #[test]
+    fn the_cpu_frame_lands_where_the_independent_oracle_says() {
+        for mode in NEW_MODES {
+            let got = first(&frame(mode, 77, 232, 1.0));
+            let want = encode(expected(mode, decode(232), 1.0, decode(77), 1.0));
+            assert!(
+                got[0].abs_diff(want) <= 1,
+                "{mode:?}: CPU stored {} but the oracle says {want}",
+                got[0]
+            );
+        }
+    }
+
+    /// Burn and dodge divide by an alpha-derived quantity, so partial
+    /// alpha is where a mismatch would first show. Report the worst stored
+    /// level over three opacities and four colour pairs; hold it to the
+    /// three-level tolerance `PARITY_TOOL.md` allows for a partial-alpha
+    /// layer. The printed number is what decides whether that tolerance
+    /// can later be tightened.
+    #[test]
+    fn burn_and_dodge_at_partial_alpha_report_their_worst_level() {
+        let mut worst = 0u8;
+        for mode in [Mode::ColorBurn, Mode::ColorDodge] {
+            for opacity in [0.25, 0.5, 0.75] {
+                for (cb, cs) in [(77u8, 232u8), (232, 77), (20, 90), (200, 40)] {
+                    let got = first(&frame(mode, cb, cs, opacity));
+                    let want = encode(expected(
+                        mode,
+                        decode(cs),
+                        opacity,
+                        decode(cb),
+                        1.0,
+                    ));
+                    worst = worst.max(got[0].abs_diff(want));
+                }
+            }
+        }
+        eprintln!("burn/dodge at partial alpha: worst stored-level gap is {worst}");
+        assert!(
+            worst <= 3,
+            "burn/dodge at partial alpha: {worst} levels apart, tolerance is 3"
+        );
+    }
+}
