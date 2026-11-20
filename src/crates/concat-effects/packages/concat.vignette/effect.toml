@@ -3,7 +3,7 @@ format = 2
 [effect]
 id = "concat.vignette"
 name = "Vignette"
-version = 2
+version = 3
 kind = "effect"
 category = "Stylize"
 order = 40
@@ -11,14 +11,43 @@ intensity = "strength"
 aliases = ["vignette"]
 description = "Darkened corners that draw the eye to the middle."
 
+# Three keyframeable percentages, like the sliders of the Adjust panel.
+# Strength is also the card's mix: at zero the shader is an exact identity,
+# so no radius or softness setting can darken a single pixel. Radius moves
+# where the fall starts, softness widens its edge; the defaults keep the
+# look the old two-knob package drew.
+# 3: radius and softness added; strength's floor lowered to zero so the
+# identity is reachable from the slider, not only from an omitted card.
+
 [[param]]
 key = "strength"
 label = "Strength"
-min = 10
+min = 0
 max = 100
 default = 50
 step = 1
 unit = "%"
+animate = true
+
+[[param]]
+key = "radius"
+label = "Radius"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+animate = true
+
+[[param]]
+key = "softness"
+label = "Softness"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+animate = true
 
 [wgsl]
 entry = "effect.wgsl"
