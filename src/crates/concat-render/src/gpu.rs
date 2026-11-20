@@ -433,7 +433,7 @@ fn vs_main(in: VsIn) -> VsOut {
 @group(0) @binding(1) var layer_sampler: sampler;
 @group(1) @binding(0) var mask_texture: texture_2d<f32>;
 @group(1) @binding(1) var mask_sampler: sampler;
-// The ground as it stood before this layer, for the two blends that need
+// The ground as it stood before this layer, for the eight blends that need
 // to see it; bound only for their pipelines.
 @group(2) @binding(0) var ground_texture: texture_2d<f32>;
 @group(2) @binding(1) var ground_sampler: sampler;
@@ -482,6 +482,55 @@ fn fs_lighten(in: VsOut) -> @location(0) vec4<f32> {
 fn fs_darken(in: VsOut) -> @location(0) vec4<f32> {
     let s = shade(in);
     return vec4<f32>(min(s.rgb, ground_at(in.position)) * s.a, s.a);
+}
+
+// The six modes no BlendState can name. shade() hands back a straight
+// colour and its alpha, while the target and the ground texture both hold
+// premultiplied values, so premultiply the layer before calling
+// blend_composite. The ground is *loaded*, not sampled: it is exactly the
+// target's size, and a bilinear tap half a pixel off would shift a hard
+// burn edge by one pixel.
+fn ground_load(position: vec4<f32>) -> vec4<f32> {
+    return textureLoad(ground_texture, vec2<i32>(position.xy), 0);
+}
+
+// blend_composite returns the COMPLETE composite, premultiplied. These
+// pipelines therefore have blend: None - writing it source-over on top of
+// the ground would apply the ground twice and darken every frame.
+fn composite_against_ground(mode: u32, in: VsOut) -> vec4<f32> {
+    let s = shade(in);
+    let fg = vec4<f32>(s.rgb * s.a, s.a);
+    return blend_composite(mode, fg, ground_load(in.position));
+}
+
+@fragment
+fn fs_overlay(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(6u, in);
+}
+
+@fragment
+fn fs_soft_light(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(7u, in);
+}
+
+@fragment
+fn fs_hard_light(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(8u, in);
+}
+
+@fragment
+fn fs_color_burn(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(9u, in);
+}
+
+@fragment
+fn fs_color_dodge(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(10u, in);
+}
+
+@fragment
+fn fs_linear_burn(in: VsOut) -> @location(0) vec4<f32> {
+    return composite_against_ground(11u, in);
 }
 "#;
 
@@ -1134,9 +1183,10 @@ struct Draw {
     texture: usize,
     blend: Blend,
     mask: (u32, u32, usize),
-    /// For a Lighten or Darken layer: the pooled texture, at the output
-    /// size, that the ground is copied into just before the draw, for its
-    /// fragment stage to sample. See `fs_lighten` in [`SHADER`].
+    /// For one of the eight ground-reading layers: the pooled texture, at
+    /// the output size, that the stack is copied into just before the draw,
+    /// for its fragment stage to sample or load. See `fs_lighten` and the
+    /// six `composite_against_ground` entries in [`SHADER`].
     ground: Option<usize>,
 }
 
@@ -1260,9 +1310,11 @@ pub struct WgpuCompositor {
     queue: wgpu::Queue,
     /// One pipeline per blend mode, indexed as `Blend::ALL` is.
     pipelines: Vec<wgpu::RenderPipeline>,
-    /// Lighten, then Darken: the two blends that sample the ground, drawn
-    /// with a third bind group and plain source-over.
-    ground_pipelines: [wgpu::RenderPipeline; 2],
+    /// One ground pipeline per mode, indexed as `Blend::ALL` is; `None`
+    /// for the six modes that never read the ground. Lighten and Darken
+    /// still blend source-over; the six non-linear modes write an already
+    /// complete composite with `blend: None`.
+    ground_pipelines: [Option<wgpu::RenderPipeline>; 12],
     /// An uploaded frame into the working format.
     upload_pipeline: wgpu::RenderPipeline,
     /// A finished frame out of the working format into eight bits: as it
@@ -1965,13 +2017,12 @@ impl WgpuCompositor {
                         dst_factor: BlendFactor::One,
                         operation: BlendOperation::Min,
                     },
-                    // The six non-linear modes have no fixed-function state:
-                    // they read the ground back and evaluate in the
-                    // fragment stage, which is the next commit. Until then
-                    // they draw as source-over - wrong, but not misdrawn
-                    // as some *other* mode, and CI's parity suite names
-                    // them. Overlay and HardLight are the same arithmetic
-                    // with the predicate swapped, so nothing here may guess.
+                    // Unreachable placeholder. These six have no fixed-
+                    // function state: their draws go through
+                    // ground_pipelines, whose fragment stage evaluates
+                    // blend_composite against a copy of the stack. The
+                    // slot exists only so both pipeline arrays are indexed
+                    // by the same Blend::ALL index.
                     Blend::Overlay
                     | Blend::SoftLight
                     | Blend::HardLight
@@ -2011,16 +2062,32 @@ impl WgpuCompositor {
             })
             .collect();
 
-        // Lighten and Darken: source-over of a fragment that has already
-        // taken the max or min against a copy of the ground, bound as a
-        // third group of the same shape as the layer and its mask.
+        // Eight modes read the ground, bound as a third group of the same
+        // shape as the layer and its mask. Lighten and Darken weigh a
+        // premultiplied fragment source-over; the six non-linear modes
+        // return the COMPLETE composite from blend_composite and must
+        // therefore write with no blend state at all - blending them again
+        // would apply the ground twice and darken every frame.
         let ground_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("concat compositor ground"),
             bind_group_layouts: &[Some(&bind_layout), Some(&bind_layout), Some(&bind_layout)],
             immediate_size: 0,
         });
-        let ground_pipelines = ["fs_lighten", "fs_darken"].map(|entry| {
-            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let ground_pipelines: [Option<wgpu::RenderPipeline>; 12] = std::array::from_fn(|index| {
+            let entry = GROUND_ENTRIES[index]?;
+            let blend = if is_non_linear(Blend::ALL[index]) {
+                None
+            } else {
+                Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::One,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha,
+                })
+            };
+            Some(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some(entry),
                 layout: Some(&ground_layout),
                 vertex: wgpu::VertexState {
@@ -2035,14 +2102,7 @@ impl WgpuCompositor {
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: work,
-                        blend: Some(wgpu::BlendState {
-                            color: wgpu::BlendComponent {
-                                src_factor: wgpu::BlendFactor::One,
-                                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                                operation: wgpu::BlendOperation::Add,
-                            },
-                            alpha,
-                        }),
+                        blend,
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                 }),
@@ -2051,7 +2111,7 @@ impl WgpuCompositor {
                 multisample: wgpu::MultisampleState::default(),
                 multiview_mask: None,
                 cache: None,
-            })
+            }))
         });
 
         // The two copies in and out of the working format; see COPY_SHADER.
@@ -2465,8 +2525,7 @@ impl WgpuCompositor {
             Some(stack) => self.mask_pass(layer.mask.as_deref(), &stack, &geometry),
             None => self.mask_of(layer.mask.as_deref()),
         };
-        let ground = matches!(layer.blend, Blend::Lighten | Blend::Darken)
-            .then(|| self.claim(plan.width, plan.height));
+        let ground = reads_ground(layer.blend).then(|| self.claim(plan.width, plan.height));
         draws.push(Draw {
             size,
             texture,
@@ -2970,9 +3029,10 @@ impl WgpuCompositor {
     }
 
     /// The render passes: every draw over `clear` into `view`, which is a
-    /// view of `target`. One pass, except that a Lighten or Darken layer
-    /// needs the ground as it stands: the pass ends, the target is copied
-    /// into the draw's ground texture, and a new pass loads what is there
+    /// view of `target`. One pass, except that any of the eight
+    /// ground-reading blends needs the stack as it stands: the pass ends,
+    /// the target is copied into the draw's ground texture, and a new pass
+    /// loads what is there
     /// and carries on. Returns the encoder so the caller can add a readback
     /// before submitting.
     fn encode(
@@ -3045,16 +3105,16 @@ impl WgpuCompositor {
         for &(index, draw) in draws {
             match draw.ground {
                 Some(ground) => {
-                    let which = usize::from(draw.blend == Blend::Darken);
-                    pass.set_pipeline(&self.ground_pipelines[which]);
+                    let slot = ground_slot(draw.blend)
+                        .expect("a ground-reading draw has a pipeline slot");
+                    let pipeline = self.ground_pipelines[slot]
+                        .as_ref()
+                        .expect("a ground-reading draw has a pipeline");
+                    pass.set_pipeline(pipeline);
                     pass.set_bind_group(2, &self.pool[&size][ground].bind_group, &[]);
                 }
                 None => {
-                    let which = Blend::ALL
-                        .iter()
-                        .position(|mode| *mode == draw.blend)
-                        .unwrap_or(0);
-                    pass.set_pipeline(&self.pipelines[which]);
+                    pass.set_pipeline(&self.pipelines[blend_index(draw.blend)]);
                 }
             }
             pass.set_bind_group(0, &self.pool[&draw.size][draw.texture].bind_group, &[]);
@@ -3510,7 +3570,7 @@ impl WgpuCompositor {
                 format: self.work,
                 // A render attachment too: a shader pass draws one pooled
                 // texture into another of the same size. A copy source and
-                // destination for the ground a Lighten or Darken reads.
+                // destination for the ground any of the eight modes reads.
                 usage: wgpu::TextureUsages::TEXTURE_BINDING
                     | wgpu::TextureUsages::COPY_DST
                     | wgpu::TextureUsages::COPY_SRC
