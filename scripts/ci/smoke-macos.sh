@@ -2,13 +2,13 @@
 # Launches the built macOS bundle the way a person would, and fails if it
 # does not start: nothing else in the build ever runs what it packages.
 #
-#   smoke-macos.sh Concat.app
+#   smoke-macos.sh BobbyCat.app
 #
 # The signature holds over the whole bundle (an ad-hoc one, which is what
 # a fork's build gets, passes and is reported); no binary in it loads a
-# library from Homebrew or anywhere else outside the bundle; `concat
-# --version` exits 0; `concat --smoke-export` exports a project of a clip;
-# and `concat --smoke` - start-up through the first
+# library from Homebrew or anywhere else outside the bundle; `bobbycat
+# --version` exits 0; `bobbycat --smoke-export` exports a project of a clip;
+# and `bobbycat --smoke` - start-up through the first
 # frame of the window, then out - exits 0. Runs in CI after signing
 # (build-app.yml), and locally against a bundle built the same way.
 set -euo pipefail
@@ -36,9 +36,9 @@ expect_ok() {
   fi
 }
 
-[ $# -eq 1 ] || { echo "usage: $0 Concat.app" >&2; exit 2; }
+[ $# -eq 1 ] || { echo "usage: $0 BobbyCat.app" >&2; exit 2; }
 app=$1
-bin="$app/Contents/MacOS/concat"
+bin="$app/Contents/MacOS/bobbycat"
 [ -x "$bin" ] || fail "$bin is not there"
 
 say "the signature"
@@ -64,16 +64,16 @@ if [ -n "$leaks" ]; then
 fi
 echo "every load path is the system's or the bundle's"
 
-say "concat --version"
-HOME=$(mktemp -d) expect_ok "concat --version" 60 "$bin" --version
+say "bobbycat --version"
+HOME=$(mktemp -d) expect_ok "bobbycat --version" 60 "$bin" --version
 
-say "concat --smoke"
-HOME=$(mktemp -d) expect_ok "concat --smoke" 180 "$bin" --smoke
+say "bobbycat --smoke"
+HOME=$(mktemp -d) expect_ok "bobbycat --smoke" 180 "$bin" --smoke
 
 # A project of a two-second clip from the media fixtures, exported through
 # the Export sheet's own messages: a launch alone never reaches an export.
-say "concat --smoke-export"
+say "bobbycat --smoke-export"
 clip=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../src/crates/concat-media/fixtures" && pwd)/picture-starts-late.mov
-HOME=$(mktemp -d) expect_ok "concat --smoke-export" 300 "$bin" --smoke-export "$clip"
+HOME=$(mktemp -d) expect_ok "bobbycat --smoke-export" 300 "$bin" --smoke-export "$clip"
 
 say "ok"

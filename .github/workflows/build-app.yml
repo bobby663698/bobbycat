@@ -1,6 +1,6 @@
 name: Build app
 
-# Builds Concat - the Slint window, `src/crates/concat` - for every
+# Builds BobbyCat - the Slint window, `src/crates/concat` - for every
 # platform and architecture it ships on, each on a runner of that
 # architecture so nothing is cross-compiled, and uploads one artifact per
 # target:
@@ -18,7 +18,7 @@ name: Build app
 # - The engine links FFmpeg and compiles whisper.cpp in, so a build needs the
 #   FFmpeg 7+ development libraries (headers and import libraries), cmake, a
 #   C++ toolchain and libclang for bindgen.
-# - FFmpeg is LGPL everywhere, with nothing GPL in it: Concat encodes H.264,
+# - FFmpeg is LGPL everywhere, with nothing GPL in it: BobbyCat encodes H.264,
 #   HEVC and AAC on the platform's own encoders. On macOS it is built here
 #   from source (src/scripts/ffmpeg-macos.sh) against Homebrew's BSD-licensed
 #   VP9, AV1 and Opus libraries, and travels with the app: the dylibs are
@@ -533,13 +533,13 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          app=Concat.app
+          app=BobbyCat.app
           rm -rf "$app"
           mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks"
           cp "src/target/${{ matrix.target }}/app/bobbycat" "$app/Contents/MacOS/bobbycat"
 
           # The icon set Apple wants: each size and its @2x twin.
-          iconset=Concat.iconset
+          iconset=BobbyCat.iconset
           rm -rf "$iconset"; mkdir "$iconset"
           icons=assets/icons
           cp "$icons/bobbycat_logo_16.png"  "$iconset/icon_16x16.png"
@@ -629,7 +629,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          app=Concat.app
+          app=BobbyCat.app
           dmg="BobbyCat-${VERSION}-macos-${{ matrix.arch }}.dmg"
           if [ -n "${CERT_P12}" ] && [ -n "${IDENTITY}" ]; then
             keychain=$RUNNER_TEMP/signing.keychain-db
@@ -663,7 +663,7 @@ jobs:
           # "Resource busy" - Spotlight or XProtect still on the folder - and
           # that failed a whole bundle run. Tried again, a few seconds apart.
           for attempt in 1 2 3 4 5; do
-            if hdiutil create -volname Concat -srcfolder "$app" -ov -format UDZO "$dmg"; then
+            if hdiutil create -volname BobbyCat -srcfolder "$app" -ov -format UDZO "$dmg"; then
               break
             fi
             if [ "$attempt" = 5 ]; then
@@ -688,7 +688,7 @@ jobs:
       - name: Smoke test (macOS)
         if: matrix.platform == 'macos'
         timeout-minutes: 10
-        run: scripts/ci/smoke-macos.sh Concat.app
+        run: scripts/ci/smoke-macos.sh BobbyCat.app
 
       # ── Package: Linux ─────────────────────────────────────────────────
       # The binary, the FFmpeg runtime libraries it loads from lib/ beside
