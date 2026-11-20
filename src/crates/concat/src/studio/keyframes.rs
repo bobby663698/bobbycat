@@ -2123,14 +2123,14 @@ impl Studio {
         sync(&models.sounds_mine, self.sounds.mine());
         sync(&models.sounds_concat, self.sounds.concat_rows());
         {
-            use crate::panes::sounds::ConcatState;
+            use crate::panes::sounds::BobbyCatState;
             let page = app.global::<crate::ui::Sounds>();
             page.set_concat_state(match self.sounds.concat {
-                ConcatState::Idle => 0,
-                ConcatState::Loading => 1,
-                ConcatState::Ready => 2,
-                ConcatState::Soon => 3,
-                ConcatState::Offline => 4,
+                BobbyCatState::Idle => 0,
+                BobbyCatState::Loading => 1,
+                BobbyCatState::Ready => 2,
+                BobbyCatState::Soon => 3,
+                BobbyCatState::Offline => 4,
             });
             page.set_concat_category(self.sounds.category as i32);
         }
