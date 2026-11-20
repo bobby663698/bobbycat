@@ -51,15 +51,16 @@ BobbyCat 是一款完全在本机运行的视频编辑器，覆盖大多数剪�
 | 平台 | 文件 |
 | --- | --- |
 | Windows x86_64 | `BobbyCat-<版本>-windows-x86_64-setup.exe`、`BobbyCat-<版本>-windows-x86_64.msi` |
-| macOS（Intel / Apple silicon） | `.dmg` |
-| Linux x86_64 / ARM | `.deb`、`.rpm`、`.AppImage` |
-| Android | `.apk` |
 
-Windows 构建暂未做代码签名，SmartScreen 会拦一下：**更多信息** › **仍要运行**。macOS 上遇到未签名拦截：
+目前只发布 Windows 版；macOS、Linux、Android 的构建仍在仓库里，需要时打开即用。
 
-```sh
-xattr -dr com.apple.quarantine /Applications/BobbyCat.app
+Windows 安装包由 CI 签名（当前是自签证书，发布页附带 `bobbycat-cert.cer`）。想让它不再提示「未知发布者」，装一次证书：
+
 ```
+certutil -addstore -user Root bobbycat-cert.cer
+```
+
+不装也能用：点 **更多信息** › **仍要运行**。每个文件的 SHA-256 在发布页的 `SHA256SUMS.txt` 里。
 
 ## 从源码构建
 
