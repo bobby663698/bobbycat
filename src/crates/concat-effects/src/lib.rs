@@ -32,6 +32,7 @@ pub mod looks;
 pub mod manifest;
 pub mod shader;
 pub mod template;
+pub mod vignette;
 
 mod builtins {
     include!(concat!(env!("OUT_DIR"), "/builtins.rs"));
