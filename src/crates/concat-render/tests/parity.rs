@@ -250,6 +250,35 @@ fn a_flat_blend_stays_within_one_level_of_the_cpu_reference() {
     assert_eq!(diff.over, 0, "flat multiply: {}", diff.report());
 }
 
+/// All twelve modes, flat and opaque. The six new ones reach the GPU by a
+/// different road from the six old ones - a copy of the ground, a fragment
+/// stage that returns the complete composite, and `blend: None` - so a
+/// green check on Multiply says nothing about them. Print the worst stored
+/// level per mode: a systematic disagreement then names itself instead of
+/// arriving as one unexplained red check. Three levels is the allowance
+/// `PARITY_TOOL.md` gives a partial-alpha layer; the printed numbers are
+/// what decides whether this can be tightened to one.
+#[test]
+fn every_blend_lands_within_three_levels_of_the_cpu_reference() {
+    let Some(mut gpu) = gpu() else { return };
+    let ground = solid(64, 48, [180, 120, 60, 255]);
+    let picture = solid(64, 48, [40, 200, 240, 255]);
+    for blend in Blend::ALL {
+        let mut over = layer(picture.clone());
+        over.blend = blend;
+        let plan = plan(64, 48, vec![layer(ground.clone()), over]);
+        let expected = CpuCompositor.render(&plan);
+        let actual = gpu.render(&plan);
+        assert!(
+            actual.pixels().chunks_exact(BYTES_PER_PIXEL).all(|px| px[3] == 255),
+            "{blend:?}: the GPU's frame is not opaque"
+        );
+        let diff = Deltas::new(&expected, &actual).measure(3, |_, _| true);
+        eprintln!("{blend:?}: {}", diff.report());
+        assert_eq!(diff.over, 0, "{blend:?}: {}", diff.report());
+    }
+}
+
 /// A gradient laid down at 1.3 times and thirty degrees: SSIM holds the
 /// whole picture, and every pixel three in from the layer's own edge must
 /// agree to a level. The rim itself is bilinear sampling either side of one
