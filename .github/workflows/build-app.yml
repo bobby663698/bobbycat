@@ -1149,6 +1149,9 @@ jobs:
           $store.Close()
           certutil -user -delkey $env:SIGNING_THUMBPRINT 2>$null | Out-Null
           Write-Host "certificate forgotten"
+          # certutil says 1 when the container is already gone; that is the
+          # state this step wants, not a failure.
+          exit 0
 
       # What each file in the release is, so a download can be checked
       # without trusting the connection it came over.
