@@ -313,7 +313,7 @@ impl Weighing<'_> {
         for channel in 0..3 {
             let colour = self.shading.colour(channel, linear(sample[channel]));
             let ground = linear(f32::from(under[channel])) * coverage;
-            under[channel] = encoded(mix(self.blend, colour, ground, alpha) / covered);
+            under[channel] = encoded(mix(self.blend, colour, ground, coverage, alpha) / covered);
         }
         under[3] = (covered * 255.0).round().clamp(0.0, 255.0) as u8;
     }
@@ -351,9 +351,14 @@ fn encoded(light: f32) -> u8 {
     curves().edges.partition_point(|&edge| edge <= light) as u8
 }
 
+/// What the non-linear blends divide by when the divisor would be zero:
+/// the same `BLEND_EPS` `blend_modes.wgsl` uses, so a degenerate ground
+/// lands on the same number on both paths rather than on an infinity.
+const BLEND_EPS: f32 = 1e-6;
+
 /// One channel of `blend`: `colour` is the layer's straight colour, `under`
-/// the ground, both linear light `0..1`, `alpha` how much of the layer is
-/// there.
+/// the ground, both linear light `0..1`, `coverage` how much of the ground
+/// is there, `alpha` how much of the layer is.
 /// Normal, Multiply, Screen and Add are the GPU's fixed-function blends
 /// over premultiplied colour, spelled the same way so the two paths agree.
 /// Lighten and Darken weigh the lighter (darker) of the two in by the
@@ -361,8 +366,13 @@ fn encoded(light: f32) -> u8 {
 /// the way to white, and darkens it not at all - which no fixed-function
 /// blend expresses; the GPU samples a copy of the ground for these two
 /// (audit 2026-09-23, #10).
+/// The last six are the non-linear ones, line for line with
+/// `blend_modes.wgsl` so the shader and this agree pixel for pixel. They
+/// need `coverage` because their formulas branch on, divide by or subtract
+/// from the ground's own alpha; the first six do not, and pass it unused.
+/// Returns premultiplied colour: the caller divides `coverage` back out.
 #[inline]
-fn mix(blend: Blend, colour: f32, under: f32, alpha: f32) -> f32 {
+fn mix(blend: Blend, colour: f32, under: f32, coverage: f32, alpha: f32) -> f32 {
     let over = colour * alpha;
     match blend {
         Blend::Normal => over + under * (1.0 - alpha),
@@ -371,6 +381,62 @@ fn mix(blend: Blend, colour: f32, under: f32, alpha: f32) -> f32 {
         Blend::Add => over + under,
         Blend::Lighten => colour.max(under) * alpha + under * (1.0 - alpha),
         Blend::Darken => colour.min(under) * alpha + under * (1.0 - alpha),
+        Blend::Overlay => {
+            if 2.0 * under < coverage {
+                over * (1.0 - coverage) + under * (1.0 - alpha) + 2.0 * over * under
+            } else {
+                over * (1.0 + coverage) + under * (1.0 + alpha)
+                    - 2.0 * over * under
+                    - alpha * coverage
+            }
+        }
+        Blend::HardLight => {
+            if 2.0 * over < alpha {
+                over * (1.0 - coverage) + under * (1.0 - alpha) + 2.0 * over * under
+            } else {
+                over * (1.0 + coverage) + under * (1.0 + alpha)
+                    - 2.0 * over * under
+                    - alpha * coverage
+            }
+        }
+        Blend::SoftLight => {
+            let t = under / coverage.max(BLEND_EPS);
+            if 2.0 * over <= alpha {
+                over * (1.0 - coverage)
+                    + under * (1.0 - alpha)
+                    + under * (alpha + (2.0 * over - alpha) * (1.0 - t))
+            } else {
+                over * (1.0 - coverage) + under * (1.0 + alpha)
+                    + t.sqrt() * (2.0 * over * coverage - alpha * coverage)
+                    - 2.0 * over * under
+            }
+        }
+        Blend::ColorBurn => {
+            if over == 0.0 && under == coverage {
+                under * (1.0 - alpha) + alpha * coverage
+            } else if over == 0.0 {
+                under * (1.0 - alpha)
+            } else {
+                let t = (over * coverage).max(BLEND_EPS);
+                over * (1.0 - coverage) + under * (1.0 - alpha)
+                    + alpha * coverage * (1.0 - ((coverage - under) * alpha / t).min(1.0))
+            }
+        }
+        Blend::ColorDodge => {
+            if over == alpha && under == 0.0 {
+                over * (1.0 - coverage) + alpha * coverage
+            } else if over == alpha {
+                over * (1.0 - coverage) + under * (1.0 - alpha) + alpha * coverage
+            } else {
+                let t = (coverage * (alpha - over)).max(BLEND_EPS);
+                over * (1.0 - coverage) + under * (1.0 - alpha)
+                    + alpha * coverage * (under * alpha / t).min(1.0)
+            }
+        }
+        Blend::LinearBurn => {
+            over * (1.0 - coverage) + under * (1.0 - alpha)
+                + (over * coverage + under * alpha - alpha * coverage).max(0.0)
+        }
     }
 }
 
@@ -595,14 +661,79 @@ mod tests {
     fn lighten_and_darken_weigh_the_layer_in_by_its_alpha() {
         use super::{Blend, mix};
         // White at 30 % over mid grey: 30 % of the way to white, no darker.
-        assert!((mix(Blend::Lighten, 255.0, 128.0, 0.3) - 166.1).abs() < 0.01);
-        assert_eq!(mix(Blend::Darken, 255.0, 128.0, 0.3), 128.0);
+        assert!((mix(Blend::Lighten, 255.0, 128.0, 1.0, 0.3) - 166.1).abs() < 0.01);
+        assert_eq!(mix(Blend::Darken, 255.0, 128.0, 1.0, 0.3), 128.0);
         // Black at 30 % over mid grey: 30 % of the way to black, no lighter.
-        assert!((mix(Blend::Darken, 0.0, 128.0, 0.3) - 89.6).abs() < 0.01);
-        assert_eq!(mix(Blend::Lighten, 0.0, 128.0, 0.3), 128.0);
+        assert!((mix(Blend::Darken, 0.0, 128.0, 1.0, 0.3) - 89.6).abs() < 0.01);
+        assert_eq!(mix(Blend::Lighten, 0.0, 128.0, 1.0, 0.3), 128.0);
         // At full alpha the pair are the plain max and min.
-        assert_eq!(mix(Blend::Lighten, 40.0, 128.0, 1.0), 128.0);
-        assert_eq!(mix(Blend::Darken, 40.0, 128.0, 1.0), 40.0);
+        assert_eq!(mix(Blend::Lighten, 40.0, 128.0, 1.0, 1.0), 128.0);
+        assert_eq!(mix(Blend::Darken, 40.0, 128.0, 1.0, 1.0), 40.0);
+    }
+
+    /// The two degeneracies every mode shares, on the six non-linear ones:
+    /// a transparent layer leaves the ground exactly, and a layer over
+    /// nothing is exactly itself. These would pass on the first six too,
+    /// which is the point - they catch scaffolding terms `(1-ba)` and
+    /// `(1-fa)` going missing.
+    #[test]
+    fn the_non_linear_modes_leave_what_they_cannot_see() {
+        use super::mix;
+        use concat_core::timeline::Blend;
+        for mode in [
+            Blend::Overlay,
+            Blend::SoftLight,
+            Blend::HardLight,
+            Blend::ColorBurn,
+            Blend::ColorDodge,
+            Blend::LinearBurn,
+        ] {
+            for ground in [0.0, 0.3, 0.8] {
+                for coverage in [0.0, 0.5, 1.0] {
+                    // A transparent layer: premultiplied, so its colour is 0.
+                    let kept = mix(mode, 0.0, ground * coverage, coverage, 0.0);
+                    assert!(
+                        (kept - ground * coverage).abs() < 1e-9,
+                        "{mode:?}: a clear layer must leave the ground, {kept}"
+                    );
+                }
+            }
+            for layer in [0.0, 0.3, 0.8] {
+                for alpha in [0.0, 0.5, 1.0] {
+                    let kept = mix(mode, layer, 0.0, 0.0, alpha);
+                    assert!(
+                        (kept - layer * alpha).abs() < 1e-9,
+                        "{mode:?}: a layer over nothing must be itself, {kept}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// The closed forms at full alpha over an opaque ground - the same
+    /// numbers `PARITY_TABLE.md` §3 and §6 record, and the row that tells
+    /// Overlay from HardLight: they are the same arithmetic with the
+    /// predicate swapped, so they agree whenever layer and ground sit on
+    /// the same side of mid grey. Layer 0.8, ground 0.3 puts them apart.
+    #[test]
+    fn the_non_linear_modes_land_on_their_closed_forms() {
+        use super::mix;
+        use concat_core::timeline::Blend;
+        let full = |mode: Blend, layer: f32, ground: f32| mix(mode, layer, ground, 1.0, 1.0);
+        assert!((full(Blend::Overlay, 0.8, 0.3) - 0.48).abs() < 1e-6);
+        assert!((full(Blend::HardLight, 0.8, 0.3) - 0.72).abs() < 1e-6);
+        assert!((full(Blend::SoftLight, 0.8, 0.3) - 0.448634).abs() < 1e-5);
+        assert!((full(Blend::ColorBurn, 0.8, 0.3) - 0.125).abs() < 1e-6);
+        assert!((full(Blend::ColorDodge, 0.8, 0.3) - 1.0).abs() < 1e-6);
+        assert!((full(Blend::LinearBurn, 0.8, 0.3) - 0.1).abs() < 1e-6);
+        // On the same side of mid grey the two are the same number.
+        for (layer, ground) in [(0.8, 0.7), (0.2, 0.3)] {
+            assert!(
+                (full(Blend::Overlay, layer, ground) - full(Blend::HardLight, layer, ground)).abs()
+                    < 1e-9,
+                "overlay and hard light coincide off the mixed pair"
+            );
+        }
     }
 
     use std::sync::Arc;
