@@ -1,0 +1,24 @@
+[package]
+name = "concat-plugin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "BobbyCat's plugin system: the manifest, the permission model, and the paths a plugin may reach."
+
+# A plugin is a program the app does not trust. Everything here - the
+# manifest's shape, the capability table, and the path check - runs in the
+# host's process, on the host's side of the pipe, before a plugin's word is
+# acted on. It deliberately does not depend on concat-api: the plugin's
+# wire format is its own, and binding this crate to the editor's RPC
+# vocabulary would make the two impossible to version apart.
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true
