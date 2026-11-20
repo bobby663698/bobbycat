@@ -2778,8 +2778,23 @@ pub struct Clip {
     /// Mirrored top to bottom.
     #[serde(default, skip_serializing_if = "is_false")]
     pub flip_v: bool,
-    /// How the picture's colour meets what is beneath it: "normal",
-    /// "multiply", "screen", "add", "lighten", "darken".
+    /// How the picture's colour meets what is beneath it. One of:
+    /// `normal` `multiply` `screen` `add` `lighten` `darken` `overlay`
+    /// `soft-light` `hard-light` `color-burn` `color-dodge` `linear-burn`.
+    /// Empty means `normal`.
+    ///
+    /// These are storage values, and the hyphen is the storage spelling:
+    /// `Blend::name` writes these and `Blend::parse` reads them, taking the
+    /// underscore aliases (`soft_light`) only because CapCut's own
+    /// `nameId` is spelled that way. A value leaving for a CapCut draft
+    /// has to be translated; the aliases are for reading, not writing.
+    ///
+    /// They are not labels. The inspector's i18n keys in `locales/*.json`
+    /// are lowerCamelCase (`softLight`), and the two spellings must not be
+    /// confused - one is what a document holds, the other what a person
+    /// reads. A validator should ask `Blend::all_names` rather than keep a
+    /// copy of this list, which would go stale the day a thirteenth mode
+    /// is added.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub blend: String,
     /// What is cut off each edge of the source before it is fitted, as
