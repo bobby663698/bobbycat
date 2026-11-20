@@ -40,6 +40,139 @@ const MASK_STACK_KEY: &str = "concat.mask-stack/1";
 use concat_core::shader::{Lut, RevealMap, ShaderPass, TransitionPass};
 use concat_core::timeline::Blend;
 
+// Which blends need the stack beneath them as a texture. Two different
+// questions, deliberately kept apart:
+//
+//   reads_ground(blend)  - does this draw need a copy of the stack as it
+//     stood before it? Eight modes: Lighten and Darken weigh the layer
+//     against the ground with Max/Min, and the six non-linear modes
+//     evaluate their formula in the fragment stage. This decides where a
+//     render pass breaks.
+//   is_non_linear(blend) - of those eight, which six have no BlendState at
+//     all and return a *complete* composite from the shader, so the
+//     pipeline must write without blending? This decides `blend: None`.
+//
+// Both are keyed off `Blend::ALL`'s index, never off a second hand-written
+// list of names: adding a mode without a line here is a test failure, not
+// a silent fallback to source-over.
+
+/// The fragment entry point for a mode that reads the ground, indexed as
+/// `Blend::ALL` is. `None` for the six fixed-function modes.
+const GROUND_ENTRIES: [Option<&str>; 12] = [
+    None,
+    None,
+    None,
+    None,
+    Some("fs_lighten"),
+    Some("fs_darken"),
+    Some("fs_overlay"),
+    Some("fs_soft_light"),
+    Some("fs_hard_light"),
+    Some("fs_color_burn"),
+    Some("fs_color_dodge"),
+    Some("fs_linear_burn"),
+];
+
+/// The index of `blend` in `Blend::ALL`: the mode number WGSL's
+/// `blend_composite` switches on, and the slot of both pipeline arrays.
+fn blend_index(blend: Blend) -> usize {
+    Blend::ALL
+        .iter()
+        .position(|mode| *mode == blend)
+        .unwrap_or(0)
+}
+
+/// Whether this draw must see the stack beneath it. Decides the pass break.
+fn reads_ground(blend: Blend) -> bool {
+    GROUND_ENTRIES[blend_index(blend)].is_some()
+}
+
+/// Whether the fragment stage returns the complete composite, and the
+/// pipeline must therefore write it unblended. Decides `blend: None`.
+fn is_non_linear(blend: Blend) -> bool {
+    matches!(
+        blend,
+        Blend::Overlay
+            | Blend::SoftLight
+            | Blend::HardLight
+            | Blend::ColorBurn
+            | Blend::ColorDodge
+            | Blend::LinearBurn
+    )
+}
+
+/// The ground pipeline's slot for a mode that has one, or `None`.
+fn ground_slot(blend: Blend) -> Option<usize> {
+    let index = blend_index(blend);
+    GROUND_ENTRIES[index].map(|_| index)
+}
+
+#[cfg(test)]
+mod ground_mode_tests {
+    use super::*;
+
+    #[test]
+    fn the_ground_table_is_the_same_length_as_the_enum() {
+        assert_eq!(GROUND_ENTRIES.len(), Blend::ALL.len());
+    }
+
+    #[test]
+    fn eight_modes_read_the_ground_and_six_of_them_are_non_linear() {
+        let reading: Vec<Blend> = Blend::ALL
+            .iter()
+            .copied()
+            .filter(|blend| reads_ground(*blend))
+            .collect();
+        assert_eq!(
+            reading,
+            vec![
+                Blend::Lighten,
+                Blend::Darken,
+                Blend::Overlay,
+                Blend::SoftLight,
+                Blend::HardLight,
+                Blend::ColorBurn,
+                Blend::ColorDodge,
+                Blend::LinearBurn,
+            ]
+        );
+
+        let nonlinear: Vec<Blend> = reading
+            .iter()
+            .copied()
+            .filter(|blend| is_non_linear(*blend))
+            .collect();
+        assert_eq!(nonlinear.len(), 6);
+        assert!(nonlinear.iter().all(|blend| ground_slot(*blend).is_some()));
+    }
+
+    #[test]
+    fn the_four_pure_fixed_function_modes_never_read_the_ground() {
+        // Lighten and Darken are fixed-function too, but they are the two
+        // that do need a copy of the ground; see the eight above.
+        for blend in [
+            Blend::Normal,
+            Blend::Multiply,
+            Blend::Screen,
+            Blend::Add,
+        ] {
+            assert!(!reads_ground(blend), "{blend:?} reads the ground");
+            assert!(ground_slot(blend).is_none(), "{blend:?} has a ground entry");
+        }
+    }
+
+    #[test]
+    fn every_entry_is_a_real_mode_number_and_lighten_darken_are_not_non_linear() {
+        for (index, entry) in GROUND_ENTRIES.iter().enumerate() {
+            let blend = Blend::ALL[index];
+            assert_eq!(reads_ground(blend), entry.is_some(), "{blend:?}");
+            assert_eq!(ground_slot(blend), entry.map(|_| index), "{blend:?}");
+        }
+        assert!(!is_non_linear(Blend::Lighten));
+        assert!(!is_non_linear(Blend::Darken));
+    }
+}
+
 use crate::compositor::Compositor;
 use crate::plan::{FramePlan, Geometry, PlannedLayer, PlannedTreatment, Shading};
 
