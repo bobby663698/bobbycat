@@ -23,9 +23,17 @@ trusted.
 
 [SignPath.io](https://signpath.io/) signs open-source projects for free, and
 its certificate chains to a CA Windows already trusts — nothing to install on
-the user's side. The workflow is already in the repository
-(`.github/workflows/sign-windows.yml`); turning it on needs the project's
-application to be accepted, then one secret and four repository variables:
+the user's side, and no prompt on first run. The repository already carries
+what the plan needs:
+
+- `.github/workflows/sign-windows.yml` — takes a finished Build app run, signs
+  the two installers, rewrites `SHA256SUMS.txt` over the signed bytes.
+- `signing/signpath-artifact-config.xml` — the artifact configuration to paste
+  into SignPath.
+- `signing/SIGNPATH-APPLICATION.md` — the answers the application asks for.
+
+Turning it on needs the project's application to be accepted, then one secret
+and four variables:
 
 | 名称 | 值 |
 |---|---|

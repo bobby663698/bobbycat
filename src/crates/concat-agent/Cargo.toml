@@ -1,0 +1,18 @@
+[package]
+name = "concat-agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The assistant pane's model client: OpenAI-compatible and Anthropic endpoints, streamed."
+
+# Same shape as the rest of the engine: synchronous HTTP on ureq, no async
+# runtime, because the caller is a UI thread pumping one event per delta.
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+ureq = { version = "2", features = ["json"] }
+
+[lints]
+workspace = true

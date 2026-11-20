@@ -1,0 +1,22 @@
+<!--
+  The artifact configuration to paste into SignPath (Projects › bobbycat ›
+  Artifact configurations) when the Foundation plan is approved.
+
+  It describes the zip that Build app publishes for Windows: two installers
+  and the files that travel beside them. The two installers are PE/MSI files
+  and are what SmartScreen looks at when a person runs the download, so they
+  are what gets a CA-trusted signature. SHA256SUMS.txt is rewritten after
+  signing, since a signature changes the bytes it would describe.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="BobbyCat-*-windows-x86_64-setup.exe"
+             product-name="BobbyCat"
+             product-version="${version}" />
+    <msi-file path="BobbyCat-*-windows-x86_64.msi"
+              product-name="BobbyCat"
+              product-version="${version}" />
+    <file path="bobbycat-cert.cer" />
+    <file path="SHA256SUMS.txt" />
+  </zip-file>
+</artifact-configuration>

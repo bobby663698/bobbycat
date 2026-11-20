@@ -1,19 +1,20 @@
-# Signs a build's Windows files with SignPath.io's free plan for open
-# source: the signature chains to a CA Windows already trusts, and the
-# certificate belongs to SignPath Foundation rather than to this project.
+# Signs a build's Windows installers with SignPath.io's free plan for open
+# source: the signature chains to a CA Windows already trusts, so a person
+# who downloads the setup .exe runs it without installing anything and
+# without seeing "unknown publisher". The certificate belongs to SignPath
+# Foundation, not to this project.
 #
-# Run by hand once the project is accepted (https://signpath.io/, the
-# Foundation plan) and these are set in the repository's secrets and
-# variables:
+# Needs, once the Foundation plan accepts the project:
 #
-#   secret  SIGNPATH_API_TOKEN         the token from SignPath's user page
-#   var     SIGNPATH_ORGANIZATION_ID   the organization's id
-#   var     SIGNPATH_PROJECT_SLUG       bobbycat
-#   var     SIGNPATH_POLICY_SLUG         release-signing
-#   var     SIGNPATH_ARTIFACT_CONFIG    the slug of the zip configuration
+#   secret  SIGNPATH_API_TOKEN        the token from SignPath's user page
+#   var     SIGNPATH_ORGANIZATION_ID  the organization's id
+#   var     SIGNPATH_PROJECT_SLUG      bobbycat
+#   var     SIGNPATH_POLICY_SLUG       release-signing
+#   var     SIGNPATH_ARTIFACT_CONFIG   the slug of signing/signpath-artifact-config.xml
 #
-# The unsigned files come from a finished run of Build app (its
-# windows-x86_64 artifact); the signed ones come back as an artifact here.
+# Run it with the id of a finished Build app run; it downloads that run's
+# windows artifact, signs the two installers, rewrites SHA256SUMS.txt over
+# the signed bytes and publishes the result as windows-x86_64-signed.
 name: Sign (Windows, SignPath)
 
 on:
@@ -32,15 +33,18 @@ jobs:
   sign:
     runs-on: ubuntu-22.04
     steps:
-      - name: Fetch the unsigned artifact
+      - name: Fetch the unsigned installers
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           gh run download "${{ inputs.run_id }}" \
             --repo "${{ github.repository }}" \
-            --name windows-x86_64 --dir unsigned
-          (cd unsigned && zip -r ../unsigned.zip .)
+            --name "BobbyCat-windows-x86_64" --dir payload
+          ls -l payload
+          # The sums describe unsigned bytes; they are rewritten below.
+          rm -f payload/SHA256SUMS.txt
+          (cd payload && zip -q -r ../unsigned.zip .)
           ls -l unsigned.zip
 
       - name: Upload it for SignPath to take
@@ -50,7 +54,7 @@ jobs:
           name: unsigned-for-signpath
           path: unsigned.zip
 
-      - name: Submit to SignPath
+      - name: Sign
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -62,7 +66,17 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: signed
 
-      - uses: actions/upload-artifact@v4
+      - name: Checksums over the signed bytes
+        run: |
+          set -euo pipefail
+          cd signed
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -exec basename {} \; | sort |
+            while read -r f; do sha256sum "$f"; done > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish
+        uses: actions/upload-artifact@v4
         with:
           name: windows-x86_64-signed
           path: signed/*
+          if-no-files-found: error
