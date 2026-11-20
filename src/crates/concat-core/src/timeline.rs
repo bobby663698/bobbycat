@@ -191,11 +191,14 @@ impl Blend {
     ///
     /// This is bobbycat's storage spelling, kebab-case, and the whole legal
     /// value domain of a document's `blend` string; see
-    /// [`Blend::all_names`]. Note what it is *not*: Jianying's own
-    /// `MixMode.json` spells the same modes with underscores as `nameId`
-    /// (`soft_light`), so an exporter must swap `-` for `_`, and the
-    /// interface's translatable labels are a third set entirely, the
-    /// lowerCamelCase keys `clipInspector.softLight` in `locales/*.json`.
+    /// [`Blend::all_names`]. It is *not* Jianying's spelling: `MixMode.json`
+    /// uses its own `nameId` values (`soft_light`, `over_lay`, `glare_pc`,
+    /// `color_filter`, ...), most of which are not this name with `-` swapped
+    /// for `_`. An exporter must look them up in a table - the eleven real
+    /// `nameId` / `effectId` / `resourceId` triples are in
+    /// `bridge/departments/data/EXPORT_FIELDS.md` §0.6.2. The interface's
+    /// translatable labels are a third set entirely, the lowerCamelCase keys
+    /// `clipInspector.softLight` in `locales/*.json`.
     /// [`Blend::parse`] reads either spelling; `name` writes only this one.
     pub fn name(self) -> &'static str {
         match self {
