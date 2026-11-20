@@ -55,12 +55,23 @@ on:
         description: The ref to build (main when empty)
         type: string
         default: ""
+      targets:
+        description: What to build
+        type: choice
+        options:
+          - windows-only
+          - all
+        default: windows-only
   workflow_call:
     inputs:
       ref:
         description: The ref to build, when it is not the one this runs on
         type: string
         default: ""
+      targets:
+        description: What to build
+        type: string
+        default: all
     secrets:
       APPLE_CERTIFICATE_P12:
         description: Base64 of a Developer ID Application .p12
@@ -119,62 +130,39 @@ env:
   GGML_NATIVE: "OFF"
 
 jobs:
+  # What to build, as a matrix: one row per target. Windows only unless the
+  # rest is asked for, since Windows is the platform this release ships on;
+  # the other rows stay here, so turning them back on is one input.
+  plan:
+    name: plan
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.rows.outputs.matrix }}
+    steps:
+      - id: rows
+        env:
+          TARGETS: ${{ inputs.targets || 'windows-only' }}
+        run: |
+          set -euo pipefail
+          all='{"include":[
+            {"platform":"macos","arch":"arm64","os":"macos-15","target":"aarch64-apple-darwin"},
+            {"platform":"macos","arch":"x86_64","os":"macos-15-intel","target":"x86_64-apple-darwin"},
+            {"platform":"linux","arch":"x86_64","os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu","ffmpeg":"linux64","ort":"x64","nfpm":"amd64","appimage":"x86_64","ggml":"variants"},
+            {"platform":"linux","arch":"aarch64","os":"ubuntu-22.04-arm","target":"aarch64-unknown-linux-gnu","ffmpeg":"linuxarm64","ort":"aarch64","nfpm":"arm64","appimage":"aarch64"},
+            {"platform":"windows","arch":"x86_64","os":"windows-2022","target":"x86_64-pc-windows-msvc","ffmpeg":"win64","ort":"win-x64","llvm":"win64","vc":"x64","inno":"x64compatible","wix":"x64","ggml":"variants"}
+          ]}'
+          if [ "$TARGETS" = "all" ]; then
+            printf 'matrix=%s\n' "$all" >> "$GITHUB_OUTPUT"
+          else
+            printf 'matrix=%s\n' "$(printf '%s' "$all" | jq -c '{include: [.include[] | select(.platform == "windows")]}')" >> "$GITHUB_OUTPUT"
+          fi
+
   app:
+    needs: plan
     name: ${{ matrix.platform }}-${{ matrix.arch }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # `ffmpeg` and `ort` name the target the way each project's
-          # release archives do.
-          - platform: macos
-            arch: arm64
-            os: macos-15
-            target: aarch64-apple-darwin
-          - platform: macos
-            arch: x86_64
-            os: macos-15-intel
-            target: x86_64-apple-darwin
-            # No `ggml` row: built as 0.2.7 was, with no AVX2. This bundle
-            # runs on macOS 12 again, and so on the 2013 Mac Pro, whose Ivy
-            # Bridge has AVX and nothing newer; Intel Macs are about one
-            # download in a hundred, and slower captions there beat a crash.
-          # 22.04, not latest: the binary links the build machine's glibc,
-          # so the oldest supported runner is what keeps it runnable on
-          # older distributions.
-          - platform: linux
-            arch: x86_64
-            os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            ffmpeg: linux64
-            ort: x64
-            nfpm: amd64
-            appimage: x86_64
-            ggml: variants
-          - platform: linux
-            arch: aarch64
-            os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            ffmpeg: linuxarm64
-            ort: aarch64
-            nfpm: arm64
-            appimage: aarch64
-          - platform: windows
-            arch: x86_64
-            os: windows-2022
-            target: x86_64-pc-windows-msvc
-            ffmpeg: win64
-            ort: win-x64
-            llvm: win64
-            vc: x64
-            inno: x64compatible
-            wix: x64
-            ggml: variants
-          # No Windows on ARM until its program starts: v0.2.7-rc.4's
-          # concat.exe died with an access violation on `--version` (#326).
-          # Its row was platform windows, arch aarch64, os windows-11-arm,
-          # target aarch64-pc-windows-msvc, ffmpeg winarm64, ort
-          # win-arm64, llvm woa64, vc and inno and wix arm64.
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     # The slowest target is Intel macOS, whose build alone ran past an hour
     # in v0.2.7-rc.1. The steps that can hang have timeouts of their own,
