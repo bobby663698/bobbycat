@@ -52,6 +52,8 @@ changes=$(git log "$since..$until" --no-merges --format='%s' 2>/dev/null \
   | grep -Eiv '^[a-z0-9]+\((release|ci)\)!?: ' \
   | grep -Eiv "${type}.*(clippy|lint|rustfmt|(unused|duplicate|missing) [A-Za-z]* ?import|non-existent|does not compile|before test module|green again)" \
   | grep -Eiv '^(updates?|wip|fixes?|cleanup)\.?$' \
+  | grep -Ev '^release: v?[0-9]+\.[0-9]+\.[0-9]+$' \
+  | grep -Ev '^v?[0-9]+\.[0-9]+\.[0-9]+$' \
   | awk -v marks="$marks" '
       BEGIN {
         n = split(marks, pairs, " ")
@@ -104,7 +106,15 @@ Windows, 64-bit:
 | `windows-x86_64-setup.exe` | the installer; installs for the current user, no administrator |
 | `windows-x86_64.msi` | the same, as an MSI, for a domain or a script |
 
-`SHA256SUMS.txt` lists each file's checksum.
+`SHA256SUMS` lists each file's checksum, and `manifest.json` says where each
+model comes from.
+
+The installers are signed with this project's own certificate. Let Windows
+trust it once, then install:
+
+```
+certutil -addstore -user Root bobbycat-cert.cer
+```
 
 Other platforms are built from the same source when asked for; no bundles
 are published for them yet.

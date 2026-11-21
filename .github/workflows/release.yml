@@ -180,7 +180,9 @@ jobs:
           WINDOWS_SIGNED: ${{ secrets.WINDOWS_CERTIFICATE_PFX != '' }}
           # No launch check reaches the APK's own code until the emulator
           # runs a build of it it can execute (see smoke-android.sh).
-          ANDROID_STARTED: "false"
+          # No APK is published while this repository ships Windows only,
+          # so the template must not warn about one.
+          ANDROID_STARTED: "true"
         run: |
           set -euo pipefail
           cd source
