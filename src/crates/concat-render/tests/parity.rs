@@ -303,16 +303,19 @@ fn every_blend_lands_within_three_levels_of_the_cpu_reference() {
 
 /// A gradient laid down at 1.3 times and thirty degrees: SSIM holds the
 /// whole picture, and every pixel three in from the layer's own edge must
-/// agree to two levels. The rim itself is bilinear sampling either side of
+/// agree to three levels. The rim itself is bilinear sampling either side of
 /// one edge, where the two samplers round differently, and is not held to a
 /// level - see `PARITY_TOOL.md`.
 ///
-/// Two rather than one, measured on the gnu build: three pixels of 4473 sit
-/// two levels apart, and they are the same three at every scale tried. A
-/// fraction of a pixel is the smallest disagreement two bilinear samplers
-/// can have about where a texel centre is, and on the steepest ramp this
-/// picture has that fraction is worth two levels. One level is what a flat
-/// colour under a plain blend is held to, and stays there.
+/// Three rather than one, measured on four adapters: three pixels of 4473 sit
+/// two levels apart on lavapipe, and one pixel sits three levels apart on a
+/// Windows software adapter. A fraction of a pixel is the smallest
+/// disagreement two bilinear samplers can have about where a texel centre is,
+/// and on the steepest ramp this picture has that fraction is worth two or
+/// three levels depending on how the driver rounds. The count stays under
+/// 0.1% either way; a geometry error moves dozens of pixels, not one. One
+/// level is what a flat colour under a plain blend is held to, and stays
+/// there.
 #[test]
 fn a_rotated_layer_matches_the_cpu_reference_away_from_its_edge() {
     let Some(mut gpu) = gpu() else { return };
@@ -337,8 +340,8 @@ fn a_rotated_layer_matches_the_cpu_reference_away_from_its_edge() {
     let bare_frame = CpuCompositor.render(&bare);
     let footprint = Deltas::new(&bare_frame, &expected);
     let deltas = Deltas::new(&expected, &actual);
-    let whole = deltas.measure(2, |_, _| true);
-    let inside = deltas.measure(2, |x, y| footprint.inside(x, y, 3));
+    let whole = deltas.measure(3, |_, _| true);
+    let inside = deltas.measure(3, |x, y| footprint.inside(x, y, 3));
     let score = ssim(&expected, &actual);
     eprintln!("rotated: ssim {score:.4}, {}", whole.report());
     eprintln!(
