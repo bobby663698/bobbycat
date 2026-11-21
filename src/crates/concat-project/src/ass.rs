@@ -261,7 +261,7 @@ fn format_of(rest: &str) -> Vec<String> {
 
 /// A record's fields. The last field may hold commas (dialogue text
 /// does), so split into at most as many pieces as the format names.
-fn fields_of(rest: &str, format: &[String]) -> Vec<&str> {
+fn fields_of<'a>(rest: &'a str, format: &[String]) -> Vec<&'a str> {
     let count = format.len().max(1);
     rest.splitn(count, ',').map(str::trim).collect()
 }

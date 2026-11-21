@@ -123,7 +123,7 @@ pub fn for_name(name: &str) -> Option<&'static MixModeResource> {
 
 #[cfg(test)]
 mod tests {
-    use super::{MIX_MODE_TABLE, MixModeResource, for_blend, for_name};
+    use super::{MIX_MODE_TABLE, for_blend, for_name};
     use concat_core::timeline::Blend;
 
     /// Pin all three resource fields of one mode against the spec table.
