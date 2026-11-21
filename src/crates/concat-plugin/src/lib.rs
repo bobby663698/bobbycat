@@ -39,6 +39,9 @@
 //! path check is what keeps the host's authority from becoming the
 //! plugin's authority.
 
+/// The loop between a running plugin and the host: one request line in, at
+/// most one reply line out, with a cap so a plugin cannot buffer forever.
+pub mod bridge;
 /// The child-process loader: spawn a plugin and complete the two-frame
 /// `hello` / `ready` handshake over its standard streams.
 pub mod loader;
