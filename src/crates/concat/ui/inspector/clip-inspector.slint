@@ -1091,6 +1091,56 @@ component ToolButton inherits Rectangle {
     }
 }
 
+// The twelve blend modes as a grid of cards, four to a row.
+//
+// Slint has no auto-fill grid: a GridLayout wants its cells named at compile
+// time, which a model cannot do. So each card places itself from its index,
+// the way ProjectsGrid places a poster - see workspace/media-pane.slint.
+//
+// The names arrive in `blends`' order, which is Blend::ALL's, and the index
+// reported back is the field value. Nothing here translates between the two.
+component BlendCards inherits Rectangle {
+    in property <[string]> names;
+    /// The selected index, into both `names` and the blend field.
+    in property <int> current;
+    callback picked(index: int);
+
+    property <int> cols: 4;
+    property <length> gap: 6px;
+    property <length> card-h: 40px;
+    property <int> rows: Math.ceil(root.names.length / root.cols);
+    property <length> card-w: (root.width - (root.cols - 1) * root.gap) / root.cols;
+
+    height: Math.max(0px, root.rows * root.card-h + (root.rows - 1) * root.gap);
+    background: Colors.transparent;
+
+    for name[index] in root.names: Rectangle {
+        x: Math.mod(index, root.cols) * (root.card-w + root.gap);
+        y: Math.floor(index / root.cols) * (root.card-h + root.gap);
+        width: root.card-w;
+        height: root.card-h;
+        border-radius: Theme.r-sm;
+        border-width: root.current == index ? 2px : 1px;
+        border-color: root.current == index ? Theme.accent : Theme.line;
+        background: touch.has-hover ? Theme.field-hover : Theme.field;
+
+        Text {
+            text: name;
+            width: 100%;
+            height: 100%;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            color: root.current == index ? Theme.accent : Theme.fg;
+            font-size: 11px;
+            overflow: elide;
+        }
+
+        touch := TouchArea {
+            clicked => { root.picked(index); }
+        }
+    }
+}
+
 // The cutout model at work, while it runs: the masks are found in the
 // background and the picture is shown as shot until they are.
 component AnalysisRow inherits Row {
@@ -1821,12 +1871,17 @@ export component VideoPanel inherits VerticalLayout {
                 changed(v) => { root.set(ClipField.opacity, v); root.commit(); }
             }
 
-            Row {
-                label: I18n.t("common.mode");
-                Select {
-                    options: root.blends;
-                    current: root.selected.blend;
-                    changed(index) => { root.set(ClipField.blend, index); root.commit(); }
+            // The twelve modes as cards rather than a dropdown. A menu keeps
+            // eleven of them behind a click; laid out flat, the set reads as
+            // a set, and the two a person actually alternates between are one
+            // press apart. The order is `blends`' order - Blend::ALL's -
+            // because the press reports the index.
+            BlendCards {
+                names: root.blends;
+                current: root.selected.blend;
+                picked(index) => {
+                    root.set(ClipField.blend, index);
+                    root.commit();
                 }
             }
 
