@@ -3371,6 +3371,29 @@ impl Clip {
     }
 }
 
+/// A named group of timelines: one scene of a project, the strip's top level
+/// in the interface.
+///
+/// A scene owns timelines by id, not by nesting: they stay flat in
+/// [`Project::timelines`] and [`Timeline::scene`] names the group. Every
+/// command that walks timelines therefore keeps working unchanged, and a
+/// document with no scenes - which is every document made before this
+/// existed - is a document whose timelines are all ungrouped. That is the
+/// whole reason for the flat shape: a nested `Vec<Vec<Timeline>>` would have
+/// rewritten every command in the crate to save one string per timeline.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, PartialEq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Scene {
+    /// Minted by the editor ("sc1", "sc2", ...).
+    pub id: String,
+    /// The label in the strip; never blank, trimmed when it lands.
+    pub name: String,
+    /// Fields this build does not know, kept so they round-trip.
+    #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
+    pub extra: Map<String, Value>,
+}
+
 /// One timeline: a name and its lanes and clips. Every operation takes the
 /// project and works on whichever timeline is active.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -3416,6 +3439,14 @@ pub struct Timeline {
     /// while on.
     #[serde(default = "yes", skip_serializing_if = "is_true")]
     pub linkage: bool,
+    /// The scene this timeline belongs to, by [`Scene::id`]. Empty is
+    /// ungrouped, which is what every timeline is until a scene is made.
+    ///
+    /// An id that names no scene reads as ungrouped rather than refusing the
+    /// file: a document that lost a scene in a hand edit still opens, and
+    /// the strip shows its timelines where ungrouped ones go.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub scene: String,
     /// Fields this build does not know, kept so they round-trip.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Map<String, Value>,
@@ -3431,6 +3462,7 @@ impl Default for Timeline {
             tracks: Vec::new(),
             clips: Vec::new(),
             linkage: true,
+            scene: String::new(),
             extra: Map::new(),
         }
     }
@@ -3675,6 +3707,10 @@ pub struct Project {
     /// Fonts the user added from disk, available to every title.
     #[serde(default, deserialize_with = "wire::list")]
     pub fonts: Vec<CustomFont>,
+    /// The scenes, in strip order. Empty on a document that never made one,
+    /// and empty is a document whose timelines are all ungrouped.
+    #[serde(default, deserialize_with = "wire::list")]
+    pub scenes: Vec<Scene>,
     /// Every timeline, in tab order. Always at least one. Behind `Arc` for
     /// the reason [`Timeline::clips`] is: a command on one timeline leaves
     /// the others shared with the undo snapshot.
@@ -3721,6 +3757,7 @@ impl Project {
             media: Vec::new(),
             fonts: Vec::new(),
             extra: Map::new(),
+            scenes: Vec::new(),
             timelines: vec![Arc::new(Timeline {
                 id: "TL1".to_owned(),
                 name: "Timeline 1".to_owned(),
@@ -3734,6 +3771,7 @@ impl Project {
                     .collect(),
                 clips: Vec::new(),
                 linkage: true,
+                scene: String::new(),
                 extra: Map::new(),
             })],
             active_timeline_id: "TL1".to_owned(),

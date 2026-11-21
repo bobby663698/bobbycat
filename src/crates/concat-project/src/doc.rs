@@ -344,6 +344,15 @@ pub fn to_document(settings: &DocumentSettings, project: &Project) -> Value {
     document.insert("tracks".into(), tracks);
     document.insert("clips".into(), clips);
     document.insert("fonts".into(), Value::Array(fonts));
+    // Scenes only when there are some: a document that never made one keeps
+    // the shape it had before they existed, and its timelines carry no
+    // `scene` key either.
+    if !project.scenes.is_empty() {
+        document.insert(
+            "scenes".into(),
+            serde_json::to_value(&project.scenes).expect("serialises"),
+        );
+    }
     document.insert("timelines".into(), Value::Array(timelines));
     document.insert("activeTimelineId".into(), json!(project.active_timeline_id));
     // Whatever a newer or a different build put at the top level, back

@@ -41,6 +41,9 @@ pub(super) fn apply(
             let background = project.active().background.clone();
             // And with the linkage it was set to: it is how the cut edits.
             let linkage = project.active().linkage;
+            // And in the scene it was in: the likeliest second timeline is
+            // another cut of the scene you were looking at, not a new one.
+            let scene = project.active().scene.clone();
             project.timelines.push(Arc::new(Timeline {
                 id: id.clone(),
                 name,
@@ -49,6 +52,7 @@ pub(super) fn apply(
                 tracks,
                 clips: Vec::new(),
                 linkage,
+                scene,
                 extra: Default::default(),
             }));
             project.active_timeline_id = id.clone();
@@ -174,6 +178,88 @@ pub(super) fn apply(
             }
             let timeline = project.timelines.remove(from);
             project.timelines.insert(to, timeline);
+            Ok(Outcome {
+                created_id: None,
+                applied: true,
+            })
+        }
+
+        Command::AddScene => {
+            let id = mint.next("sc");
+            let name = next_numbered(
+                "Scene",
+                project.scenes.iter().map(|scene| scene.name.clone()),
+            );
+            project.scenes.push(Scene {
+                id: id.clone(),
+                name,
+                extra: Default::default(),
+            });
+            Ok(Outcome {
+                created_id: Some(id),
+                applied: true,
+            })
+        }
+
+        Command::RenameScene { scene_id, name } => {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                return Ok(Outcome::default());
+            }
+            let Some(scene) = project.scenes.iter_mut().find(|scene| scene.id == scene_id) else {
+                return Ok(Outcome::default());
+            };
+            scene.name = trimmed.to_owned();
+            Ok(Outcome {
+                created_id: None,
+                applied: true,
+            })
+        }
+
+        Command::RemoveScene { scene_id } => {
+            let Some(index) = project.scenes.iter().position(|scene| scene.id == scene_id) else {
+                return Ok(Outcome::default());
+            };
+            project.scenes.remove(index);
+            // The timelines are not deleted with the scene: they go back to
+            // ungrouped, which is where they were before it existed. Losing
+            // an afternoon's edit to a mis-click on a group heading would be
+            // the wrong trade for a command whose name says "remove scene".
+            for timeline in &mut project.timelines {
+                let timeline = Arc::make_mut(timeline);
+                if timeline.scene == scene_id {
+                    timeline.scene.clear();
+                }
+            }
+            Ok(Outcome {
+                created_id: None,
+                applied: true,
+            })
+        }
+
+        Command::MoveTimelineToScene {
+            timeline_id,
+            scene_id,
+        } => {
+            // An unknown scene puts the timeline back in the ungrouped pile
+            // rather than leaving it pointing at a scene that is not there.
+            let target = if project.scenes.iter().any(|scene| scene.id == scene_id) {
+                scene_id
+            } else {
+                String::new()
+            };
+            let Some(timeline) = project
+                .timelines
+                .iter_mut()
+                .find(|timeline| timeline.id == timeline_id)
+            else {
+                return Ok(Outcome::default());
+            };
+            let timeline = Arc::make_mut(timeline);
+            if timeline.scene == target {
+                return Ok(Outcome::default());
+            }
+            timeline.scene = target;
             Ok(Outcome {
                 created_id: None,
                 applied: true,

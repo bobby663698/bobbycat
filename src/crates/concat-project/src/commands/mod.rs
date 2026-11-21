@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::model::{
     AppliedFilter, AudioTrack, Background, Clip, ClipKind, ClipMotion, ColorRange, ColorSpace,
     Crop, CustomFont, Cutout, CutoutMode, Enhanced, Framing, KeyEase, KeyProperty, Mask, MediaItem,
-    MediaKind, MediaOrigin, Project, RunStyle, ShapeStyle, SpeedPoint, Stabilize, Stroke,
+    MediaKind, MediaOrigin, Project, RunStyle, Scene, ShapeStyle, SpeedPoint, Stabilize, Stroke,
     TextStyle, Timeline, Track, Transition, VideoSettings, VoiceMix,
 };
 
@@ -961,6 +961,34 @@ pub enum Command {
         /// timeline already removed from its old slot. Clamped to the end.
         index: usize,
     },
+    /// Adds a scene: "Scene N" after the highest in use, empty. Mints an
+    /// "sc" id. Making one does not move any timeline into it - a scene is
+    /// a group, and grouping is `MoveTimelineToScene`'s job.
+    AddScene,
+    /// Renames a scene. Whitespace-only names are ignored so a scene can
+    /// never end up blank; unknown ids are tolerated.
+    RenameScene {
+        /// The scene to rename.
+        scene_id: String,
+        /// The new label; trimmed before it lands.
+        name: String,
+    },
+    /// Deletes a scene. Its timelines are not deleted with it: they become
+    /// ungrouped, which is where a document without scenes keeps all of
+    /// them. An unknown id is a no-op.
+    RemoveScene {
+        /// The scene to delete.
+        scene_id: String,
+    },
+    /// Puts a timeline in a scene, or takes it out. An unknown timeline is a
+    /// no-op; an unknown scene takes it out, because the alternative is a
+    /// reference to nothing.
+    MoveTimelineToScene {
+        /// The timeline to move.
+        timeline_id: String,
+        /// The scene; empty for ungrouped.
+        scene_id: String,
+    },
     /// Registers a font file for titles. A path already registered is a
     /// no-op, so re-adding cannot duplicate.
     AddFont {
@@ -1425,6 +1453,10 @@ pub fn apply(
         | Command::RemoveTimeline { .. }
         | Command::RenameTimeline { .. }
         | Command::SelectTimeline { .. }
-        | Command::MoveTimeline { .. }) => timelines::apply(project, mint, command),
+        | Command::MoveTimeline { .. }
+        | Command::AddScene
+        | Command::RenameScene { .. }
+        | Command::RemoveScene { .. }
+        | Command::MoveTimelineToScene { .. }) => timelines::apply(project, mint, command),
     }
 }
