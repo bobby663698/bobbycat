@@ -1671,7 +1671,7 @@ component WideHome inherits Rectangle {
                 // verbs on it, the news at its end, and the accent's light
                 // running in from the corners rather than a flat fill.
                 hero := Rectangle {
-                    height: root.hero-h;
+                    height: Math.max(root.hero-h, hero-body.preferred-height + 2 * root.hero-pad);
                     border-radius: 30px;
                     background: Theme.launch-panel;
                     border-width: 1px;
@@ -1694,10 +1694,11 @@ component WideHome inherits Rectangle {
                         tint: Theme.accent.with-alpha(0.10);
                     }
 
-                    VerticalLayout {
+                    hero-body := VerticalLayout {
                         x: root.hero-pad;
                         y: root.hero-pad;
                         width: root.left-w;
+                        height: self.preferred-height;
                         spacing: 0px;
 
                         Text {
@@ -1773,7 +1774,7 @@ component WideHome inherits Rectangle {
                         x: root.content-w - root.aside-w - root.hero-pad;
                         y: root.hero-pad;
                         width: root.aside-w;
-                        height: root.hero-h - 2 * root.hero-pad;
+                        height: hero.height - 2 * root.hero-pad;
                         compact: true;
                         title: I18n.t1("start.whatsNew", root.version);
                         note: I18n.t("start.newsNote");
