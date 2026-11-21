@@ -20,6 +20,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use concat_project::Command;
+use concat_project::ass;
 use concat_project::model::{ClipKind, TextStyle};
 use concat_project::srt;
 use concat_speech::JobStage;
@@ -72,10 +73,13 @@ pub enum CaptionsMsg {
     Progress(JobStage),
     /// The transcriber's worker is done: what was said, or why not.
     Finished(Result<Vec<Segment>, String>),
-    /// Asks for a SubRip file to read in.
-    ImportSrt,
-    /// The SubRip file chosen: its cues as captions.
-    ImportSrtFrom(PathBuf),
+    /// Asks for a subtitle file to read in: SubRip, or Advanced SubStation
+    /// Alpha. The two carry the same three things this sheet uses - when a
+    /// line starts, when it ends, what it says - so one door reads both and
+    /// the extension decides which parser sees it.
+    ImportSubtitles,
+    /// The subtitle file chosen: its cues as captions.
+    ImportSubtitlesFrom(PathBuf),
     /// Asks where to write the captions as SubRip.
     ExportSrt,
     /// Where they go.
@@ -291,29 +295,58 @@ impl CaptionsPane {
             }
             // Asked with the studio unborrowed, on a turn of its own; see
             // `host::after_dialog`.
-            CaptionsMsg::ImportSrt => crate::host::pick_files_then(
-                t("captions.importSrt"),
-                Some((t("captions.subRipSubtitles"), &["srt"])),
+            CaptionsMsg::ImportSubtitles => crate::host::pick_files_then(
+                t("captions.importSubtitles"),
+                Some((t("captions.subtitleFiles"), &["srt", "ass", "ssa"])),
                 |studio, _, _, paths| {
                     if let Some(path) = paths.into_iter().next() {
-                        studio.handle(Msg::Captions(CaptionsMsg::ImportSrtFrom(path)));
+                        studio.handle(Msg::Captions(CaptionsMsg::ImportSubtitlesFrom(path)));
                     }
                 },
             ),
-            CaptionsMsg::ImportSrtFrom(path) => self.import_srt(studio, &path),
+            CaptionsMsg::ImportSubtitlesFrom(path) => self.import_subtitles(studio, &path),
             CaptionsMsg::ExportSrt => self.ask_export_srt(studio),
             CaptionsMsg::ExportSrtTo(path) => self.export_srt(studio, &path),
         }
     }
 
-    /// A SubRip file's cues as captions where the file times them, with
+    /// A subtitle file's cues as captions where the file times them, with
     /// the sheet's look: one batch, one undo step. A file that is not
     /// UTF-8 is read as best it can be.
-    fn import_srt(&mut self, studio: &mut Studio, path: &Path) {
+    ///
+    /// The extension picks the parser. Both formats carry the three things
+    /// this sheet uses - when a line starts, when it ends, what it says -
+    /// so an Advanced SubStation Alpha file keeps its timing and its words
+    /// and loses only what it alone has: per-line style, alignment and the
+    /// override tags `ass` already drops when it reads one.
+    fn import_subtitles(&mut self, studio: &mut Studio, path: &Path) {
+        let advanced = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("ass") || extension.eq_ignore_ascii_case("ssa")
+            });
         let cues = std::fs::read(path)
             .map_err(|error| error.to_string())
             .and_then(|bytes| {
-                srt::parse(&String::from_utf8_lossy(&bytes)).map_err(|error| error.to_string())
+                let text = String::from_utf8_lossy(&bytes);
+                if advanced {
+                    ass::parse(&text)
+                        .map(|document| {
+                            document
+                                .cues
+                                .into_iter()
+                                .map(|cue| srt::Cue {
+                                    start: cue.start,
+                                    end: cue.end,
+                                    text: cue.text,
+                                })
+                                .collect::<Vec<srt::Cue>>()
+                        })
+                        .map_err(|error| error.to_string())
+                } else {
+                    srt::parse(&text).map_err(|error| error.to_string())
+                }
             });
         let cues = match cues {
             Ok(cues) => cues,

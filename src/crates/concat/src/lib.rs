@@ -2483,7 +2483,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         state.handle(Msg::Captions(CaptionsMsg::Cancel));
     }));
     app.on_captions_import_srt(on_window!(|state| {
-        state.handle(Msg::Captions(CaptionsMsg::ImportSrt));
+        state.handle(Msg::Captions(CaptionsMsg::ImportSubtitles));
     }));
     app.on_captions_export_srt(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::ExportSrt));
@@ -2520,7 +2520,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         state.handle(Msg::Captions(CaptionsMsg::Cancel));
     }));
     editor.on_captions_import_srt(on_window!(|state| {
-        state.handle(Msg::Captions(CaptionsMsg::ImportSrt));
+        state.handle(Msg::Captions(CaptionsMsg::ImportSubtitles));
     }));
     editor.on_captions_export_srt(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::ExportSrt));
