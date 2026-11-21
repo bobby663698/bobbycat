@@ -38,7 +38,7 @@ pub mod proto {
     tonic::include_proto!("concat.v1");
 }
 
-use proto::concat_server::{Concat, ConcatServer};
+use proto::bobby_cat_server::{BobbyCat, BobbyCatServer};
 
 /// The service: the hub, and nothing else.
 struct Service {
@@ -46,7 +46,7 @@ struct Service {
 }
 
 #[tonic::async_trait]
-impl Concat for Service {
+impl BobbyCat for Service {
     async fn call(
         &self,
         request: Request<proto::Request>,
@@ -161,7 +161,7 @@ pub(crate) fn serve(
                 };
                 let incoming = tokio_stream::wrappers::TcpListenerStream::new(listener);
                 let service =
-                    ConcatServer::with_interceptor(Service { hub }, bearer(token, throttle));
+                    BobbyCatServer::with_interceptor(Service { hub }, bearer(token, throttle));
                 let stopped = async move {
                     while !stop.load(Ordering::SeqCst) {
                         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -215,7 +215,7 @@ mod tests {
     use super::*;
     use crate::{Config, Server};
     use concat_api::{Api, AppDirs};
-    use proto::concat_client::ConcatClient;
+    use proto::bobby_cat_client::BobbyCatClient;
 
     fn server(token: Option<&str>) -> (Server, tempfile::TempDir) {
         let scratch = tempfile::tempdir().expect("scratch");
@@ -247,7 +247,7 @@ mod tests {
     async fn a_call_answers_in_json_text_and_an_error_carries_its_code() {
         let (server, _scratch) = server(None);
         let address = server.grpc_addr().expect("listening");
-        let mut client = ConcatClient::connect(format!("http://{address}"))
+        let mut client = BobbyCatClient::connect(format!("http://{address}"))
             .await
             .expect("connects");
         let version = client
@@ -293,7 +293,7 @@ mod tests {
     async fn a_token_travels_as_a_bearer() {
         let (server, _scratch) = server(Some(crate::tests::TOKEN));
         let address = server.grpc_addr().expect("listening");
-        let mut client = ConcatClient::connect(format!("http://{address}"))
+        let mut client = BobbyCatClient::connect(format!("http://{address}"))
             .await
             .expect("connects");
         let version = || proto::Request {
