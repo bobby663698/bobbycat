@@ -393,10 +393,17 @@ fn the_branches_meet_at_the_half() {
 /// The quantisation is the point. Two modes less than a level apart are two
 /// modes CI cannot tell apart - a green run would say nothing about either -
 /// so the discriminating input has to survive being written into eight bits.
+///
+/// 77 over 232 does not survive it: colour burn stays off black only while
+/// `cs + cb > 1` and linear burn only while the same holds, so at 0.06 over
+/// 0.80 both saturate and land on stored level 0 together. 174 over 229 keeps
+/// overlay on its multiply side (2 x 0.40 < 1) and hard light on its screen
+/// side (2 x 0.77 > 1), leaves both burns above black, and spreads the six
+/// levels by at least fourteen.
 #[test]
 fn the_discriminating_input_survives_eight_bit_quantisation() {
-    let cs = decode(232);
-    let cb = decode(77);
+    let cs = decode(229);
+    let cb = decode(174);
     let mut levels: Vec<u8> = NEW_MODES
         .iter()
         .map(|mode| encode(expected(*mode, cs, 1.0, cb, 1.0)))
