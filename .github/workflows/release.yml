@@ -104,9 +104,15 @@ jobs:
       targets: windows-only
     secrets: inherit
 
+  # Windows-only for now: this repository publishes the desktop installers
+  # and nothing for a phone. Set the RELEASE_PHONES repository variable to
+  # 'true' to bring the Android and iOS bundles back, and put `phones` back
+  # into publish's needs below.
+  #
   # `sign` is the one thing that puts the repository's Android key into a
   # run; a pull request's build of mobile.yml never gets it.
   phones:
+    if: vars.RELEASE_PHONES == 'true'
     needs: [check, engine]
     uses: ./.github/workflows/mobile.yml
     with:
@@ -116,7 +122,7 @@ jobs:
 
   publish:
     name: Publish release
-    needs: [check, build, phones]
+    needs: [check, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -191,7 +197,7 @@ jobs:
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: ${{ needs.check.outputs.tag }}
-          name: Concat ${{ needs.check.outputs.tag }}
+          name: BobbyCat ${{ needs.check.outputs.tag }}
           draft: true
           prerelease: ${{ contains(needs.check.outputs.tag, '-') }}
           body_path: ${{ runner.temp }}/notes.md
