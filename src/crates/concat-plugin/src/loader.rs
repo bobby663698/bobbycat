@@ -146,13 +146,15 @@ pub fn hello_frame(id: u32, api: u32) -> String {
 /// Pure: no pipe, no clock, no child. Every refusal carries the reason so
 /// the caller can say which half spoke a different protocol.
 pub fn parse_ready(line: &str, expected_id: &Value) -> Result<Ready, HandshakeError> {
-    let value: Value = serde_json::from_str(line)
-        .map_err(|error| HandshakeError::Malformed(error.to_string()))?;
+    let value: Value =
+        serde_json::from_str(line).map_err(|error| HandshakeError::Malformed(error.to_string()))?;
     let Value::Object(mut object) = value else {
         return Err(HandshakeError::Malformed("应答必须是 JSON 对象".to_owned()));
     };
     if object.get("jsonrpc").and_then(Value::as_str) != Some("2.0") {
-        return Err(HandshakeError::Malformed("jsonrpc 必须是 \"2.0\"".to_owned()));
+        return Err(HandshakeError::Malformed(
+            "jsonrpc 必须是 \"2.0\"".to_owned(),
+        ));
     }
     // A notification reads like a call; it is not an answer to our hello.
     if object.contains_key("method") {
@@ -160,9 +162,9 @@ pub fn parse_ready(line: &str, expected_id: &Value) -> Result<Ready, HandshakeEr
             "ready 应答不能带 method".to_owned(),
         ));
     }
-    let found_id = object
-        .remove("id")
-        .ok_or_else(|| HandshakeError::WrongId { found: "none".to_owned() })?;
+    let found_id = object.remove("id").ok_or_else(|| HandshakeError::WrongId {
+        found: "none".to_owned(),
+    })?;
     if &found_id != expected_id {
         return Err(HandshakeError::WrongId {
             found: found_id.to_string(),
@@ -478,15 +480,15 @@ fn read_capped_line<R: BufRead>(reader: &mut R, cap: usize) -> io::Result<Option
             None => available.len(),
         };
         if out.len() + end > cap {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "握手帧太长",
-            ));
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "握手帧太长"));
         }
         out.extend_from_slice(&available[..end]);
         reader.consume(end);
         if available[end - 1] == b'\n' {
-            while out.last().is_some_and(|&byte| byte == b'\n' || byte == b'\r') {
+            while out
+                .last()
+                .is_some_and(|&byte| byte == b'\n' || byte == b'\r')
+            {
                 out.pop();
             }
             return Ok(Some(String::from_utf8_lossy(&out).into_owned()));
@@ -549,20 +551,25 @@ mod tests {
     #[test]
     fn a_ready_reply_yields_the_api_version() {
         let got = parse_ready(&ready(HELLO_ID, manifest::API_MAJOR), &hello_id()).expect("ready");
-        assert_eq!(got, Ready { api: manifest::API_MAJOR });
+        assert_eq!(
+            got,
+            Ready {
+                api: manifest::API_MAJOR
+            }
+        );
     }
 
     #[test]
     fn a_reply_to_another_id_is_rejected() {
-        let error =
-            parse_ready(&ready(HELLO_ID + 1, manifest::API_MAJOR), &hello_id()).expect_err("wrong id");
+        let error = parse_ready(&ready(HELLO_ID + 1, manifest::API_MAJOR), &hello_id())
+            .expect_err("wrong id");
         assert!(matches!(error, HandshakeError::WrongId { .. }), "{error:?}");
     }
 
     #[test]
     fn a_notification_is_not_a_ready_reply() {
-        let line =
-            json!({ "jsonrpc": "2.0", "method": "plugin.hello", "params": { "api": 1 } }).to_string();
+        let line = json!({ "jsonrpc": "2.0", "method": "plugin.hello", "params": { "api": 1 } })
+            .to_string();
         let error = parse_ready(&line, &hello_id()).expect_err("not a reply");
         assert!(matches!(error, HandshakeError::Malformed(_)), "{error:?}");
     }

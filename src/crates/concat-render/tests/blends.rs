@@ -358,8 +358,14 @@ fn the_branches_meet_at_the_half() {
     let at = premul(Mode::HardLight, 0.5, 0.3, 1.0, 1.0);
     let below = premul(Mode::HardLight, 0.5 - 1e-5, 0.3, 1.0, 1.0);
     let above = premul(Mode::HardLight, 0.5 + 1e-5, 0.3, 1.0, 1.0);
-    assert!((below - at).abs() < 1e-4, "hard light: {below}, {at}, {above}");
-    assert!((above - at).abs() < 1e-4, "hard light: {below}, {at}, {above}");
+    assert!(
+        (below - at).abs() < 1e-4,
+        "hard light: {below}, {at}, {above}"
+    );
+    assert!(
+        (above - at).abs() < 1e-4,
+        "hard light: {below}, {at}, {above}"
+    );
 
     let at = premul(Mode::Overlay, 0.6, 0.5, 1.0, 1.0);
     let below = premul(Mode::Overlay, 0.6, 0.5 - 1e-5, 1.0, 1.0);
@@ -370,8 +376,14 @@ fn the_branches_meet_at_the_half() {
     let at = premul(Mode::SoftLight, 0.5, 0.7, 1.0, 1.0);
     let below = premul(Mode::SoftLight, 0.5 - 1e-5, 0.7, 1.0, 1.0);
     let above = premul(Mode::SoftLight, 0.5 + 1e-5, 0.7, 1.0, 1.0);
-    assert!((below - at).abs() < 1e-4, "soft light: {below}, {at}, {above}");
-    assert!((above - at).abs() < 1e-4, "soft light: {below}, {at}, {above}");
+    assert!(
+        (below - at).abs() < 1e-4,
+        "soft light: {below}, {at}, {above}"
+    );
+    assert!(
+        (above - at).abs() < 1e-4,
+        "soft light: {below}, {at}, {above}"
+    );
 }
 
 /// Bright over dark: the two colours sit either side of a half, so overlay
@@ -402,9 +414,15 @@ fn the_discriminating_input_survives_eight_bit_quantisation() {
 #[test]
 fn saturation_is_exact_at_both_ends() {
     let burnt = premul(Mode::ColorBurn, 0.1, 0.3, 1.0, 1.0);
-    assert!(burnt < 1e-6, "a burn past its quotient is not zero: {burnt}");
+    assert!(
+        burnt < 1e-6,
+        "a burn past its quotient is not zero: {burnt}"
+    );
     let dodged = premul(Mode::ColorDodge, 0.9, 0.3, 1.0, 1.0);
-    assert!((dodged - 1.0).abs() < 1e-6, "a dodge past it is not one: {dodged}");
+    assert!(
+        (dodged - 1.0).abs() < 1e-6,
+        "a dodge past it is not one: {dodged}"
+    );
 }
 
 /// CapCut is not the specification, and this is where the two part company.
@@ -453,9 +471,7 @@ mod against_the_compositor {
 
     use concat_core::frame::{BYTES_PER_PIXEL, Frame};
     use concat_core::timeline::Blend;
-    use concat_render::{
-        Compositor, CpuCompositor, FramePlan, PlannedLayer, detached_clip,
-    };
+    use concat_render::{Compositor, CpuCompositor, FramePlan, PlannedLayer, detached_clip};
 
     use super::*;
 
@@ -528,13 +544,7 @@ mod against_the_compositor {
             for opacity in [0.25, 0.5, 0.75] {
                 for (cb, cs) in [(77u8, 232u8), (232, 77), (20, 90), (200, 40)] {
                     let got = first(&frame(mode, cb, cs, opacity));
-                    let want = encode(expected(
-                        mode,
-                        decode(cs),
-                        opacity,
-                        decode(cb),
-                        1.0,
-                    ));
+                    let want = encode(expected(mode, decode(cs), opacity, decode(cb), 1.0));
                     worst = worst.max(got[0].abs_diff(want));
                 }
             }

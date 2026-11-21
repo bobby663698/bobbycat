@@ -280,10 +280,7 @@ impl Denied {
                     self.field("at")
                 ),
             },
-            Reason::Escape => format!(
-                "{asked} 不在授权范围内（{}）",
-                self.field("roots")
-            ),
+            Reason::Escape => format!("{asked} 不在授权范围内（{}）", self.field("roots")),
             Reason::Symlink => format!(
                 "路径经过符号链接 `{}`，插件不允许穿过符号链接",
                 self.field("component")
@@ -430,10 +427,7 @@ fn expand(template: &str, ctx: &Context) -> Result<PathBuf, Denied> {
         }
     };
     let mut out = base.clone();
-    for part in after
-        .split(['\\', '/'])
-        .filter(|part| !part.is_empty())
-    {
+    for part in after.split(['\\', '/']).filter(|part| !part.is_empty()) {
         out.push(part);
     }
     // The directory a template names has to be real. `${PROJECT}/export`
@@ -442,10 +436,8 @@ fn expand(template: &str, ctx: &Context) -> Result<PathBuf, Denied> {
     // means nothing, and saying that here is far kinder than refusing every
     // call later.
     if stat(base).is_err() {
-        return Err(
-            Denied::new(Reason::Unresolvable, template)
-                .at("at", base.to_string_lossy().into_owned()),
-        );
+        return Err(Denied::new(Reason::Unresolvable, template)
+            .at("at", base.to_string_lossy().into_owned()));
     }
     Ok(out)
 }
@@ -484,12 +476,14 @@ fn inspect(path: &Path) -> Result<PathBuf, Denied> {
                     Denied::new(Reason::Invalid, raw.clone()).at("character", "?")
                 })?;
                 if text.ends_with('.') || text.ends_with(' ') {
-                    return Err(Denied::new(Reason::Trailing, raw.clone())
-                        .at("component", text.to_owned()));
+                    return Err(
+                        Denied::new(Reason::Trailing, raw.clone()).at("component", text.to_owned())
+                    );
                 }
                 if text.contains(':') {
-                    return Err(Denied::new(Reason::Colon, raw.clone())
-                        .at("component", text.to_owned()));
+                    return Err(
+                        Denied::new(Reason::Colon, raw.clone()).at("component", text.to_owned())
+                    );
                 }
                 if let Some(device) = device_name(text) {
                     return Err(Denied::new(Reason::Device, raw.clone())
@@ -678,16 +672,15 @@ fn walk_links(path: &Path, roots: &[Root]) -> Result<(), Denied> {
         if step.as_os_str().is_empty() {
             continue;
         }
-        if roots
-            .iter()
-            .any(|root| root.declared.starts_with(step))
-        {
+        if roots.iter().any(|root| root.declared.starts_with(step)) {
             continue;
         }
         match stat(step) {
             Ok(meta) if meta.file_type().is_symlink() => {
-                return Err(Denied::new(Reason::Symlink, path.to_string_lossy().into_owned())
-                    .at("component", step.to_string_lossy().into_owned()));
+                return Err(
+                    Denied::new(Reason::Symlink, path.to_string_lossy().into_owned())
+                        .at("component", step.to_string_lossy().into_owned()),
+                );
             }
             Ok(_) => {}
             // Nothing further exists, so nothing further can be a link.
@@ -732,11 +725,10 @@ fn split_existing(path: &Path) -> Result<(PathBuf, Vec<OsString>), Denied> {
                 }
             }
             Err(_) => {
-                return Err(Denied::new(
-                    Reason::Unresolvable,
-                    path.to_string_lossy().into_owned(),
-                )
-                .at("at", existing.to_string_lossy().into_owned()));
+                return Err(
+                    Denied::new(Reason::Unresolvable, path.to_string_lossy().into_owned())
+                        .at("at", existing.to_string_lossy().into_owned()),
+                );
             }
         }
     }
@@ -900,10 +892,7 @@ mod tests {
                 .expect_err(relative)
                 .reason();
             assert!(
-                matches!(
-                    reason,
-                    Reason::Relative | Reason::Dot | Reason::Parent
-                ),
+                matches!(reason, Reason::Relative | Reason::Dot | Reason::Parent),
                 "{relative:?} gave {reason}"
             );
         }
@@ -1029,7 +1018,9 @@ mod tests {
         // A plugin that declared no roots was granted no roots.
         let dir = tempfile::tempdir().expect("a temp dir");
         assert_eq!(
-            validate(&text(dir.path()), &[]).expect_err("nothing granted").reason(),
+            validate(&text(dir.path()), &[])
+                .expect_err("nothing granted")
+                .reason(),
             Reason::Escape
         );
     }
@@ -1155,7 +1146,11 @@ mod tests {
         let root = Root::parse(&text(&inside), &context(&inside)).expect("a root");
 
         // Pointing inside, pointing outside, and pointing nowhere.
-        let cases = [(&target, "into"), (&outside, "out"), (&dir.path().join("gone"), "dangling")];
+        let cases = [
+            (&target, "into"),
+            (&outside, "out"),
+            (&dir.path().join("gone"), "dangling"),
+        ];
         for (target, which) in cases {
             let link = inside.join(format!("link-{which}"));
             match std::os::windows::fs::symlink_dir(target, &link) {
@@ -1242,7 +1237,9 @@ mod tests {
     fn a_reserved_device_name_is_refused() {
         let dir = tempfile::tempdir().expect("a temp dir");
         let (_, root) = one_root(dir.path());
-        for case in ["NUL", "nul.txt", "CON", "AUX", "PRN", "COM1", "LPT9", "CONIN$"] {
+        for case in [
+            "NUL", "nul.txt", "CON", "AUX", "PRN", "COM1", "LPT9", "CONIN$",
+        ] {
             let wanted = joined(dir.path(), case);
             assert_eq!(
                 validate(&wanted, std::slice::from_ref(&root))

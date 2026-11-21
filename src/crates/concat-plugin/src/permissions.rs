@@ -271,14 +271,23 @@ pub const PATHS: &[(&str, &[(&str, Roots)])] = &[
     ("edit.undo", &[("path", Roots::Write)]),
     ("edit.redo", &[("path", Roots::Write)]),
     ("media.probe", &[("path", Roots::Either)]),
-    ("media.import", &[("path", Roots::Write), ("file", Roots::Read)]),
+    (
+        "media.import",
+        &[("path", Roots::Write), ("file", Roots::Read)],
+    ),
     ("catalogue.list", &[]),
     ("template.list", &[]),
     // `fills[].file` is a list of paths inside one field; the gate walks
     // it separately, because one request may name any number of files.
-    ("template.instantiate", &[("template", Roots::Read), ("location", Roots::Write)]),
+    (
+        "template.instantiate",
+        &[("template", Roots::Read), ("location", Roots::Write)],
+    ),
     ("template.save", &[("path", Roots::Read)]),
-    ("export.run", &[("path", Roots::Read), ("output", Roots::Write)]),
+    (
+        "export.run",
+        &[("path", Roots::Read), ("output", Roots::Write)],
+    ),
     ("export.cancel", &[]),
     ("export.status", &[]),
     (

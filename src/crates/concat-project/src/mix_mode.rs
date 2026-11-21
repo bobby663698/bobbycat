@@ -140,8 +140,18 @@ mod tests {
     /// right; pin every field so a future edit cannot drift.
     #[test]
     fn hyphen_modes_are_underscored_names() {
-        check(Blend::SoftLight, "soft_light", "871337", "6758325439212556814");
-        check(Blend::ColorDodge, "color_dodge", "871334", "6758325800031752712");
+        check(
+            Blend::SoftLight,
+            "soft_light",
+            "871337",
+            "6758325439212556814",
+        );
+        check(
+            Blend::ColorDodge,
+            "color_dodge",
+            "871334",
+            "6758325800031752712",
+        );
         assert_eq!(for_name("soft-light"), for_blend(Blend::SoftLight));
         assert_eq!(for_name("color-dodge"), for_blend(Blend::ColorDodge));
     }
@@ -152,14 +162,39 @@ mod tests {
     /// rewrite.
     #[test]
     fn internal_names_are_looked_up_not_derived() {
-        check(Blend::Multiply, "multiply_blend_mode", "871333", "6758325895519277582");
-        check(Blend::Screen, "color_filter", "871339", "6758325170760323597");
+        check(
+            Blend::Multiply,
+            "multiply_blend_mode",
+            "871333",
+            "6758325895519277582",
+        );
+        check(
+            Blend::Screen,
+            "color_filter",
+            "871339",
+            "6758325170760323597",
+        );
         check(Blend::Lighten, "bright_en", "871341", "6758324919789949453");
         check(Blend::Darken, "dark_en", "871342", "6758324839670354445");
         check(Blend::Overlay, "over_lay", "871340", "6758324989931295240");
-        check(Blend::HardLight, "glare_pc", "871338", "6758325264670790152");
-        check(Blend::ColorBurn, "darken_color", "871335", "6758325724848853518");
-        check(Blend::LinearBurn, "linear_deepening", "871336", "6758325619253056013");
+        check(
+            Blend::HardLight,
+            "glare_pc",
+            "871338",
+            "6758325264670790152",
+        );
+        check(
+            Blend::ColorBurn,
+            "darken_color",
+            "871335",
+            "6758325724848853518",
+        );
+        check(
+            Blend::LinearBurn,
+            "linear_deepening",
+            "871336",
+            "6758325619253056013",
+        );
         assert_ne!(for_blend(Blend::Overlay).unwrap().name_id, "overlay");
         assert_ne!(for_blend(Blend::HardLight).unwrap().name_id, "hard_light");
         assert_ne!(for_blend(Blend::Screen).unwrap().name_id, "screen");

@@ -178,9 +178,9 @@ impl Problem {
     pub fn message(&self) -> String {
         match self {
             Problem::Json(why) => format!("清单不是合法的 bobbycat-plugin.json：{why}"),
-            Problem::Name(name) => format!(
-                "插件名 {name:?} 不是 `作者.名字` 的形式（小写字母、数字、- 和 _）"
-            ),
+            Problem::Name(name) => {
+                format!("插件名 {name:?} 不是 `作者.名字` 的形式（小写字母、数字、- 和 _）")
+            }
             Problem::Version(version) => {
                 format!("版本 {version:?} 不是 主.次.修订 三个数字")
             }
@@ -230,8 +230,7 @@ impl Manifest {
         if self.entry.command.trim().is_empty() {
             return Err(Problem::Entry("没有 command".to_owned()));
         }
-        if self.entry.command.contains('\0')
-            || self.entry.args.iter().any(|arg| arg.contains('\0'))
+        if self.entry.command.contains('\0') || self.entry.args.iter().any(|arg| arg.contains('\0'))
         {
             return Err(Problem::Entry("参数里有 NUL".to_owned()));
         }
@@ -444,7 +443,11 @@ mod tests {
         };
         let denied = manifest.roots(&ctx).expect_err("gone");
         assert_eq!(denied.reason(), crate::paths::Reason::Unresolvable);
-        assert!(denied.message().contains("${PROJECT}"), "{}", denied.message());
+        assert!(
+            denied.message().contains("${PROJECT}"),
+            "{}",
+            denied.message()
+        );
     }
 
     #[cfg(windows)]
@@ -454,7 +457,11 @@ mod tests {
         let manifest = Manifest::load(&text).expect("a manifest");
         let warnings = manifest.warnings();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].starts_with("permissions.write[0]: "), "{:?}", warnings);
+        assert!(
+            warnings[0].starts_with("permissions.write[0]: "),
+            "{:?}",
+            warnings
+        );
         assert!(warnings[0].contains("NUL"), "{:?}", warnings);
     }
 

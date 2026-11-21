@@ -406,7 +406,8 @@ fn mix(blend: Blend, colour: f32, under: f32, coverage: f32, alpha: f32) -> f32 
                     + under * (1.0 - alpha)
                     + under * (alpha + (2.0 * over - alpha) * (1.0 - t))
             } else {
-                over * (1.0 - coverage) + under * (1.0 + alpha)
+                over * (1.0 - coverage)
+                    + under * (1.0 + alpha)
                     + t.sqrt() * (2.0 * over * coverage - alpha * coverage)
                     - 2.0 * over * under
             }
@@ -418,7 +419,8 @@ fn mix(blend: Blend, colour: f32, under: f32, coverage: f32, alpha: f32) -> f32 
                 under * (1.0 - alpha)
             } else {
                 let t = (over * coverage).max(BLEND_EPS);
-                over * (1.0 - coverage) + under * (1.0 - alpha)
+                over * (1.0 - coverage)
+                    + under * (1.0 - alpha)
                     + alpha * coverage * (1.0 - ((coverage - under) * alpha / t).min(1.0))
             }
         }
@@ -429,12 +431,14 @@ fn mix(blend: Blend, colour: f32, under: f32, coverage: f32, alpha: f32) -> f32 
                 over * (1.0 - coverage) + under * (1.0 - alpha) + alpha * coverage
             } else {
                 let t = (coverage * (alpha - over)).max(BLEND_EPS);
-                over * (1.0 - coverage) + under * (1.0 - alpha)
+                over * (1.0 - coverage)
+                    + under * (1.0 - alpha)
                     + alpha * coverage * (under * alpha / t).min(1.0)
             }
         }
         Blend::LinearBurn => {
-            over * (1.0 - coverage) + under * (1.0 - alpha)
+            over * (1.0 - coverage)
+                + under * (1.0 - alpha)
                 + (over * coverage + under * alpha - alpha * coverage).max(0.0)
         }
     }

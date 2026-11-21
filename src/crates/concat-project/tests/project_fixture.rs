@@ -51,7 +51,11 @@ fn the_minimal_project_reads_with_one_track_of_each_kind() {
     );
 
     for kind in [ClipKind::Video, ClipKind::Text, ClipKind::Audio] {
-        let count = timeline.clips.iter().filter(|clip| clip.kind == kind).count();
+        let count = timeline
+            .clips
+            .iter()
+            .filter(|clip| clip.kind == kind)
+            .count();
         assert_eq!(count, 1, "{kind:?} has {count} clips, not 1");
     }
 }

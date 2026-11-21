@@ -150,12 +150,7 @@ mod ground_mode_tests {
     fn the_four_pure_fixed_function_modes_never_read_the_ground() {
         // Lighten and Darken are fixed-function too, but they are the two
         // that do need a copy of the ground; see the eight above.
-        for blend in [
-            Blend::Normal,
-            Blend::Multiply,
-            Blend::Screen,
-            Blend::Add,
-        ] {
+        for blend in [Blend::Normal, Blend::Multiply, Blend::Screen, Blend::Add] {
             assert!(!reads_ground(blend), "{blend:?} reads the ground");
             assert!(ground_slot(blend).is_none(), "{blend:?} has a ground entry");
         }
@@ -2087,31 +2082,33 @@ impl WgpuCompositor {
                     alpha,
                 })
             };
-            Some(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some(entry),
-                layout: Some(&ground_layout),
-                vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: Some("vs_main"),
-                    compilation_options: Default::default(),
-                    buffers: &[Some(vertex_layout.clone())],
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: Some(entry),
-                    compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: work,
-                        blend,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
+            Some(
+                device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some(entry),
+                    layout: Some(&ground_layout),
+                    vertex: wgpu::VertexState {
+                        module: &shader,
+                        entry_point: Some("vs_main"),
+                        compilation_options: Default::default(),
+                        buffers: &[Some(vertex_layout.clone())],
+                    },
+                    fragment: Some(wgpu::FragmentState {
+                        module: &shader,
+                        entry_point: Some(entry),
+                        compilation_options: Default::default(),
+                        targets: &[Some(wgpu::ColorTargetState {
+                            format: work,
+                            blend,
+                            write_mask: wgpu::ColorWrites::ALL,
+                        })],
+                    }),
+                    primitive: wgpu::PrimitiveState::default(),
+                    depth_stencil: None,
+                    multisample: wgpu::MultisampleState::default(),
+                    multiview_mask: None,
+                    cache: None,
                 }),
-                primitive: wgpu::PrimitiveState::default(),
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState::default(),
-                multiview_mask: None,
-                cache: None,
-            }))
+            )
         });
 
         // The two copies in and out of the working format; see COPY_SHADER.
@@ -3105,8 +3102,8 @@ impl WgpuCompositor {
         for &(index, draw) in draws {
             match draw.ground {
                 Some(ground) => {
-                    let slot = ground_slot(draw.blend)
-                        .expect("a ground-reading draw has a pipeline slot");
+                    let slot =
+                        ground_slot(draw.blend).expect("a ground-reading draw has a pipeline slot");
                     let pipeline = self.ground_pipelines[slot]
                         .as_ref()
                         .expect("a ground-reading draw has a pipeline");

@@ -1737,10 +1737,7 @@ mod tests {
         }));
         assert_eq!(refused.code, ErrorCode::Refused, "{}", refused.message);
         // The folder is untouched by the refusal.
-        ok(api.dispatch(Request::ProjectClose {
-            path,
-            save: false,
-        }));
+        ok(api.dispatch(Request::ProjectClose { path, save: false }));
     }
 
     #[test]

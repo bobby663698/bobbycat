@@ -29,14 +29,7 @@ pub fn attenuation(u: f32, v: f32, strength: f32, radius: f32, softness: f32) ->
 }
 
 /// The colour at `uv` after the vignette, straight alpha left alone.
-pub fn apply(
-    rgb: [f32; 3],
-    u: f32,
-    v: f32,
-    strength: f32,
-    radius: f32,
-    softness: f32,
-) -> [f32; 3] {
+pub fn apply(rgb: [f32; 3], u: f32, v: f32, strength: f32, radius: f32, softness: f32) -> [f32; 3] {
     let a = attenuation(u, v, strength, radius, softness);
     [rgb[0] * a, rgb[1] * a, rgb[2] * a]
 }

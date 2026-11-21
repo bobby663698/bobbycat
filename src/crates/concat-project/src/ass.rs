@@ -201,7 +201,10 @@ pub fn parse(text: &str) -> Result<Document, AssError> {
         if line.is_empty() || line.starts_with(';') {
             continue;
         }
-        if let Some(name) = line.strip_prefix('[').and_then(|rest| rest.strip_suffix(']')) {
+        if let Some(name) = line
+            .strip_prefix('[')
+            .and_then(|rest| rest.strip_suffix(']'))
+        {
             section = match name.trim().to_ascii_lowercase().as_str() {
                 "script info" => Section::ScriptInfo,
                 "v4+ styles" => Section::Styles,
@@ -265,7 +268,9 @@ fn fields_of(rest: &str, format: &[String]) -> Vec<&str> {
 
 /// A named field of a record, by the `Format:` line's spelling.
 fn field<'a>(format: &[String], values: &[&'a str], name: &str) -> Option<&'a str> {
-    let index = format.iter().position(|field| field.eq_ignore_ascii_case(name))?;
+    let index = format
+        .iter()
+        .position(|field| field.eq_ignore_ascii_case(name))?;
     values.get(index).copied()
 }
 
@@ -274,7 +279,10 @@ fn number_field(format: &[String], values: &[&str], name: &str) -> Option<f64> {
 }
 
 fn flag_field(format: &[String], values: &[&str], name: &str) -> bool {
-    matches!(field(format, values, name).map(str::trim), Some("-1") | Some("1"))
+    matches!(
+        field(format, values, name).map(str::trim),
+        Some("-1") | Some("1")
+    )
 }
 
 /// `&HAABBGGRR`, or `&HBBGGRR`. An unparsable colour is white, the
@@ -442,10 +450,42 @@ mod tests {
 
     #[test]
     fn colours_are_read_as_bbgg_rr() {
-        assert_eq!(super::color_of("&H00FFFFFF"), Color { r: 255, g: 255, b: 255, a: 0 });
-        assert_eq!(super::color_of("&H000000FF"), Color { r: 255, g: 0, b: 0, a: 0 });
-        assert_eq!(super::color_of("&H00FF0000"), Color { r: 0, g: 0, b: 255, a: 0 });
-        assert_eq!(super::color_of("&H800000FF"), Color { r: 255, g: 0, b: 0, a: 0x80 });
+        assert_eq!(
+            super::color_of("&H00FFFFFF"),
+            Color {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 0
+            }
+        );
+        assert_eq!(
+            super::color_of("&H000000FF"),
+            Color {
+                r: 255,
+                g: 0,
+                b: 0,
+                a: 0
+            }
+        );
+        assert_eq!(
+            super::color_of("&H00FF0000"),
+            Color {
+                r: 0,
+                g: 0,
+                b: 255,
+                a: 0
+            }
+        );
+        assert_eq!(
+            super::color_of("&H800000FF"),
+            Color {
+                r: 255,
+                g: 0,
+                b: 0,
+                a: 0x80
+            }
+        );
     }
 
     #[test]
@@ -457,12 +497,23 @@ mod tests {
         let style = &document.styles["Default"];
         assert_eq!(style.font, "Arial");
         assert_eq!(style.size, 20.0);
-        assert_eq!(style.primary, Color { r: 255, g: 255, b: 255, a: 0 });
+        assert_eq!(
+            style.primary,
+            Color {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 0
+            }
+        );
         assert!(style.bold);
         assert!(!style.italic);
         assert_eq!(style.outline, 2.0);
         assert_eq!(style.alignment, Alignment::BottomCenter);
-        assert_eq!((style.margin_l, style.margin_r, style.margin_v), (10.0, 10.0, 10.0));
+        assert_eq!(
+            (style.margin_l, style.margin_r, style.margin_v),
+            (10.0, 10.0, 10.0)
+        );
 
         assert_eq!(document.cues.len(), 2);
         let first = &document.cues[0];
