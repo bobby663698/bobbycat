@@ -12,7 +12,7 @@ description = "The assistant pane's model client: OpenAI-compatible and Anthropi
 serde = { version = "1", features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
-ureq = { version = "2", features = ["json"] }
+ureq = { version = "3", features = ["json"] }
 
 [lints]
 workspace = true
