@@ -36,9 +36,9 @@
 //! behind when the handle goes out of scope (see `Drop::drop`).
 
 use std::fmt;
-use std::io::{self, BufRead, BufReader, ChildStderr, ChildStdin, ChildStdout, Read, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::Path;
-use std::process::{Child, Command, ExitStatus, Stdio};
+use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, ExitStatus, Stdio};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -379,7 +379,7 @@ pub fn load(
     let tail = Arc::new(Mutex::new(Vec::new()));
     let drain = spawn_stderr_drain(stderr, Arc::clone(&tail));
 
-    let result = handshake(&mut child, &mut stdin, stdout, config);
+    let result = handshake(&mut child, &mut stdin, BufReader::new(stdout), config);
     match result {
         Ok((ready, stdout)) => Ok(PluginProcess {
             child,
@@ -483,8 +483,9 @@ fn read_capped_line<R: BufRead>(reader: &mut R, cap: usize) -> io::Result<Option
             return Err(io::Error::new(io::ErrorKind::InvalidData, "握手帧太长"));
         }
         out.extend_from_slice(&available[..end]);
+        let newline = available[end - 1] == b'\n';
         reader.consume(end);
-        if available[end - 1] == b'\n' {
+        if newline {
             while out
                 .last()
                 .is_some_and(|&byte| byte == b'\n' || byte == b'\r')
@@ -512,7 +513,8 @@ fn spawn_stderr_drain(stderr: ChildStderr, tail: Arc<Mutex<Vec<u8>>>) -> JoinHan
                     };
                     if guard.len() + count > KEEP {
                         let excess = guard.len() + count - KEEP;
-                        guard.drain(..excess.min(guard.len()));
+                        let cut = excess.min(guard.len());
+                        guard.drain(..cut);
                     }
                     guard.extend_from_slice(&buf[..count]);
                 }

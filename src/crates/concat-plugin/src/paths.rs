@@ -435,6 +435,13 @@ fn expand(template: &str, ctx: &Context) -> Result<PathBuf, Denied> {
     // but `${PROJECT}` naming a project that is not there means the root
     // means nothing, and saying that here is far kinder than refusing every
     // call later.
+    // Being relative is a stronger complaint than not existing: a relative
+    // root is not a folder somebody has yet to make, it is a folder nobody
+    // can name. Ask which first, or a typo'd `${PLUGIN}` reads as
+    // "unresolvable" and sends the author looking for a missing directory.
+    if !out.is_absolute() {
+        return Err(Denied::new(Reason::Relative, template));
+    }
     if stat(base).is_err() {
         return Err(Denied::new(Reason::Unresolvable, template)
             .at("at", base.to_string_lossy().into_owned()));
@@ -449,6 +456,14 @@ fn inspect(path: &Path) -> Result<PathBuf, Denied> {
         return Err(Denied::new(Reason::Blank, raw));
     }
     shape(path, &raw)?;
+    // `Path::components` folds a `.` component away before the loop below
+    // can see it (`C:\a\.\b` becomes four components, not five), so the
+    // only place left to look for one is the request as it was written.
+    for part in raw.split(['\\', '/']) {
+        if part == "." {
+            return Err(Denied::new(Reason::Dot, raw));
+        }
+    }
     for part in path.components() {
         if let Component::Normal(name) = part {
             no_bad_characters(name, &raw)?;
