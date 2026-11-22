@@ -2003,6 +2003,16 @@ fn command_kind(command: &Command) -> &'static str {
         Command::RenameTimeline { .. } => "Rename timeline",
         Command::SelectTimeline { .. } => "Switch timeline",
         Command::MoveTimeline { .. } => "Reorder timelines",
+        Command::AddScene => "New scene",
+        Command::RenameScene { .. } => "Rename scene",
+        Command::RemoveScene { .. } => "Delete scene",
+        Command::MoveTimelineToScene { scene_id, .. } => {
+            if scene_id.is_empty() {
+                "Ungroup timeline"
+            } else {
+                "Move timeline to scene"
+            }
+        }
         Command::AddFont { .. } => "Add font",
         Command::RemoveFont { .. } => "Remove font",
         Command::UpdateMediaPath { .. } => "Relink media",
