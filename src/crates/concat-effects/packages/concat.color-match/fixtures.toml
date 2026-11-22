@@ -1,0 +1,33 @@
+# A probe fills an 8x8 picture with one colour and reads its middle pixel.
+# With no transfer curves set, all three are the straight line black-to-white
+# and `curve_at` returns the level unchanged - so this package at its default
+# is an exact identity whatever the colour and whatever the strength. The
+# learned-curve behaviour is checked in concat-effects/src/color_match.rs,
+# where the histogram transfer is built and applied in plain Rust.
+
+[[probe]]
+name = "default, a grey"
+input = [0.18, 0.18, 0.18, 1]
+expect = [0.18, 0.18, 0.18, 1]
+
+[[probe]]
+name = "default, a saturated colour"
+input = [0.9, 0.1, 0.2, 1]
+expect = [0.9, 0.1, 0.2, 1]
+
+[[probe]]
+name = "default, half transparent"
+input = [0.5, 0.2, 0.1, 0.5]
+expect = [0.5, 0.2, 0.1, 0.5]
+
+[[probe]]
+name = "min strength still passes the picture"
+at = "min"
+input = [0.4, 0.3, 0.2, 1]
+expect = [0.4, 0.3, 0.2, 1]
+
+[[probe]]
+name = "max strength still passes it, the curves being straight"
+at = "max"
+input = [0.4, 0.3, 0.2, 1]
+expect = [0.4, 0.3, 0.2, 1]

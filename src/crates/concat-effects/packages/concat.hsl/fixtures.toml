@@ -1,0 +1,53 @@
+# A probe fills an 8x8 picture with one colour and reads back its middle
+# pixel. Every parameter starts at its default (all bands at zero), so the
+# first three probes pin the one thing that matters most: at its defaults
+# this effect is an exact identity, whatever the colour and whatever the
+# alpha. The band-specific reach is covered by the CPU twin in
+# concat-effects/src/hsl.rs, which a single-colour probe cannot express.
+
+[[probe]]
+name = "default, a grey"
+input = [0.18, 0.18, 0.18, 1]
+expect = [0.18, 0.18, 0.18, 1]
+
+[[probe]]
+name = "default, a saturated red"
+input = [0.9, 0.1, 0.2, 1]
+expect = [0.9, 0.1, 0.2, 1]
+
+[[probe]]
+name = "default, half transparent"
+input = [0.5, 0.2, 0.1, 0.5]
+expect = [0.5, 0.2, 0.1, 0.5]
+
+[[probe]]
+name = "a pure grey has no hue to shift"
+params = { red_hue = 40, red_saturation = 80, blue_lightness = 60 }
+input = [0.3, 0.3, 0.3, 1]
+expect = [0.3, 0.3, 0.3, 1]
+
+[[probe]]
+name = "alpha is passed through untouched"
+# A pure grey has no hue, so no band moves it - only alpha is under test.
+params = { green_saturation = 30 }
+input = [0.3, 0.3, 0.3, 0.25]
+expect = [0.3, 0.3, 0.3, 0.25]
+
+# Every scene-linear package pins its slider bounds. HSL's bounds are signed
+# and symmetric about the identity, but `at = min` / `at = max` set EVERY
+# slider to that bound at once; a picture whose hue lands in a band then
+# changes. A grey has no hue, so even with all bands pushed to either end it
+# stays put - which is the bound check this shader can honestly make with a
+# single-colour probe. The band-by-band reach is the CPU twin's job.
+
+[[probe]]
+name = "min, a grey has no hue"
+at = "min"
+input = [0.3, 0.3, 0.3, 1]
+expect = [0.3, 0.3, 0.3, 1]
+
+[[probe]]
+name = "max, a grey has no hue"
+at = "max"
+input = [0.3, 0.3, 0.3, 1]
+expect = [0.3, 0.3, 0.3, 1]

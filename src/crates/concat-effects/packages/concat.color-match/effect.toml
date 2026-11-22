@@ -1,0 +1,55 @@
+format = 2
+
+[effect]
+id = "concat.color-match"
+name = "Colour Match"
+kind = "filter"
+category = "Adjust"
+order = 0
+intensity = "strength"
+description = "Match the shot's tonal distribution to a reference with per-channel transfer curves, the way Jianying's Colour Match panel does."
+
+# Colour matching is a two-part job. The CPU side (`concat-effects`'s
+# `color_match` module) reads a reference picture and the shot, and learns a
+# transfer curve per channel by matching their histograms. This package
+# applies those curves on the GPU. Three curve parameters carry the learned
+# transfers, one per channel; `strength` blends from the untouched picture
+# (0) to the full match (1).
+#
+# All three curves default to the line from black to white, so at its
+# defaults the package changes nothing. Jianying keeps its transfer in a
+# closed `general_lens` node with no shader to transcribe; the algorithm
+# here is the standard histogram transfer that node performs.
+version = 1
+
+[[param]]
+key = "red"
+group = "Transfer"
+label = "Red transfer"
+type = "curve"
+
+[[param]]
+key = "green"
+group = "Transfer"
+label = "Green transfer"
+type = "curve"
+
+[[param]]
+key = "blue"
+group = "Transfer"
+label = "Blue transfer"
+type = "curve"
+
+[[param]]
+key = "strength"
+group = "Transfer"
+label = "Strength"
+min = 0
+max = 100
+default = 100
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+space = "display"

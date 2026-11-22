@@ -1,0 +1,271 @@
+format = 2
+
+[effect]
+id = "concat.hsl"
+name = "HSL"
+kind = "filter"
+category = "Adjust"
+order = 0
+intensity = "red_saturation"
+description = "Eight colour bands — red through magenta — each with its own hue shift, saturation and lightness, the way Jianying's HSL panel works."
+
+# Eight bands in spectral order, matching Jianying's hsl/hsl_v1 panel: red,
+# orange, yellow, green, cyan, blue, purple, magenta. Each band carries three
+# signed percentages: hue in degrees (-180..180), saturation and lightness in
+# percent (-100..100). All at zero is an exact identity — the shader returns
+# the picture untouched — so this effect layers over the manual Adjust panel
+# without fighting it.
+#
+# Each band's influence is a triangular window over hue: full at the band's
+# centre, fading to nothing at the edges of its range. A pixel can therefore
+# be touched by at most two neighbouring bands, and the bands never introduce
+# a seam. The centre hues and half-widths are transcribed from Jianying's
+# `DefaultAdjustBundle/hsl/HSL/xshader/fshader.frag`.
+version = 1
+
+[[param]]
+key = "red_hue"
+group = "Red"
+label = "Red hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "red_saturation"
+group = "Red"
+label = "Red saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "red_lightness"
+group = "Red"
+label = "Red lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "orange_hue"
+group = "Orange"
+label = "Orange hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "orange_saturation"
+group = "Orange"
+label = "Orange saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "orange_lightness"
+group = "Orange"
+label = "Orange lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "yellow_hue"
+group = "Yellow"
+label = "Yellow hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "yellow_saturation"
+group = "Yellow"
+label = "Yellow saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "yellow_lightness"
+group = "Yellow"
+label = "Yellow lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "green_hue"
+group = "Green"
+label = "Green hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "green_saturation"
+group = "Green"
+label = "Green saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "green_lightness"
+group = "Green"
+label = "Green lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "cyan_hue"
+group = "Cyan"
+label = "Cyan hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "cyan_saturation"
+group = "Cyan"
+label = "Cyan saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "cyan_lightness"
+group = "Cyan"
+label = "Cyan lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "blue_hue"
+group = "Blue"
+label = "Blue hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "blue_saturation"
+group = "Blue"
+label = "Blue saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "blue_lightness"
+group = "Blue"
+label = "Blue lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "purple_hue"
+group = "Purple"
+label = "Purple hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "purple_saturation"
+group = "Purple"
+label = "Purple saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "purple_lightness"
+group = "Purple"
+label = "Purple lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "magenta_hue"
+group = "Magenta"
+label = "Magenta hue"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[[param]]
+key = "magenta_saturation"
+group = "Magenta"
+label = "Magenta saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "magenta_lightness"
+group = "Magenta"
+label = "Magenta lightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+
+# At its defaults no band has anything to say; the card shows red pushed.
+[card]
+params = { red_hue = 12, red_saturation = 35, blue_saturation = -20 }

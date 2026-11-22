@@ -25,9 +25,12 @@
 //! skipped at render time.
 
 pub mod catalogue;
+pub mod color_match;
+pub mod combine;
 pub mod cube;
 pub mod expr;
 pub mod filters;
+pub mod hsl;
 pub mod looks;
 pub mod manifest;
 pub mod shader;

@@ -1,0 +1,99 @@
+format = 2
+
+[effect]
+id = "concat.combine-adjust"
+name = "Combine Adjust"
+kind = "filter"
+category = "Adjust"
+order = 0
+intensity = "brightness"
+description = "Jianying's combined tone panel: brightness, contrast, saturation, highlights, shadows and black-and-white in one pass."
+
+# Seven signed knobs, −100..100, each feeding its own transfer function before
+# the shader applies it, the way Jianying's `combine_adjust` panel works.
+# Every knob at zero is an exact identity. The transfer functions and the
+# order of operations are transcribed from the panel's `SeekModeScript.lua`
+# and `colorAdjust.frag`; the CPU twin in concat-effects/src/combine.rs
+# mirrors them for tests.
+#
+# Temperature, tint and the 3D-LUT looks of the original panel are left to
+# `concat.adjust` (white balance, curves) and `concat.color-match`, which
+# already cover them.
+version = 1
+
+[[param]]
+key = "brightness"
+group = "Tone"
+label = "Brightness"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "contrast"
+group = "Tone"
+label = "Contrast"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "saturation"
+group = "Color"
+label = "Saturation"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "highlight"
+group = "Tone"
+label = "Highlights"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "shadow"
+group = "Tone"
+label = "Shadows"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "black"
+group = "Tone"
+label = "Black point"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "white"
+group = "Tone"
+label = "White point"
+min = -100
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+space = "display"
+
+[card]
+params = { brightness = 20, contrast = 15, saturation = 25 }

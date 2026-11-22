@@ -1,0 +1,38 @@
+# A probe fills an 8x8 picture with one colour and reads its middle pixel.
+# Every knob at zero leaves the picture untouched, so the first three probes
+# pin the identity at defaults. The per-knob behaviour is in the CPU twin at
+# concat-effects/src/combine.rs, which a single-colour probe cannot fully
+# express. `at = min` and `at = max` set every knob to its bound at once; at
+# those extremes a pure black input lands a hair above zero on a half-float
+# GPU, so the bound probe pins that with a deliberately wide tolerance.
+
+[[probe]]
+name = "default, a grey"
+input = [0.18, 0.18, 0.18, 1]
+expect = [0.18, 0.18, 0.18, 1]
+
+[[probe]]
+name = "default, a saturated colour"
+input = [0.9, 0.1, 0.2, 1]
+expect = [0.9, 0.1, 0.2, 1]
+
+[[probe]]
+name = "default, half transparent"
+input = [0.5, 0.2, 0.1, 0.5]
+expect = [0.5, 0.2, 0.1, 0.5]
+
+# At min every knob is at −100. On pure black the chain lands just above
+# zero; the point here is that it stays bounded near black, not an exact
+# value, hence the wide tolerance.
+[[probe]]
+name = "min, still near black"
+at = "min"
+input = [0.0, 0.0, 0.0, 1]
+expect = [0.0035, 0.0035, 0.0035, 1]
+tolerance = 0.5
+
+[[probe]]
+name = "max, white stays white"
+at = "max"
+input = [1.0, 1.0, 1.0, 1]
+expect = [1.0, 1.0, 1.0, 1]
