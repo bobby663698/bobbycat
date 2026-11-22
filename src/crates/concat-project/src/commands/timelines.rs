@@ -53,6 +53,7 @@ pub(super) fn apply(
                 clips: Vec::new(),
                 linkage,
                 scene,
+                bookmarks: Vec::new(),
                 extra: Default::default(),
             }));
             project.active_timeline_id = id.clone();
@@ -260,6 +261,69 @@ pub(super) fn apply(
                 return Ok(Outcome::default());
             }
             timeline.scene = target;
+            Ok(Outcome {
+                created_id: None,
+                applied: true,
+            })
+        }
+
+        Command::AddBookmark { at, label } => {
+            let trimmed = label.trim();
+            if trimmed.is_empty() {
+                return Ok(Outcome::default());
+            }
+            let id = mint.next("bm");
+            let timeline = project.active_mut();
+            let mark = Bookmark {
+                id: id.clone(),
+                at: at.max(0.0),
+                label: trimmed.to_owned(),
+            };
+            let index = timeline
+                .bookmarks
+                .iter()
+                .position(|existing| existing.at > mark.at)
+                .unwrap_or(timeline.bookmarks.len());
+            timeline.bookmarks.insert(index, mark);
+            Ok(Outcome {
+                created_id: Some(id),
+                applied: true,
+            })
+        }
+
+        Command::RemoveBookmark { bookmark_id } => {
+            let timeline = project.active_mut();
+            let Some(index) = timeline
+                .bookmarks
+                .iter()
+                .position(|mark| mark.id == bookmark_id)
+            else {
+                return Ok(Outcome::default());
+            };
+            timeline.bookmarks.remove(index);
+            Ok(Outcome {
+                created_id: None,
+                applied: true,
+            })
+        }
+
+        Command::RenameBookmark { bookmark_id, label } => {
+            let trimmed = label.trim();
+            if trimmed.is_empty() {
+                return Ok(Outcome::default());
+            }
+            let timeline = project.active_mut();
+            let Some(mark) = timeline
+                .bookmarks
+                .iter_mut()
+                .find(|mark| mark.id == bookmark_id)
+            else {
+                return Ok(Outcome::default());
+            };
+            if mark.label == trimmed {
+                return Ok(Outcome::default());
+            }
+            mark.label = trimmed.to_owned();
             Ok(Outcome {
                 created_id: None,
                 applied: true,

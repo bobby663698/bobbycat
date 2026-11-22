@@ -13,10 +13,10 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::model::{
-    AppliedFilter, AudioTrack, Background, Clip, ClipKind, ClipMotion, ColorRange, ColorSpace,
-    Crop, CustomFont, Cutout, CutoutMode, Enhanced, Framing, KeyEase, KeyProperty, Mask, MediaItem,
-    MediaKind, MediaOrigin, Project, RunStyle, Scene, ShapeStyle, SpeedPoint, Stabilize, Stroke,
-    TextStyle, Timeline, Track, Transition, VideoSettings, VoiceMix,
+    AppliedFilter, AudioTrack, Background, Bookmark, Clip, ClipKind, ClipMotion, ColorRange,
+    ColorSpace, Crop, CustomFont, Cutout, CutoutMode, Enhanced, Framing, KeyEase, KeyProperty,
+    Mask, MediaItem, MediaKind, MediaOrigin, Project, RunStyle, Scene, ShapeStyle, SpeedPoint,
+    Stabilize, Stroke, TextStyle, Timeline, Track, Transition, VideoSettings, VoiceMix,
 };
 
 mod audio;
@@ -989,6 +989,27 @@ pub enum Command {
         /// The scene; empty for ungrouped.
         scene_id: String,
     },
+    /// Puts a named bookmark on the active timeline at `at` seconds, kept in
+    /// time order. A blank label is ignored so a mark can never be nameless.
+    /// Mints a "bm" id; the mark never moves clips.
+    AddBookmark {
+        /// Seconds from the timeline's start; negative is clamped to zero.
+        at: f64,
+        /// The label shown in the strip; trimmed before it lands.
+        label: String,
+    },
+    /// Removes a bookmark by id. An unknown id is a no-op.
+    RemoveBookmark {
+        /// The bookmark to remove.
+        bookmark_id: String,
+    },
+    /// Renames a bookmark. Blank is ignored; unknown ids are tolerated.
+    RenameBookmark {
+        /// The bookmark to rename.
+        bookmark_id: String,
+        /// The new label; trimmed before it lands.
+        label: String,
+    },
     /// Registers a font file for titles. A path already registered is a
     /// no-op, so re-adding cannot duplicate.
     AddFont {
@@ -1457,6 +1478,9 @@ pub fn apply(
         | Command::AddScene
         | Command::RenameScene { .. }
         | Command::RemoveScene { .. }
-        | Command::MoveTimelineToScene { .. }) => timelines::apply(project, mint, command),
+        | Command::MoveTimelineToScene { .. }
+        | Command::AddBookmark { .. }
+        | Command::RemoveBookmark { .. }
+        | Command::RenameBookmark { .. }) => timelines::apply(project, mint, command),
     }
 }

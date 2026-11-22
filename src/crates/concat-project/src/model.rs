@@ -3394,6 +3394,23 @@ pub struct Scene {
     pub extra: Map<String, Value>,
 }
 
+/// A bookmark on a timeline: a named instant, for jumping back to a beat.
+///
+/// Bookmarks are read-only markers - they never move clips and no command
+/// that edits the timeline touches them - so they ride on the timeline as a
+/// plain list. `at` is seconds from the timeline's start.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, PartialEq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Bookmark {
+    /// Minted by the editor ("bm1", "bm2", ...).
+    pub id: String,
+    /// Seconds from the start of the timeline.
+    pub at: f64,
+    /// The label shown in the timeline strip.
+    pub label: String,
+}
+
 /// One timeline: a name and its lanes and clips. Every operation takes the
 /// project and works on whichever timeline is active.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -3447,6 +3464,14 @@ pub struct Timeline {
     /// the strip shows its timelines where ungrouped ones go.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub scene: String,
+    /// Named instants on this timeline, kept in time order. Read-only
+    /// markers: no edit command moves a clip through them.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "wire::list"
+    )]
+    pub bookmarks: Vec<Bookmark>,
     /// Fields this build does not know, kept so they round-trip.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Map<String, Value>,
@@ -3463,6 +3488,7 @@ impl Default for Timeline {
             clips: Vec::new(),
             linkage: true,
             scene: String::new(),
+            bookmarks: Vec::new(),
             extra: Map::new(),
         }
     }
@@ -3772,6 +3798,7 @@ impl Project {
                 clips: Vec::new(),
                 linkage: true,
                 scene: String::new(),
+                bookmarks: Vec::new(),
                 extra: Map::new(),
             })],
             active_timeline_id: "TL1".to_owned(),

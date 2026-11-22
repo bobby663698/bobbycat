@@ -2013,6 +2013,9 @@ fn command_kind(command: &Command) -> &'static str {
                 "Move timeline to scene"
             }
         }
+        Command::AddBookmark { .. } => "Add bookmark",
+        Command::RemoveBookmark { .. } => "Remove bookmark",
+        Command::RenameBookmark { .. } => "Rename bookmark",
         Command::AddFont { .. } => "Add font",
         Command::RemoveFont { .. } => "Remove font",
         Command::UpdateMediaPath { .. } => "Relink media",
