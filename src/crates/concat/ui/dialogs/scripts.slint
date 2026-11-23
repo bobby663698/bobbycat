@@ -30,6 +30,13 @@ export struct ScriptsSheetData {
 export component ScriptsDialog inherits Modal {
     in property <ScriptsSheetData> data;
 
+    // The editor's own copy. A TextInput drops a binding to a one-way
+    // property the moment it is typed into, so it owns this one; Rust
+    // reseeds it whenever the data changes from a Clear.
+    in-out property <string> draft;
+    changed data => { if (!root.data.running) { root.draft = root.data.source; } }
+    init => { root.draft = root.data.source; }
+
     callback source-edited(text: string);
     callback run();
     callback clear();
@@ -48,14 +55,14 @@ export component ScriptsDialog inherits Modal {
             // A script is lines, so it needs a real text edit, not the
             // single-line Field the other sheets use. What is typed comes
             // back through `edited`.
-            TextEdit {
-                text: root.data.source;
-                placeholder: I18n.t("scripts.placeholder");
+            TextInput {
+                text <=> root.draft;
                 font-family: Theme.font-technical;
                 font-size: Theme.fs-sm;
                 read-only: root.data.running;
-                wrap: word-wrap;
-                edited(text) => { root.source-edited(text); }
+                single-line: false;
+                wrap: char-wrap;
+                edited => { root.source-edited(self.text); }
             }
         }
 
@@ -64,12 +71,13 @@ export component ScriptsDialog inherits Modal {
         DialogSection {
             title: I18n.t("scripts.output");
 
-            TextEdit {
+            TextInput {
                 text: root.data.output;
                 font-family: Theme.font-technical;
                 font-size: Theme.fs-sm;
                 read-only: true;
-                wrap: word-wrap;
+                single-line: false;
+                wrap: char-wrap;
             }
 
             Text {
