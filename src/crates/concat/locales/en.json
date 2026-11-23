@@ -504,7 +504,6 @@
   "relink.selectFolderContainingMedia": "Select folder containing media files",
   "scripts.clear": "Clear",
   "scripts.output": "Output",
-  "scripts.placeholder": "{\"method\":\"version\"}\n{\"method\":\"project\"}",
   "scripts.run": "Run",
   "scripts.running": "Running…",
   "scripts.script": "Script — one API request per line",
