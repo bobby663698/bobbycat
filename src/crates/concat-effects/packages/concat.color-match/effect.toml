@@ -53,3 +53,10 @@ unit = "%"
 [wgsl]
 entry = "effect.wgsl"
 space = "display"
+
+# At its defaults every curve is the straight line, so the card would show
+# the still untouched and the card test would call it idle. These two
+# curves pull red and blue down while green holds, which is unmistakably a
+# colour match at work.
+[card]
+params = { "red.1.x" = 1.0, "red.1.y" = 0.55, "blue.1.x" = 1.0, "blue.1.y" = 0.45, strength = 100 }
