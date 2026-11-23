@@ -95,10 +95,10 @@ impl ScriptsPane {
                         self.output = outcome.lines.join("\n");
                         if self.output.is_empty() {
                             self.error = outcome.stderr;
-                        } else if let Some(code) = outcome.exit {
-                            if code != 0 {
-                                self.error = format!("CLI exited {code}: {}", outcome.stderr);
-                            }
+                        } else if let Some(code) = outcome.exit
+                            && code != 0
+                        {
+                            self.error = format!("CLI exited {code}: {}", outcome.stderr);
                         }
                     }
                     Err(error) => self.error = error.to_string(),
