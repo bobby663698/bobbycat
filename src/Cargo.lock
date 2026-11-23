@@ -1235,6 +1235,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "concat-autoedit"
+version = "0.2.16"
+dependencies = [
+ "concat-project",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "concat-cli"
 version = "0.2.16"
 dependencies = [

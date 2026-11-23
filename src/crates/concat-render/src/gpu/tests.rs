@@ -1724,7 +1724,11 @@ fn a_scene_linear_pass_mixes_by_intensity_in_light() {
 /// light that went in brighter should.
 #[test]
 fn every_look_carries_a_highlight_past_white() {
-    let Some(mut gpu) = gpu() else { return };
+    // This walks every display package, two probes each - the work `heavy_gpu`
+    // exists for. With three more display packages the WARP adapter on
+    // Windows CI lost its device partway through under plain `gpu()`. The
+    // Linux job sets CONCAT_REQUIRE_GPU and still runs it in full.
+    let Some(mut gpu) = heavy_gpu() else { return };
     let luma = |c: [f32; 4]| 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     let mut clipped = Vec::new();
     for package in concat_effects::Catalogue::builtin().packages() {
