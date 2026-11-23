@@ -107,7 +107,10 @@ const INVERT: &str = "fn effect(uv: vec2<f32>) -> vec4<f32> { let c = sample(uv)
 /// Both compositors draw `plan`; the pictures must agree to `least` by
 /// SSIM, and every pixel's alpha must be opaque.
 fn assert_parity(name: &str, plan: &FramePlan, least: f64) {
-    let Some(mut gpu) = gpu() else { return };
+    // A CPU/GPU pixel-by-pixel comparison, called in loops that render many
+    // frames - the work `heavy_gpu` is for. On Windows' WARP one too many
+    // of these loses the device and fails every test after it.
+    let Some(mut gpu) = heavy_gpu() else { return };
     let expected = CpuCompositor.render(plan);
     let actual = gpu.render(plan);
     let score = ssim(&expected, &actual);
@@ -905,7 +908,10 @@ fn every_shader_package_builds_on_this_adapter() {
     }
     let _ = log::set_logger(&Stderr).map(|()| log::set_max_level(log::LevelFilter::Warn));
 
-    let Some(mut gpu) = gpu() else { return };
+    // Tries every shader in the catalogue, opening a fresh device after any
+    // that leaves one unusable: far too much for Windows' WARP adapter, for
+    // which `heavy_gpu` skips this walk unless CONCAT_REQUIRE_GPU is set.
+    let Some(mut gpu) = heavy_gpu() else { return };
     let canary = package("test.canary", INVERT, "", &[], 1.0);
     let catalogue = concat_effects::Catalogue::builtin();
     let mut refused = Vec::new();
@@ -2220,7 +2226,9 @@ fn a_motion_blur_is_a_gaussian_along_its_line() {
 #[test]
 fn a_zoom_blur_is_its_scales_summed() {
     const PEAK: f64 = 6.0;
-    let Some(mut gpu) = gpu() else { return };
+    // Six successive zoom blurs at this size are the kind of walk that
+    // exhausts WARP on Windows CI; skip there unless CONCAT_REQUIRE_GPU.
+    let Some(mut gpu) = heavy_gpu() else { return };
     let zoom = concat_effects::Catalogue::builtin()
         .get("concat.zoom-blur")
         .expect("a built-in");
