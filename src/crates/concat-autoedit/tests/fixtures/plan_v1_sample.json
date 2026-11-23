@@ -1,0 +1,67 @@
+{
+  "schema_version": "ip_plan_v1",
+  "manifest_id": "sha256:e1ee6e17a293d79da629a1bea4f92274f267eb6b688ff814ba9a352b5a87704e",
+  "profile_id": "sha256:ae5d7baa9d28c0ea3a1667d71bace266d0cc0d234f4d7f38277cae81f690c8f8",
+  "notes": "对拍用样例：clean-expert 档，两个候选。媒体时长见 expected_commands.md 的假设表。",
+  "clips": [
+    {
+      "clip_id": "hook-open",
+      "title": "开场：三周重做工作台",
+      "edit_reason": "第一句给结论，抓前 3 秒留存",
+      "segments": [
+        {
+          "asset_id": "m1",
+          "source_start": 12.0,
+          "duration": 6.5,
+          "fit": "fit",
+          "include_audio": true
+        },
+        {
+          "asset_id": "m2",
+          "source_start": 3.0,
+          "duration": 4.0,
+          "fit": "fill",
+          "include_audio": false,
+          "crop": {"mode": "fill", "anchor_x": 0.5, "anchor_y": 0.4}
+        }
+      ],
+      "texts": [
+        {"start": 0.5, "end": 4.5, "text": "三周把工作台重做了一遍", "position": "top"}
+      ],
+      "audio_tracks": [
+        {
+          "asset_id": "m3",
+          "role": "music",
+          "source_start": 0.0,
+          "timeline_start": 0.0,
+          "duration": 10.5,
+          "gain_db": -18.0,
+          "fade_in": 0.8,
+          "fade_out": 1.2,
+          "duck_under_speech": true
+        }
+      ]
+    },
+    {
+      "clip_id": "body-proof",
+      "title": "正文：给证据",
+      "edit_reason": "接开场结论，用一个具体数字支撑",
+      "segments": [
+        {
+          "asset_id": "m1",
+          "source_start": 20.0,
+          "duration": 5.0,
+          "fit": "fit",
+          "include_audio": true
+        },
+        {
+          "asset_id": "m2",
+          "source_start": 8.0,
+          "duration": 2.5,
+          "fit": "fit",
+          "include_audio": false
+        }
+      ]
+    }
+  ]
+}

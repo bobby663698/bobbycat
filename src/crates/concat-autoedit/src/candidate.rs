@@ -22,6 +22,11 @@ pub struct Candidate {
     pub rationale: String,
     /// The edit, as the editor's own commands.
     pub commands: Vec<Command>,
+    /// Assets whose sound this candidate uses. The ASR gate compares this
+    /// with the manifest's `timing_review_required` set; a silent picture
+    /// made from the same asset is allowed and is therefore not listed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub audio_assets: Vec<String>,
     /// How the model rated it, when it did. A tie-breaker for ordering,
     /// not a reason to adopt.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36,6 +41,7 @@ impl Candidate {
             title: title.into(),
             rationale: String::new(),
             commands,
+            audio_assets: Vec::new(),
             score: None,
         }
     }

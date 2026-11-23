@@ -47,6 +47,27 @@ impl Rejection {
     }
 }
 
+/// The ASR admission gate, called before `check`.
+///
+/// `pending` holds the manifest's `timing_review_required` asset ids. A
+/// candidate that uses one of them *with sound* is blocked; the same asset
+/// used as a silent picture is fine and is not listed in `audio_assets`.
+/// The returned rejection has no command index: the whole candidate is
+/// refused, before any copy of the project is made.
+pub fn guard_pending_asr(candidate: &Candidate, pending: &[String]) -> Option<Rejection> {
+    candidate
+        .audio_assets
+        .iter()
+        .find(|asset| pending.contains(asset))
+        .map(|asset| Rejection {
+            why: format!(
+                "asr_timing_review: material `{asset}` has transcription timing pending; \
+                 it may be used as a silent picture only"
+            ),
+            command: None,
+        })
+}
+
 /// Tries a candidate on a copy and says whether it may be adopted.
 pub fn check(project: &Path, candidate: &Candidate) -> Result<Verdict, PreviewError> {
     if candidate.is_empty() {

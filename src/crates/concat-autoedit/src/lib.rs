@@ -4,8 +4,9 @@
 //! Auto-edit: candidates a model proposes, tried on a copy of the project,
 //! adopted or dropped.
 //!
-//! The four pieces are the four steps of one sentence:
+//! The five pieces are the five steps of one sentence:
 //!
+//! - [`expand`] - an `ip_plan_v1` plan becoming the editor's commands;
 //! - [`candidate`] - what a model proposes: a run of commands and the words
 //!   that say why;
 //! - [`director`] - the prompt that asks for one, and the parse of the reply;
@@ -32,9 +33,11 @@
 pub mod candidate;
 pub mod commit;
 pub mod director;
+pub mod expand;
 pub mod preview;
 
 pub use candidate::{Candidate, Part, Score};
-pub use commit::{Rejection, Verdict, adopt, check};
+pub use commit::{Rejection, Verdict, adopt, check, guard_pending_asr};
 pub use director::{Brief, ParseError, parse, prompt};
+pub use expand::{ExpandError, Expansion, Probe, db_to_linear, expand};
 pub use preview::{Diff, PreviewError, ProjectCopy};
