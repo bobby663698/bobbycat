@@ -3435,27 +3435,17 @@ mod tests {
     /// cards are drawn: one added without running scripts/bundle-cards.sh
     /// would show a sparkle on every machine that cannot draw its own.
     ///
-    /// A card can only be drawn by a real GPU (see `cards.yml`), and the
-    /// host that draws it links ONNX Runtime, which will not build for the
-    /// GNU target this machine compiles. So a package whose card is not in
-    /// yet waits in `CARD_NOT_YET_BUNDLED` - a list that must shrink, never
-    /// grow - and every package not on it is still held to shipping one.
+    /// A card can only be drawn by a real GPU (see `cards.yml`). With the
+    /// drawings bundled, every package is held to shipping one - no
+    /// exceptions, since a list here would only ever grow.
     #[test]
     fn every_built_in_picture_package_ships_a_card() {
-        const CARD_NOT_YET_BUNDLED: &[&str] =
-            &["concat.color-match", "concat.combine-adjust", "concat.hsl"];
         for package in concat_effects::Catalogue::builtin().packages() {
             if !package.kind().is_visual() || package.id() == super::ADJUST_ID {
                 continue;
             }
-            let Some(card) = super::bundled_card(package.id()) else {
-                assert!(
-                    CARD_NOT_YET_BUNDLED.contains(&package.id()),
-                    "{} has no bundled card",
-                    package.id()
-                );
-                continue;
-            };
+            let card = super::bundled_card(package.id())
+                .unwrap_or_else(|| panic!("{} has no bundled card", package.id()));
             let size = card.size();
             assert_eq!(
                 (size.width, size.height),
