@@ -59,4 +59,4 @@ space = "display"
 # curves pull red and blue down while green holds, which is unmistakably a
 # colour match at work.
 [card]
-params = { "red.1.x" = 1.0, "red.1.y" = 0.55, "blue.1.x" = 1.0, "blue.1.y" = 0.45, strength = 100 }
+params = { "red.0.x" = 0.0, "red.0.y" = 0.0, "red.1.x" = 1.0, "red.1.y" = 0.55, "blue.0.x" = 0.0, "blue.0.y" = 0.0, "blue.1.x" = 1.0, "blue.1.y" = 0.45, strength = 100 }
