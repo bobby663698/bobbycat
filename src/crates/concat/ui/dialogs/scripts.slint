@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
+
+import { I18n } from "../i18n.slint";
+import { Theme } from "../theme/theme.slint";
+import { Glyph } from "../icons.slint";
+import { ActionPair, DialogSection, Modal } from "../primitives/modal.slint";
+
+// The Script page: one API request per line, run through the CLI.
+//
+// A script is the same thing `bobbycat-cli api` reads: a line of JSON for
+// each call, answered by a line of JSON. This sheet is a text area for
+// those lines and a Run button, with what came back shown underneath. Run
+// happens on a worker so a long script - one that exports, say - does not
+// freeze the window; while it runs the button reads as busy and the output
+// fills when the worker reports back.
+
+export struct ScriptsSheetData {
+    open: bool,
+    /// The script as typed: one API request per line.
+    source: string,
+    /// What the last run wrote back, verbatim, one answer per line.
+    output: string,
+    /// A run is in progress.
+    running: bool,
+    /// A failure before the CLI could be started, or empty.
+    error: string,
+}
+
+export component ScriptsDialog inherits Modal {
+    in property <ScriptsSheetData> data;
+
+    callback source-edited(text: string);
+    callback run();
+    callback clear();
+
+    open: root.data.open;
+    title: I18n.t("scripts.title");
+    glyph: Glyph.play;
+    surface-width: 620px;
+    dismissable: !root.data.running;
+
+    VerticalLayout {
+        DialogSection {
+            first: true;
+            title: I18n.t("scripts.script");
+
+            // A script is lines, so it needs a real text edit, not the
+            // single-line Field the other sheets use. What is typed comes
+            // back through `edited`.
+            TextEdit {
+                text: root.data.source;
+                placeholder: I18n.t("scripts.placeholder");
+                font-family: Theme.font-technical;
+                font-size: Theme.fs-sm;
+                read-only: root.data.running;
+                wrap: word-wrap;
+                edited(text) => { root.source-edited(text); }
+            }
+        }
+
+        // What came back. Shown whole and selectable, so a line can be
+        // copied into a report; read-only, so only the script is edited.
+        DialogSection {
+            title: I18n.t("scripts.output");
+
+            TextEdit {
+                text: root.data.output;
+                font-family: Theme.font-technical;
+                font-size: Theme.fs-sm;
+                read-only: true;
+                wrap: word-wrap;
+            }
+
+            Text {
+                text: root.data.error;
+                color: Theme.danger;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: Theme.line;
+        }
+
+        ActionPair {
+            padding: 14px;
+            cancel-label: I18n.t("scripts.clear");
+            cancel-enabled: !root.data.running && root.data.source != "";
+            action-glyph: Glyph.play;
+            action-label: root.data.running ? I18n.t("scripts.running") : I18n.t("scripts.run");
+            action-enabled: !root.data.running && root.data.source != "";
+            cancel => { root.clear(); }
+            act => { root.run(); }
+        }
+    }
+
+}

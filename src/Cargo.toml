@@ -24,6 +24,7 @@ concat-text = { path = "crates/concat-text" }
 concat-vision = { path = "crates/concat-vision" }
 concat-log = { path = "crates/concat-log" }
 concat-agent = { path = "crates/concat-agent" }
+concat-script = { path = "crates/concat-script" }
 concat = { path = "crates/concat" }
 
 serde_json = "1"

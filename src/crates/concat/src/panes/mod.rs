@@ -22,6 +22,7 @@ pub mod monitor;
 pub mod pace;
 pub mod project;
 pub mod relink;
+pub mod scripts;
 pub mod settings;
 pub mod sounds;
 pub mod speech;
@@ -56,6 +57,8 @@ pub enum Msg {
     Voiceover(voiceover::VoiceoverMsg),
     /// To the library's Audio page.
     Sounds(sounds::SoundsMsg),
+    /// To the Script page.
+    Scripts(scripts::ScriptsMsg),
 }
 
 /// What a message says in the log: the activity trail of what the person
@@ -87,6 +90,8 @@ pub fn activity(msg: &Msg) -> Option<Activity> {
         | Msg::Export(ExportMsg::Progress { .. })
         | Msg::Captions(CaptionsMsg::Progress(_))
         | Msg::Speech(SpeechMsg::Progress(_))
+        | Msg::Scripts(scripts::ScriptsMsg::SourceEdited(_))
+        | Msg::Scripts(scripts::ScriptsMsg::Finished(_))
         | Msg::Settings(SettingsMsg::ModelProgress { .. } | SettingsMsg::InstallProgress { .. }) => {
             return None;
         }

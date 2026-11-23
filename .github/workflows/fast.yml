@@ -87,3 +87,4 @@ jobs:
           -p concat-text
           -p concat-effects
           -p concat-render
+          -p concat-script

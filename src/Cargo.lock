@@ -1170,6 +1170,7 @@ dependencies = [
  "concat-media",
  "concat-project",
  "concat-render",
+ "concat-script",
  "concat-server",
  "concat-speech",
  "concat-text",
@@ -1422,6 +1423,14 @@ dependencies = [
  "pollster",
  "wgpu",
  "windows 0.62.2",
+]
+
+[[package]]
+name = "concat-script"
+version = "0.2.16"
+dependencies = [
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

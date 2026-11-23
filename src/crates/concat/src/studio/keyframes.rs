@@ -2119,6 +2119,8 @@ impl Studio {
         );
         app.set_speech(self.speech.data(self));
         app.set_new_voice(self.speech.new_voice_data());
+        // The Script page.
+        app.set_scripts(self.scripts.data());
         // The Audio page.
         sync(&models.sounds_mine, self.sounds.mine());
         sync(&models.sounds_concat, self.sounds.concat_rows());
@@ -2630,6 +2632,7 @@ impl Studio {
                     true,
                 ),
                 row("speech", t("studio.textToSpeech"), Glyph::Volume, "", true),
+                row("scripts", t("studio.scripts"), Glyph::Play, "", true),
                 row(
                     "clear-cache",
                     t("studio.clearProjectCache"),

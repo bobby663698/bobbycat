@@ -53,6 +53,7 @@ import { ConfirmData, ConfirmDialog } from "dialogs/confirm.slint";
 import { CaptionsDialog, CaptionsSheetData } from "dialogs/captions.slint";
 import { SpeechDialog, SpeechSheetData } from "dialogs/speech.slint";
 import { NewVoiceData, NewVoiceDialog } from "dialogs/new-voice.slint";
+import { ScriptsSheetData, ScriptsDialog } from "dialogs/scripts.slint";
 import { AvatarData } from "primitives/avatar.slint";
 import { VoiceoverData, VoiceoverPanel } from "dialogs/voiceover.slint";
 import { DockDivider, DockSide, SeatBox } from "dock.slint";
@@ -187,6 +188,7 @@ export {
     Sounds,
     VoiceCardData,
     NewVoiceData,
+    ScriptsSheetData,
 }
 export component App inherits Window {
     title: "BobbyCat";
@@ -503,6 +505,13 @@ export component App inherits Window {
     callback new-voice-start-changed(seconds: float);
     callback new-voice-pick-picture();
     callback new-voice-save();
+
+    /// The Script page: API requests run through the CLI.
+    in property <ScriptsSheetData> scripts;
+    callback scripts-source-edited(text: string);
+    callback scripts-run();
+    callback scripts-clear();
+    callback scripts-closed();
 
     /// The voiceover panel; see VoiceoverPanel. Its meter and clock come
     /// on the Editor global, from a timer.
@@ -1124,6 +1133,28 @@ export component App inherits Window {
         start-changed(seconds) => { root.new-voice-start-changed(seconds); }
         pick-picture => { root.new-voice-pick-picture(); }
         save => { root.new-voice-save(); }
+    }
+
+    ScriptsDialog {
+        fill: root.sheets-fill;
+        floating: !root.sheets-fill;
+        home-right: 60px;
+        home-top: 100px;
+        z: root.scripts.open ? 2 : 0;
+        inset-top: root.safe-area-insets.top;
+        inset-bottom: root.safe-area-insets.bottom;
+        inset-left: root.safe-area-insets.left;
+        inset-right: root.safe-area-insets.right;
+        x: 0;
+        y: root.sheets-top;
+        width: root.width;
+        height: root.height - root.sheets-top;
+        data: root.scripts;
+
+        source-edited(text) => { root.scripts-source-edited(text); }
+        run => { root.scripts-run(); }
+        clear => { root.scripts-clear(); }
+        closed => { root.scripts-closed(); }
     }
 
     RelinkDialog {

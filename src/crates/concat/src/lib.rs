@@ -1759,6 +1759,20 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     app.on_new_voice_save(on_window!(|state| {
         state.handle(Msg::Speech(SpeechMsg::NewVoiceSave));
     }));
+    // The Script page: one API request per line, run through the CLI.
+    use panes::scripts::ScriptsMsg;
+    app.on_scripts_source_edited(on_window!(|state, text: SharedString| {
+        state.handle(Msg::Scripts(ScriptsMsg::SourceEdited(text.to_string())));
+    }));
+    app.on_scripts_run(on_window!(|state| {
+        state.handle(Msg::Scripts(ScriptsMsg::Run));
+    }));
+    app.on_scripts_clear(on_window!(|state| {
+        state.handle(Msg::Scripts(ScriptsMsg::Clear));
+    }));
+    app.on_scripts_closed(on_window!(|state| {
+        state.handle(Msg::Scripts(ScriptsMsg::Close));
+    }));
     // Text to speech keeps the sample it reads in as a voice of the
     // user's own, with a name and a picture.
     app.on_speech_save_name_edited(on_window!(|state, name: SharedString| {
@@ -2597,6 +2611,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
                         "export" => state.handle(Msg::Export(ExportMsg::Open)),
                         "template" => state.save_template(),
                         "speech" => state.handle(Msg::Speech(SpeechMsg::Open)),
+                        "scripts" => state.handle(Msg::Scripts(panes::scripts::ScriptsMsg::Open)),
                         "clear-cache" => state.clear_project_cache(),
                         "settings" => state.handle(Msg::Settings(SettingsMsg::Open)),
                         "close-project" => {
