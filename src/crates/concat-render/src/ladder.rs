@@ -36,6 +36,8 @@ pub struct Ladder {
     /// Devices asked for, all told.
     opened: usize,
     cpu: CpuRung,
+    /// The external card omitted by the last draw, not an earlier frame.
+    blend_error: Option<String>,
 }
 
 impl Ladder {
@@ -60,6 +62,7 @@ impl Ladder {
             dead: Vec::new(),
             opened: 0,
             cpu: CpuRung::default(),
+            blend_error: None,
         }
     }
 
@@ -87,21 +90,31 @@ impl Ladder {
 
     /// Runs `draw` on the compositor in use, and again on the next if its
     /// device was lost under it, until one survives; the CPU always does.
-    /// Hands back what `draw` made and whether the CPU left anything of it
-    /// out (see [`CpuCompositor::leaves_out`]).
+    /// Hands back what `draw` made and whether anything was left out: a
+    /// refused external GPU blend, or [`CpuCompositor::leaves_out`].
     pub fn draw<T>(&mut self, mut draw: impl FnMut(&mut dyn Compositor) -> T) -> (T, bool) {
+        self.blend_error = None;
         loop {
             let Some(gpu) = self.gpu.as_mut() else {
                 self.cpu.left_out = false;
                 let made = draw(&mut self.cpu);
                 return (made, self.cpu.left_out);
             };
+            let _ = gpu.take_blend_error();
             let made = draw(gpu);
+            let blend_error = gpu.take_blend_error();
             if !gpu.lost() {
-                return (made, false);
+                self.blend_error = blend_error;
+                return (made, self.blend_error.is_some());
             }
             self.recover();
         }
+    }
+
+    /// Takes the specific external blend refusal from the last draw.
+    /// `draw` also returns `left_out` for a caller needing only that flag.
+    pub fn take_blend_error(&mut self) -> Option<String> {
+        self.blend_error.take()
     }
 
     /// After a loss: the dead device let go first - every texture, buffer
@@ -275,6 +288,46 @@ mod tests {
         assert!(
             !ladder.draw(|compositor| compositor.render(&plain)).1,
             "said per frame"
+        );
+    }
+
+    #[test]
+    fn a_refused_external_gpu_blend_is_reported_for_each_draw_only() {
+        let Some(gpu) = WgpuCompositor::software() else {
+            assert!(std::env::var_os("CONCAT_REQUIRE_GPU").is_none());
+            eprintln!("no software GPU adapter; skipping");
+            return;
+        };
+        let mut ladder = Ladder::with_rungs(Vec::new());
+        ladder.gpu = Some(gpu);
+        let plain = red();
+        let mut refused = plain.clone();
+        refused.layers[0].external_blend = Some(concat_core::shader::BlendPass {
+            id: "example.refused".into(),
+            key: "example.refused@1".into(),
+            source: Arc::from("not valid WGSL"),
+            entry: "blend".into(),
+        });
+        for _ in 0..2 {
+            let (frame, left_out) = ladder.draw(|compositor| compositor.render(&refused));
+            assert!(is_red(&frame), "Normal still draws the layer");
+            assert!(left_out, "including when the refusal was cached");
+            assert!(
+                ladder
+                    .take_blend_error()
+                    .unwrap()
+                    .contains("example.refused")
+            );
+        }
+        let _ = ladder.draw(|compositor| compositor.render(&refused));
+        let (_, left_out) = ladder.draw(|compositor| compositor.render(&plain));
+        assert!(!left_out, "an unconsumed previous error is cleared");
+        assert!(ladder.take_blend_error().is_none());
+        let _ = ladder.gpu.as_mut().unwrap().render(&refused);
+        assert!(!ladder.draw(|compositor| compositor.render(&plain)).1);
+        assert!(
+            ladder.take_blend_error().is_none(),
+            "old GPU reports are cleared too"
         );
     }
 }

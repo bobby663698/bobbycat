@@ -17,7 +17,7 @@ use serde::Deserialize;
 
 use crate::Error;
 use crate::expr::{Expr, Value};
-use concat_core::{Lut, RevealMap, ShaderPass, TransitionPass};
+use concat_core::{BlendPass, Lut, RevealMap, ShaderPass, TransitionPass};
 
 use crate::manifest::{Kind, Manifest, ParamType};
 use crate::shader::{Shader, TransitionShader};
@@ -50,6 +50,8 @@ pub struct Package {
     /// The two-input shader, when the package is a transition: the GPU
     /// combines the outgoing and incoming pictures with it.
     transition: Option<TransitionShader>,
+    /// A two-colour function, compiled once when external blends are installed.
+    blend: Option<BlendPass>,
     /// The pinned outputs shipped with the package.
     pub fixtures: Vec<Fixture>,
     /// The pinned colours shipped with the package: what its shader makes
@@ -237,7 +239,7 @@ impl Package {
             }
             // A transition's `effect.wgsl` is its two-input shader, compiled
             // just below, not a stray effect shader.
-            (None, Some(_)) if manifest.transition.is_some() => None,
+            (None, Some(_)) if manifest.transition.is_some() || manifest.blend.is_some() => None,
             (None, Some(_)) => {
                 return Err(invalid(
                     "a shader was given but the manifest has no [wgsl] table".to_owned(),
@@ -258,8 +260,19 @@ impl Package {
             }
             (None, _) => None,
         };
+        let blend = match (&manifest.blend, body) {
+            (Some(_), Some(body)) => Some(crate::blend::compile(&manifest, body).map_err(invalid)?),
+            (Some(table), None) => {
+                return Err(invalid(format!(
+                    "[blend] names `{}` but no source was given",
+                    table.file
+                )));
+            }
+            (None, _) => None,
+        };
         if shader.is_none()
             && transition.is_none()
+            && blend.is_none()
             && manifest.ffmpeg.is_none()
             && manifest.effect.kind != Kind::Audio
         {
@@ -391,6 +404,7 @@ impl Package {
             chain,
             shader,
             transition,
+            blend,
             fixtures,
             probes,
             folder,
@@ -414,6 +428,11 @@ impl Package {
     /// The namespaced id.
     pub fn id(&self) -> &str {
         &self.manifest.effect.id
+    }
+
+    /// This package's external blend function, when it is a blend package.
+    pub fn blend_pass(&self) -> Option<BlendPass> {
+        self.blend.clone()
     }
 
     /// The category declared in the manifest.
@@ -753,8 +772,30 @@ impl Package {
         };
         let manifest_text = read("effect.toml")?;
         let fixtures = read("fixtures.toml").ok();
-        let shader = read("effect.wgsl").ok();
         let manifest = Manifest::parse(&manifest_text)?;
+        let shader = if let Some(blend) = &manifest.blend {
+            let source_path = folder.join(&blend.file);
+            let source_file = source_path.canonicalize().map_err(|error| Error::Io {
+                path: source_path.clone(),
+                message: error.to_string(),
+            })?;
+            let package_root = folder.canonicalize().map_err(|error| Error::Io {
+                path: folder.to_owned(),
+                message: error.to_string(),
+            })?;
+            if !source_file.starts_with(package_root) {
+                return Err(Error::Invalid {
+                    id: manifest.effect.id.clone(),
+                    message: format!(
+                        "{}: blend source escapes its package",
+                        source_path.display()
+                    ),
+                });
+            }
+            Some(read(&blend.file)?)
+        } else {
+            read("effect.wgsl").ok()
+        };
         // The built-ins' author is theirs alone. A package of the user's
         // own under it would shadow, or be shadowed by, one that ships
         // with the app, and which won would turn on load order.
@@ -946,6 +987,7 @@ static CURRENT: RwLock<Option<&'static Catalogue>> = RwLock::new(None);
 pub struct Catalogue {
     packages: Vec<Package>,
     by_id: HashMap<String, usize>,
+    blends_frozen: bool,
 }
 
 impl Catalogue {
@@ -990,9 +1032,40 @@ impl Catalogue {
         dir: &Path,
         vet: &mut dyn FnMut(&Package) -> Result<(), String>,
     ) -> Vec<Error> {
-        let mut catalogue = Catalogue::compiled_in();
+        let mut catalogue = (*CURRENT.read().expect("catalogue lock"))
+            .cloned()
+            .unwrap_or_else(Self::compiled_in);
+        let errors = catalogue.install_dir_with(dir, vet);
+        let built: &'static Catalogue = Box::leak(Box::new(catalogue));
+        *CURRENT.write().expect("catalogue lock") = Some(built);
+        errors
+    }
+
+    /// Installs a directory into this independent catalogue. Blends are frozen
+    /// at the first install; other package kinds can still be reloaded.
+    pub fn install_dir(&mut self, dir: &Path) -> Vec<Error> {
+        self.install_dir_with(dir, &mut |_| Ok(()))
+    }
+
+    fn install_dir_with(
+        &mut self,
+        dir: &Path,
+        vet: &mut dyn FnMut(&Package) -> Result<(), String>,
+    ) -> Vec<Error> {
+        let mut catalogue = Self::compiled_in();
+        if self.blends_frozen {
+            for package in self
+                .packages
+                .iter()
+                .filter(|package| package.kind() == Kind::Blend)
+            {
+                catalogue
+                    .add(package.clone())
+                    .expect("an already installed blend");
+            }
+        }
         let mut errors = if dir.is_dir() {
-            catalogue.load_dir(dir)
+            catalogue.load_dir_filtered(dir, self.blends_frozen)
         } else {
             Vec::new()
         };
@@ -1000,14 +1073,15 @@ impl Catalogue {
             .packages
             .iter()
             .filter(|package| package.folder.is_some())
+            .filter(|package| !self.blends_frozen || package.kind() != Kind::Blend)
             .filter_map(|package| vet(package).err().map(|why| (package.id().to_owned(), why)))
             .collect();
         for (id, message) in refused {
             catalogue.remove(&id);
             errors.push(Error::Invalid { id, message });
         }
-        let built: &'static Catalogue = Box::leak(Box::new(catalogue));
-        *CURRENT.write().expect("catalogue lock") = Some(built);
+        catalogue.blends_frozen = true;
+        *self = catalogue;
         errors
     }
 
@@ -1057,6 +1131,13 @@ impl Catalogue {
         let mut names = vec![package.id().to_owned()];
         names.extend(package.manifest.effect.aliases.iter().cloned());
         for name in &names {
+            if package.kind() == Kind::Blend
+                && (name.trim().is_empty() || concat_core::timeline::card_by_id(name).is_some())
+            {
+                return Err(refuse(format!(
+                    "`{name}` is a built-in blend name or alias"
+                )));
+            }
             if self.by_id.contains_key(name) {
                 return Err(refuse(format!(
                     "`{name}` is already taken by another package"
@@ -1113,12 +1194,24 @@ impl Catalogue {
     /// Loads every package folder directly under `dir`. A folder that fails
     /// is reported and skipped; the rest still load.
     pub fn load_dir(&mut self, dir: &Path) -> Vec<Error> {
+        self.load_dir_filtered(dir, false)
+    }
+
+    fn load_dir_filtered(&mut self, dir: &Path, skip_blends: bool) -> Vec<Error> {
         let folders = match package_folders(dir) {
             Ok(folders) => folders,
             Err(error) => return vec![error],
         };
         let mut errors = Vec::new();
         for folder in folders {
+            if skip_blends
+                && std::fs::read_to_string(folder.join("effect.toml"))
+                    .ok()
+                    .and_then(|source| Manifest::parse(&source).ok())
+                    .is_some_and(|manifest| manifest.effect.kind == Kind::Blend)
+            {
+                continue;
+            }
             match Package::from_folder(&folder).and_then(|p| self.add(p)) {
                 Ok(()) => {}
                 Err(error) => errors.push(error),
@@ -1151,6 +1244,23 @@ impl Catalogue {
     /// The package with this id or alias.
     pub fn get(&self, id: &str) -> Option<&Package> {
         self.by_id.get(id).map(|&index| &self.packages[index])
+    }
+
+    /// An installed external blend; built-in names and aliases never resolve here.
+    pub fn blend_pass(&self, id: &str) -> Option<BlendPass> {
+        let id = id.trim();
+        if id.is_empty() || concat_core::timeline::card_by_id(id).is_some() {
+            return None;
+        }
+        self.get(id).and_then(Package::blend_pass)
+    }
+
+    /// External blend ids and their package-provided labels, in catalogue order.
+    pub fn blends(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.packages
+            .iter()
+            .filter(|package| package.kind() == Kind::Blend)
+            .map(|package| (package.id(), package.manifest.effect.name.as_str()))
     }
 
     /// `link` read as a link to the package that stands in for its retired
@@ -1301,6 +1411,39 @@ impl Catalogue {
 mod tests {
     use super::*;
     use concat_project::model::KeyEase;
+
+    #[test]
+    fn a_blend_refused_by_the_device_never_enters_the_startup_snapshot() {
+        let root = std::env::temp_dir().join(format!("concat-blend-vet-{}", std::process::id()));
+        std::fs::create_dir(&root).expect("a fresh test directory");
+        let folder = root.join("photocopy");
+        std::fs::create_dir(&folder).unwrap();
+        std::fs::write(
+            folder.join("effect.toml"),
+            include_str!("../tests/fixtures/blend-photocopy/effect.toml"),
+        )
+        .unwrap();
+        std::fs::write(
+            folder.join("photocopy.wgsl"),
+            include_str!("../tests/fixtures/blend-photocopy/photocopy.wgsl"),
+        )
+        .unwrap();
+        let mut catalogue = Catalogue::new();
+        let errors =
+            catalogue.install_dir_with(&root, &mut |_| Err("driver refused the module".to_owned()));
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].to_string().contains("driver refused"));
+        assert!(catalogue.blend_pass("plug.photocopy").is_none());
+        assert_eq!(catalogue.blends().count(), 0);
+        let errors = catalogue.install_dir_with(&root, &mut |_| Ok(()));
+        assert!(errors.is_empty());
+        assert!(catalogue.blend_pass("plug.photocopy").is_none());
+        assert_eq!(catalogue.blends().count(), 0);
+        let mut restarted = Catalogue::new();
+        assert!(restarted.install_dir(&root).is_empty());
+        assert!(restarted.blend_pass("plug.photocopy").is_some());
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     /// A link to a retired key or blur opens as its stand-in, its knobs
     /// carried over as the `[[replaces]]` table says - the screen's colour,

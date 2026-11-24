@@ -2792,9 +2792,9 @@ pub struct Clip {
     /// They are not labels. The inspector's i18n keys in `locales/*.json`
     /// are lowerCamelCase (`softLight`), and the two spellings must not be
     /// confused - one is what a document holds, the other what a person
-    /// reads. A validator should ask `Blend::all_names` rather than keep a
-    /// copy of this list, which would go stale the day a thirteenth mode
-    /// is added.
+    /// reads. Installed packages may add namespaced ids such as
+    /// `plug.photocopy`; an unavailable package's id is kept verbatim so
+    /// reinstalling it restores the intended blend.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub blend: String,
     /// What is cut off each edge of the source before it is fitted, as

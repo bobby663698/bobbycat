@@ -155,6 +155,32 @@ impl Monitor {
         Some(gpu.sibling())
     }
 
+    /// Checks external blends on one lazily opened compositor. A headless
+    /// monitor opens its own device; a machine without one refuses the package.
+    pub fn blend_validator(
+        &self,
+    ) -> impl FnMut(&concat_core::BlendPass) -> Result<(), String> + '_ {
+        let mut gpu = None;
+        let mut attempted = false;
+        move |pass| {
+            if !attempted {
+                #[cfg(feature = "gpu")]
+                let sibling = self.sibling();
+                #[cfg(not(feature = "gpu"))]
+                let sibling = None;
+                gpu = sibling.or_else(concat_render::WgpuCompositor::new);
+                attempted = true;
+            }
+            let gpu = gpu.as_mut().ok_or_else(|| {
+                format!(
+                    "external blend {} was not loaded: no GPU is available to validate its shader",
+                    pass.id
+                )
+            })?;
+            gpu.validate_blend(pass)
+        }
+    }
+
     /// [`Monitor::sibling`] for work on a thread of its own - the export,
     /// the effect cards - where the window's queue can take it, and None
     /// on Vulkan, where the work then opens a device of its own. Skia
@@ -237,6 +263,8 @@ impl Monitor {
             .as_ref()
             .ok_or_else(|| "the monitor has no GPU device".to_owned())?;
         let mut gpu = gpu.lock().map_err(|_| "compositor poisoned".to_owned())?;
+        // Only this frame's rejected external blend belongs to its warning.
+        let _ = gpu.take_blend_error();
         if sources.needs_cpu() {
             // A packaged transition, and nothing else in the way, is drawn
             // whole on the device with no round trip through memory.
@@ -260,6 +288,17 @@ impl Monitor {
         }
         gpu.render_texture(sources.plan())
             .ok_or_else(|| "the GPU device was lost".to_owned())
+    }
+
+    /// The external blend left out of the last texture, when the driver
+    /// refused it. The window shows that texture with this warning.
+    #[cfg(feature = "gpu")]
+    pub fn take_blend_error(&self) -> Option<String> {
+        self.gpu
+            .as_ref()?
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take_blend_error()
     }
 
     /// The plan for this clip list at this size and rate: the kept one
@@ -356,7 +395,16 @@ impl Monitor {
             spec.nearest,
         )?;
         let exact = sources.exact();
-        sources.pixels(strict).map(|pixels| (pixels, exact))
+        // There is no CPU implementation of an installed WGSL blend.
+        // Its absence must reach the window's existing preview error path.
+        let has_external_blend = sources
+            .plan()
+            .layers
+            .iter()
+            .any(|layer| layer.external_blend.is_some());
+        sources
+            .pixels(strict || has_external_blend)
+            .map(|pixels| (pixels, exact))
     }
 
     /// Decode-ahead for the playback stream: hands the scheduler the next

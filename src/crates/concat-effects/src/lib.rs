@@ -24,6 +24,7 @@
 //! `{ id, params, enabled }`, and an id the catalogue does not know is
 //! skipped at render time.
 
+pub mod blend;
 pub mod catalogue;
 pub mod color_match;
 pub mod combine;

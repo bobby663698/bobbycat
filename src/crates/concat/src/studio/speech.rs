@@ -104,7 +104,12 @@ impl Studio {
         // it (audit 2026-10-04, #6). A dead one is replaced for the next.
         let monitor = &self.host.monitor;
         let mut trialist = None;
+        let mut validate_blend = monitor.blend_validator();
         let errors = Catalogue::install_with(&dir, &mut |package| {
+            if let Some(pass) = package.blend_pass() {
+                return validate_blend(&pass)
+                    .map_err(|why| format!("its blend shader failed its trial: {why}"));
+            }
             for pass in package.trial_passes() {
                 if trialist.is_none() {
                     trialist = monitor.sibling();
@@ -122,6 +127,7 @@ impl Studio {
             }
             Ok(())
         });
+        drop(validate_blend);
         for error in &errors {
             log::warn!("effects: an imported package was refused: {error}; it is not offered");
         }

@@ -161,6 +161,10 @@ pub(crate) struct BuiltTimeline {
     /// each frame, because a knob with keys is worth something different
     /// each frame and the resolution is cheap.
     pub(crate) chains: HashMap<ClipId, Vec<AppliedFilter>>,
+    /// External blend programs, frozen with the timeline for both preview and export.
+    pub(crate) blends: HashMap<ClipId, BlendPass>,
+    /// Missing blend ids rendered as Normal, without rewriting the document.
+    pub(crate) blend_notes: Vec<String>,
     /// A title's per-word reveal order, for the clips that have one -
     /// carried beside `chains` rather than inside it, since it is baked
     /// once by the host and never resolved per frame the way effects are.
@@ -269,6 +273,7 @@ pub(crate) fn build_timeline(
     rate: FrameRate,
     visible: &[&ExportClip],
     mut transitions: Vec<TransitionSpan>,
+    catalogue: &Catalogue,
 ) -> BuiltTimeline {
     let mut timeline = Timeline::new(request.width, request.height, rate);
     timeline.canvas = request.canvas;
@@ -280,6 +285,8 @@ pub(crate) fn build_timeline(
     let mut shapes: HashMap<ClipId, Vec<crate::TransitionShape>> = HashMap::new();
     let mut ranges: HashMap<ClipId, concat_media::ColorRange> = HashMap::new();
     let mut chains: HashMap<ClipId, Vec<AppliedFilter>> = HashMap::new();
+    let mut blends: HashMap<ClipId, BlendPass> = HashMap::new();
+    let mut blend_notes = Vec::new();
     let mut reveal_maps: HashMap<ClipId, Arc<RevealMap>> = HashMap::new();
     let mut cutouts: HashMap<ClipId, CutoutJob> = HashMap::new();
     let mut backdrops: HashMap<ClipId, crate::ExportBackdrop> = HashMap::new();
@@ -355,6 +362,13 @@ pub(crate) fn build_timeline(
         engine_clip.video_fade_in = quantise(clip.video_fade_in, rate);
 
         if let Some(id) = timeline.add_clip(tracks[clip.track], engine_clip) {
+            if let Some(pass) = catalogue.blend_pass(&clip.blend) {
+                blends.insert(id, pass);
+            } else if let Some(note) = crate::blend_note(&clip.blend, catalogue)
+                && !blend_notes.contains(&note)
+            {
+                blend_notes.push(note);
+            }
             // A stand-in is stacked where the clip it extends is.
             tracks_of.insert(id, clip.stack_at.unwrap_or(clip.track));
             for &(span, incoming) in &clip.roles {
@@ -433,6 +447,8 @@ pub(crate) fn build_timeline(
         shapes,
         ranges,
         chains,
+        blends,
+        blend_notes,
         reveal_maps,
         cutouts,
         stabilized,

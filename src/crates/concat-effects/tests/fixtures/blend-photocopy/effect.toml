@@ -1,0 +1,10 @@
+format = 2
+
+[effect]
+id = "plug.photocopy"
+name = "Photocopy"
+kind = "blend"
+
+[blend]
+file = "photocopy.wgsl"
+entry = "blend"

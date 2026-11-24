@@ -436,8 +436,9 @@ export struct SelectedClipData {
     // the picture's edges and colour
     flip-h: bool,
     flip-v: bool,
-    /// index into the blend list: normal, multiply, screen, add, lighten, darken
+    /// Index into blend-names: the built-ins followed by installed cards.
     blend: int,
+    blend-names: [string],
     crop-left: float,
     crop-top: float,
     crop-right: float,

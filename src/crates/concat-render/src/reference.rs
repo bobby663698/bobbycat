@@ -106,6 +106,7 @@ impl CpuCompositor {
             || !plan.treatments.is_empty()
             || plan.layers.iter().any(|layer| {
                 !layer.effects.is_empty()
+                    || layer.external_blend.is_some()
                     || layer
                         .source
                         .as_ref()
@@ -176,16 +177,19 @@ impl<'a> Placed<'a> {
                 (Cow::Borrowed(source), geometry, layer.flip_h, layer.flip_v)
             };
         let shading = layer.shading();
+        let blend = if layer.external_blend.is_some() {
+            Blend::Normal
+        } else {
+            layer.blend
+        };
         let weigh = Weighing {
-            plain: layer.blend == Blend::Normal
-                && shading.scale == 1.0
-                && shading.offset == [0.0; 3],
+            plain: blend == Blend::Normal && shading.scale == 1.0 && shading.offset == [0.0; 3],
             shading,
             mask: layer.mask.as_deref(),
             shape: layer.shape_uniform(&geometry),
             stack: layer.stack_uniform(&geometry),
             opacity,
-            blend: layer.blend,
+            blend,
         };
         let aligned = geometry.is_aligned() && geometry.fits_source() && !flip_h && !flip_v;
         Some(Placed {
@@ -1178,6 +1182,25 @@ mod tests {
         deep.layers.clear();
         deep.output = Signal::Pq;
         assert!(CpuCompositor::leaves_out(&deep));
+    }
+
+    #[test]
+    fn an_external_blend_falls_back_to_normal_without_dropping_its_layer() {
+        let mut top = layer(solid(4, 4, [100, 120, 140, 255]));
+        let plain = plan(4, 4, vec![top.clone()]);
+        top.blend = Blend::Add;
+        top.external_blend = Some(concat_core::shader::BlendPass {
+            id: "plug.photocopy".into(),
+            key: "plug.photocopy@1".into(),
+            source: Arc::from(""),
+            entry: "blend".into(),
+        });
+        let external = plan(4, 4, vec![top]);
+        assert!(CpuCompositor::leaves_out(&external));
+        assert_eq!(
+            CpuCompositor.render(&external).pixels(),
+            CpuCompositor.render(&plain).pixels()
+        );
     }
 
     #[test]

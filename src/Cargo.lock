@@ -1229,6 +1229,7 @@ dependencies = [
  "concat-export",
  "concat-host",
  "concat-project",
+ "log",
  "png 0.17.16",
  "schemars",
  "serde",

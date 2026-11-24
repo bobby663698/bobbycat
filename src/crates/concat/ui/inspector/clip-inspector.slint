@@ -1091,13 +1091,13 @@ component ToolButton inherits Rectangle {
     }
 }
 
-// The twelve blend modes as a grid of cards, four to a row.
+// The available blend modes as a grid of cards, four to a row.
 //
 // Slint has no auto-fill grid: a GridLayout wants its cells named at compile
 // time, which a model cannot do. So each card places itself from its index,
 // the way ProjectsGrid places a poster - see workspace/media-pane.slint.
 //
-// The names arrive in `blends`' order, which is Blend::ALL's, and the index
+// The names arrive in the document-id list's order, and the index
 // reported back is the field value. Nothing here translates between the two.
 component BlendCards inherits Rectangle {
     in property <[string]> names;
@@ -1674,24 +1674,7 @@ export component VideoPanel inherits VerticalLayout {
         root.crop-bottom = root.selected.crop-bottom;
     }
 
-    // The index of an entry is the value of `Blend::ALL[index]`, so this
-    // list's order is load-bearing: it must match concat_core::timeline::Blend
-    // exactly, and every key must exist in all 26 locales. Adding a mode is
-    // three edits - the enum, this array, the locale inventories - never two.
-    property <[string]> blends: [
-        I18n.t("clipInspector.normal"),
-        I18n.t("clipInspector.multiply"),
-        I18n.t("clipInspector.screen"),
-        I18n.t("clipInspector.add"),
-        I18n.t("clipInspector.lighten"),
-        I18n.t("clipInspector.darken"),
-        I18n.t("clipInspector.overlay"),
-        I18n.t("clipInspector.softLight"),
-        I18n.t("clipInspector.hardLight"),
-        I18n.t("clipInspector.colorBurn"),
-        I18n.t("clipInspector.colorDodge"),
-        I18n.t("clipInspector.linearBurn")
-    ];
+    property <[string]> blends: root.selected.blend-names;
 
     init => { root.seed(); }
     changed selected => { root.seed(); }
@@ -1871,11 +1854,8 @@ export component VideoPanel inherits VerticalLayout {
                 changed(v) => { root.set(ClipField.opacity, v); root.commit(); }
             }
 
-            // The twelve modes as cards rather than a dropdown. A menu keeps
-            // eleven of them behind a click; laid out flat, the set reads as
-            // a set, and the two a person actually alternates between are one
-            // press apart. The order is `blends`' order - Blend::ALL's -
-            // because the press reports the index.
+            // Built-ins and installed cards share the list published by Rust;
+            // the press reports its index, never an engine enum discriminant.
             BlendCards {
                 names: root.blends;
                 current: root.selected.blend;

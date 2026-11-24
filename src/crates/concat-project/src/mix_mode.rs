@@ -112,13 +112,12 @@ pub fn for_blend(blend: Blend) -> Option<&'static MixModeResource> {
 
 /// Look up by the `blend` string stored in a document.
 ///
-/// Uses [`Blend::parse`], so both the kebab-case name we write
+/// Accepts both the kebab-case name we write
 /// (`"soft-light"`) and an underscored spelling from the other side
-/// (`"soft_light"`) resolve. `""` and `"normal"` are Normal and need no
-/// `mix_mode`; an unknown name also falls back to Normal rather than
-/// inventing a resource.
+/// (`"soft_light"`). `""` and `"normal"` are Normal and need no
+/// `mix_mode`; an external or unknown id has no Jianying resource.
 pub fn for_name(name: &str) -> Option<&'static MixModeResource> {
-    for_blend(Blend::parse(name))
+    for_blend(concat_core::timeline::card_by_id(name)?.mode)
 }
 
 #[cfg(test)]
@@ -213,6 +212,65 @@ mod tests {
         assert_eq!(for_name("add"), None);
         assert_eq!(for_blend(Blend::Add), None);
         assert_eq!(for_name("something-new"), None);
+        assert_eq!(for_name("plug.photocopy"), None);
+    }
+
+    #[test]
+    fn an_external_blend_id_survives_save_reopen_and_undo() {
+        use crate::commands::{ClipPatch, Command};
+        use crate::{DocumentSettings, Editor};
+
+        let mut editor = Editor::new();
+        let id = editor
+            .apply(Command::AddTextClip {
+                track_id: None,
+                above: true,
+                start: 0.0,
+                style: None,
+                duration: Some(2.0),
+                offset_y: None,
+            })
+            .expect("adds a clip")
+            .created_id
+            .expect("clip id");
+        editor
+            .apply(Command::UpdateClip {
+                clip_id: id.clone(),
+                patch: ClipPatch {
+                    blend: Some("plug.photocopy".to_owned()),
+                    ..ClipPatch::default()
+                },
+            })
+            .expect("sets the external id");
+        let settings = DocumentSettings {
+            name: "External blend".to_owned(),
+            width: 1920,
+            height: 1080,
+            rate_num: 30,
+            rate_den: 1,
+            canvas: [0, 0, 0, 255],
+        };
+        let document = editor.to_document(&settings);
+        let reopened = Editor::from_document(&document).expect("reopens without the package");
+        assert_eq!(
+            reopened.project().active().clip(&id).unwrap().blend,
+            "plug.photocopy"
+        );
+        assert!(editor.undo());
+        assert!(
+            editor
+                .project()
+                .active()
+                .clip(&id)
+                .unwrap()
+                .blend
+                .is_empty()
+        );
+        assert!(editor.redo());
+        assert_eq!(
+            editor.project().active().clip(&id).unwrap().blend,
+            "plug.photocopy"
+        );
     }
 
     /// The table stays the same length as the engine's mode list, and

@@ -31,6 +31,21 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+/// An external blend's pure, scene-linear, premultiplied colour function.
+/// The compositor supplies the fragment entry point and ground texture;
+/// the function returns the complete composite, so no fixed blending follows.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BlendPass {
+    /// The package's canonical id.
+    pub id: String,
+    /// The id, version, entry and source fingerprint used for pipeline caching.
+    pub key: String,
+    /// A validated WGSL module containing ordinary functions, not entry points.
+    pub source: Arc<str>,
+    /// A function taking foreground and background vec4<f32>, returning vec4<f32>.
+    pub entry: String,
+}
+
 /// One fragment pass over a layer.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ShaderPass {

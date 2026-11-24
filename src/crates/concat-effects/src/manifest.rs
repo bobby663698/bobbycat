@@ -53,6 +53,9 @@ pub struct Manifest {
     /// The two-input backend, when the package is a transition.
     #[serde(default)]
     pub transition: Option<Transition>,
+    /// A pure two-colour blend function; the host owns the fragment stage.
+    #[serde(default)]
+    pub blend: Option<Blend>,
     /// A look-up table the package ships: the shader reads it through
     /// `lut()`, and a chain names its file as `{lut}`.
     #[serde(default)]
@@ -202,6 +205,28 @@ pub enum Kind {
     Transition,
     /// A generator: no input, an image out.
     Generator,
+    /// A foreground and a ground colour, combined into a complete composite.
+    Blend,
+}
+
+/// The `[blend]` backend. Identity and display name remain in `[effect]`.
+#[derive(Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Blend {
+    /// The WGSL file inside the package folder.
+    pub file: String,
+    /// The ordinary function called by the host's fragment wrapper.
+    pub entry: String,
+    /// All external blends read the ground; other contracts are not supported.
+    #[serde(default = "yes")]
+    pub reads_ground: bool,
+    /// All external blends return the complete composite.
+    #[serde(default = "yes")]
+    pub non_linear: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 impl Kind {
@@ -630,13 +655,49 @@ impl Manifest {
                 "intensity names `{intensity}`, which is not a parameter"
             )));
         }
-        if self.effect.kind == Kind::Transition {
+        if self.effect.kind == Kind::Blend {
+            let Some(blend) = &self.blend else {
+                return Err(self.invalid("a blend needs a [blend] table"));
+            };
+            if !self.scene_linear() {
+                return Err(self.invalid("a blend needs format = 2"));
+            }
+            if self.ffmpeg.is_some()
+                || self.wgsl.is_some()
+                || self.transition.is_some()
+                || self.lut.is_some()
+                || !self.params.is_empty()
+                || !self.replaces.is_empty()
+            {
+                return Err(self.invalid(
+                    "a blend has only a [blend] backend and no parameters or replacements",
+                ));
+            }
+            let file = std::path::Path::new(&blend.file);
+            if blend.file.is_empty()
+                || file.is_absolute()
+                || file
+                    .components()
+                    .any(|part| !matches!(part, std::path::Component::Normal(_)))
+                || file.extension().and_then(|extension| extension.to_str()) != Some("wgsl")
+            {
+                return Err(
+                    self.invalid("[blend] file must be a relative .wgsl path inside its package")
+                );
+            }
+            if !is_ident(&blend.entry) {
+                return Err(self.invalid("[blend] entry must be a WGSL function name"));
+            }
+            if !blend.reads_ground || !blend.non_linear {
+                return Err(self.invalid("[blend] reads_ground and non_linear must both be true"));
+            }
+        } else if self.effect.kind == Kind::Transition {
             // A transition's whole backend is its two-input shader; the
             // per-clip chain and single-input shader machinery do not apply.
             let Some(transition) = &self.transition else {
                 return Err(self.invalid("a transition needs a [transition] table"));
             };
-            if self.ffmpeg.is_some() || self.wgsl.is_some() {
+            if self.ffmpeg.is_some() || self.wgsl.is_some() || self.blend.is_some() {
                 return Err(
                     self.invalid("a transition's backend is [transition], not [ffmpeg] or [wgsl]")
                 );
@@ -649,6 +710,9 @@ impl Manifest {
                 )));
             }
         } else {
+            if self.blend.is_some() {
+                return Err(self.invalid("[blend] is only for a blend package"));
+            }
             if self.transition.is_some() {
                 return Err(self.invalid("[transition] is only for a transition package"));
             }

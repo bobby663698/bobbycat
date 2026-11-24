@@ -37,7 +37,7 @@ use concat_core::mask::{MaskStack, MaskUniform, StackUniform};
 
 /// What the mask pass's pipeline is cached under.
 const MASK_STACK_KEY: &str = "concat.mask-stack/1";
-use concat_core::shader::{Lut, RevealMap, ShaderPass, TransitionPass};
+use concat_core::shader::{BlendPass, Lut, RevealMap, ShaderPass, TransitionPass};
 use concat_core::timeline::{BLEND_CARDS, Blend};
 
 // Which blends need the stack beneath them as a texture. Two different
@@ -1172,6 +1172,8 @@ struct Draw {
     size: (u32, u32),
     texture: usize,
     blend: Blend,
+    /// A prepared external pipeline, already resolved from its source key.
+    external_blend: Option<usize>,
     mask: (u32, u32, usize),
     /// For one of the eight ground-reading layers: the pooled texture, at
     /// the output size, that the stack is copied into just before the draw,
@@ -1305,6 +1307,12 @@ pub struct WgpuCompositor {
     /// still blend source-over; the six non-linear modes write an already
     /// complete composite with `blend: None`.
     ground_pipelines: [Option<wgpu::RenderPipeline>; 12],
+    /// External cards resolved once by their content key, never by id while
+    /// drawing. A refused card stays Normal and is not recompiled each frame.
+    external_blends: HashMap<String, Result<usize, String>>,
+    external_pipelines: Vec<wgpu::RenderPipeline>,
+    /// A card omitted by draws since the caller last took the report.
+    pending_blend_error: Option<String>,
     /// An uploaded frame into the working format.
     upload_pipeline: wgpu::RenderPipeline,
     /// A finished frame out of the working format into eight bits: as it
@@ -2250,6 +2258,9 @@ impl WgpuCompositor {
             queue,
             pipelines,
             ground_pipelines,
+            external_blends: HashMap::new(),
+            external_pipelines: Vec::new(),
+            pending_blend_error: None,
             upload_pipeline,
             resolve_pipeline,
             tone_mapped_pipeline,
@@ -2518,11 +2529,28 @@ impl WgpuCompositor {
             Some(stack) => self.mask_pass(layer.mask.as_deref(), &stack, &geometry),
             None => self.mask_of(layer.mask.as_deref()),
         };
-        let ground = reads_ground(layer.blend).then(|| self.claim(plan.width, plan.height));
+        let external_blend = layer.external_blend.as_ref().and_then(|pass| {
+            let compiled = self.blend_shader(pass);
+            if compiled.is_none() {
+                let reason = self.blend_error(&pass.key).map(str::to_owned);
+                if self.pending_blend_error.is_none() {
+                    self.pending_blend_error = reason;
+                }
+            }
+            compiled
+        });
+        let blend = if layer.external_blend.is_some() {
+            Blend::Normal
+        } else {
+            layer.blend
+        };
+        let ground = (external_blend.is_some() || reads_ground(blend))
+            .then(|| self.claim(plan.width, plan.height));
         draws.push(Draw {
             size,
             texture,
-            blend: layer.blend,
+            blend,
+            external_blend,
             mask,
             ground,
         });
@@ -2653,6 +2681,7 @@ impl WgpuCompositor {
             size: source_size,
             texture: source,
             blend: Blend::Normal,
+            external_blend: None,
             ground: None,
             mask,
         }];
@@ -2698,6 +2727,7 @@ impl WgpuCompositor {
             size: (width, height),
             texture: index,
             blend: Blend::Normal,
+            external_blend: None,
             ground: None,
             mask,
         });
@@ -3098,11 +3128,15 @@ impl WgpuCompositor {
         for &(index, draw) in draws {
             match draw.ground {
                 Some(ground) => {
-                    let slot =
-                        ground_slot(draw.blend).expect("a ground-reading draw has a pipeline slot");
-                    let pipeline = self.ground_pipelines[slot]
-                        .as_ref()
-                        .expect("a ground-reading draw has a pipeline");
+                    let pipeline = if let Some(slot) = draw.external_blend {
+                        &self.external_pipelines[slot]
+                    } else {
+                        let slot = ground_slot(draw.blend)
+                            .expect("a ground-reading draw has a pipeline slot");
+                        self.ground_pipelines[slot]
+                            .as_ref()
+                            .expect("a ground-reading draw has a pipeline")
+                    };
                     pass.set_pipeline(pipeline);
                     pass.set_bind_group(2, &self.pool[&size][ground].bind_group, &[]);
                 }
@@ -3686,6 +3720,119 @@ impl WgpuCompositor {
             });
         self.pictures_layouts.insert(pictures, layout.clone());
         layout
+    }
+
+    /// A driver refusal for an external card, by its content key. A caller
+    /// reports this when a layer had to be drawn with Normal instead.
+    pub fn blend_error(&self, key: &str) -> Option<&str> {
+        self.external_blends
+            .get(key)
+            .and_then(|result| result.as_ref().err())
+            .map(String::as_str)
+    }
+
+    /// Compiles a card on this device before enabling it. This catches
+    /// host-symbol conflicts and driver refusals without drawing a frame
+    /// or marking a frame as degraded.
+    pub fn validate_blend(&mut self, pass: &BlendPass) -> Result<(), String> {
+        if self.dead() {
+            return Err("the GPU device is dead".to_owned());
+        }
+        self.blend_shader(pass).map(|_| ()).ok_or_else(|| {
+            self.blend_error(&pass.key)
+                .unwrap_or("blend pipeline refused")
+                .to_owned()
+        })
+    }
+
+    /// Takes the first card refusal from draws since this was last taken.
+    /// Cached refusals are reported each time the card is used. A caller
+    /// starting an independent draw clears any previous report first.
+    pub fn take_blend_error(&mut self) -> Option<String> {
+        self.pending_blend_error.take()
+    }
+
+    /// Compiles a card independently from the built-in shader. The card
+    /// receives premultiplied linear pixels, after opacity, fades and masks,
+    /// and returns the complete composite, so the pipeline does no blending.
+    fn blend_shader(&mut self, pass: &BlendPass) -> Option<usize> {
+        if let Some(compiled) = self.external_blends.get(&pass.key) {
+            return compiled.as_ref().ok().copied();
+        }
+        let source = format!(
+            "{MASK_WGSL}{BLEND_MODES}{SHADER}\n{}\n\
+             @fragment\nfn fs_external(in: VsOut) -> @location(0) vec4<f32> {{\n\
+             let s = shade(in);\n\
+             return {}(vec4<f32>(s.rgb * s.a, s.a), ground_load(in.position));\n}}",
+            pass.source, pass.entry
+        );
+        let scope = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let module = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(&pass.key),
+                source: wgpu::ShaderSource::Wgsl(source.into()),
+            });
+        let layout = self
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(&pass.key),
+                bind_group_layouts: &[
+                    Some(&self.bind_layout),
+                    Some(&self.bind_layout),
+                    Some(&self.bind_layout),
+                ],
+                immediate_size: 0,
+            });
+        let vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![
+                0 => Float32x2, 1 => Float32x2, 2 => Float32, 3 => Float32,
+                4 => Float32x3, 5 => Float32x2, 6 => Float32x2,
+                7 => Float32x4, 8 => Float32x4, 9 => Float32x4
+            ],
+        };
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some(&pass.key),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[Some(vertex_layout)],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fs_external"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: self.work,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        if let Some(error) = pollster::block_on(scope.pop()) {
+            let reason = format!(
+                "blend {}: the driver refused its pipeline: {error}",
+                pass.id
+            );
+            log::warn!("{reason}; drawing with Normal");
+            self.external_blends.insert(pass.key.clone(), Err(reason));
+            return None;
+        }
+        let slot = self.external_pipelines.len();
+        self.external_pipelines.push(pipeline);
+        self.external_blends.insert(pass.key.clone(), Ok(slot));
+        Some(slot)
     }
 
     /// The compiled pipeline for a transition, built the first time its key is

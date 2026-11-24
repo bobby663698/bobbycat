@@ -279,6 +279,25 @@ impl Stopper {
     }
 }
 
+/// Loads the same package folder as the window, once per headless process.
+/// An absent directory freezes an empty blend snapshot until the next process.
+fn install_packages(dirs: &AppDirs, monitor: &Monitor) {
+    static INSTALLED: std::sync::Once = std::sync::Once::new();
+    let directory = dirs.config.join("effects");
+    INSTALLED.call_once(|| {
+        let mut validate = monitor.blend_validator();
+        for error in Catalogue::install_with(&directory, &mut |package| {
+            if let Some(pass) = package.blend_pass() {
+                validate(&pass)
+            } else {
+                Ok(())
+            }
+        }) {
+            log::warn!("effects: an external package was not loaded: {error}");
+        }
+    });
+}
+
 impl Api {
     /// An API over this machine's app directories, reporting its jobs
     /// through `events`.
@@ -289,6 +308,8 @@ impl Api {
     /// An API over the given directories: a test's scratch, or an embedder
     /// with a home of its own.
     pub fn with_dirs(dirs: AppDirs, events: EventSink) -> Api {
+        let monitor = Monitor::new();
+        install_packages(&dirs, &monitor);
         let book = Arc::new(job::Book::default());
         let events: EventSink = {
             let book = Arc::clone(&book);
@@ -302,7 +323,7 @@ impl Api {
             titles: Titles::new(&dirs),
             cutouts: Arc::new(Cutouts::new(&dirs.data)),
             stabilizers: Arc::new(Stabilizers::new()),
-            monitor: Monitor::new(),
+            monitor,
             exporter: Exporter::new(),
             sessions: BTreeMap::new(),
             roots: Vec::new(),
@@ -1037,9 +1058,10 @@ fn catalogue(kind: Option<&str>) -> Result<Vec<PackageInfo>, ApiError> {
         Some("audio") => Some(Kind::Audio),
         Some("transition") => Some(Kind::Transition),
         Some("generator") => Some(Kind::Generator),
+        Some("blend") => Some(Kind::Blend),
         Some(other) => {
             return Err(ApiError::invalid(format!(
-                "{other:?} is not a kind: effect, filter, audio, transition or generator"
+                "{other:?} is not a kind: effect, filter, audio, transition, generator or blend"
             )));
         }
     };
@@ -1202,6 +1224,100 @@ mod tests {
     use concat_project::model::MediaKind;
     use serde_json::json;
     use std::sync::Mutex;
+
+    #[test]
+    fn headless_packages_are_loaded_once_from_the_config_effects_folder() {
+        // Exercise the real constructor in its own process: this test must
+        // not install packages into the other API tests' global catalogue.
+        const CHILD: &str = "BOBBYCAT_HEADLESS_PACKAGES_TEST";
+        const ROOT: &str = "BOBBYCAT_HEADLESS_PACKAGES_ROOT";
+        let Some(mode) = std::env::var_os(CHILD) else {
+            let scratch = tempfile::tempdir().unwrap();
+            for mode in ["empty-start", "restarted"] {
+                let output = std::process::Command::new(std::env::current_exe().unwrap())
+                    .args([
+                        "--exact",
+                        "tests::headless_packages_are_loaded_once_from_the_config_effects_folder",
+                        "--nocapture",
+                    ])
+                    .env(CHILD, mode)
+                    .env(ROOT, scratch.path())
+                    .output()
+                    .expect("run the isolated constructor test");
+                assert!(
+                    output.status.success(),
+                    "{mode}: {}\n{}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            }
+            return;
+        };
+        let scratch = PathBuf::from(std::env::var_os(ROOT).expect("the parent's scratch folder"));
+        let dirs = AppDirs {
+            config: scratch.join("config"),
+            data: scratch.join("data"),
+        };
+        let sink: EventSink = Arc::new(|_| {});
+        let put = |directory: &Path, id: &str| {
+            std::fs::create_dir_all(directory).unwrap();
+            std::fs::write(directory.join("effect.toml"), format!("[effect]\nid = \"{id}\"\nname = \"Local effect\"\nkind = \"audio\"\n[ffmpeg]\nchain = \"volume=0.5\"\n")).unwrap();
+        };
+        if mode == "empty-start" {
+            assert!(!dirs.config.join("effects").exists());
+            let _empty = Api::with_dirs(dirs.clone(), Arc::clone(&sink));
+            put(&dirs.config.join("effects/first"), "test.headless-first");
+            put(&dirs.data.join("effects/wrong"), "test.wrong-directory");
+            let blend_folder = dirs.config.join("effects/photocopy");
+            std::fs::create_dir(&blend_folder).unwrap();
+            std::fs::write(
+                blend_folder.join("effect.toml"),
+                include_str!("../../concat-effects/tests/fixtures/blend-photocopy/effect.toml"),
+            )
+            .unwrap();
+            std::fs::write(
+                blend_folder.join("photocopy.wgsl"),
+                include_str!("../../concat-effects/tests/fixtures/blend-photocopy/photocopy.wgsl"),
+            )
+            .unwrap();
+            let mut later = Api::with_dirs(dirs, sink);
+            let Reply::Packages(packages) = ok(later.dispatch(Request::CatalogueList {
+                kind: Some("blend".to_owned()),
+            })) else {
+                panic!("catalogue.list did not return packages");
+            };
+            assert!(
+                packages.is_empty(),
+                "installation after startup waits for restart"
+            );
+            assert!(Catalogue::builtin().get("test.headless-first").is_none());
+            return;
+        }
+        assert_eq!(mode, "restarted");
+        // The previous child installed files; this is the new process that
+        // may finally load them through the normal headless constructor.
+        let mut first = Api::with_dirs(dirs.clone(), Arc::clone(&sink));
+        assert!(Catalogue::builtin().get("test.headless-first").is_some());
+        assert!(Catalogue::builtin().get("test.wrong-directory").is_none());
+        let Reply::Packages(packages) = ok(first.dispatch(Request::CatalogueList {
+            kind: Some("blend".to_owned()),
+        })) else {
+            panic!("catalogue.list did not return packages");
+        };
+        assert!(
+            packages
+                .iter()
+                .any(|package| package.id == "plug.photocopy"),
+            "the actual external blend must load through the headless constructor"
+        );
+        put(&dirs.config.join("effects/second"), "test.headless-second");
+        let _second = Api::with_dirs(dirs, sink);
+        assert!(
+            Catalogue::builtin().get("test.headless-second").is_none(),
+            "later API sessions must not reinstall packages"
+        );
+        assert!(Catalogue::builtin().get("test.headless-first").is_some());
+    }
 
     /// An API whose config and data live in a scratch folder that goes
     /// away with the test, and whose events pile up where a test can read

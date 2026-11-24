@@ -119,6 +119,8 @@ pub struct MonitorPane {
     /// Said once per project: a monitor that cannot decode says so, and
     /// then stops repeating itself.
     failed: bool,
+    /// The rejected external blend already reported for the shown frames.
+    blend_warning: Option<String>,
     /// Said once a run: the picture is drawn on the CPU, slower and without
     /// effects, since no graphics device would draw it.
     told_slow: bool,
@@ -243,7 +245,10 @@ impl MonitorPane {
                 self.quality.insert(id, (index.max(0) as usize).min(2));
                 self.request(studio, Lane::Main);
             }
-            MonitorMsg::Opened => self.failed = false,
+            MonitorMsg::Opened => {
+                self.failed = false;
+                self.blend_warning = None;
+            }
             MonitorMsg::Closed => self.image = slint::Image::default(),
         }
     }
@@ -251,19 +256,20 @@ impl MonitorPane {
     /// Puts a worker's frame on the monitor, or says once why it could not.
     fn show(&mut self, result: Result<Picture, String>, spec: FrameSpec, studio: &mut Studio) {
         let exact = result.as_ref().map_or(true, Picture::exact);
+        let mut blend_error = None;
         let picture = match result {
             // Drawn here and not on the worker: this is the event loop,
             // the one thread the window's renderer submits from, and a
             // second thread submitting beside it hangs the GPU - see
             // `Monitor::texture_of`.
-            Ok(Picture::Sources(sources)) => studio
-                .host
-                .monitor
-                .texture_of(&sources, spec)
-                .and_then(|texture| {
+            Ok(Picture::Sources(sources)) => {
+                let texture = studio.host.monitor.texture_of(&sources, spec);
+                blend_error = studio.host.monitor.take_blend_error();
+                texture.and_then(|texture| {
                     slint::Image::try_from(texture)
                         .map_err(|error| format!("preview texture: {error}"))
-                }),
+                })
+            }
             Ok(Picture::Pixels(bytes, width, height, _)) => {
                 if !self.told_slow && studio.host.monitor.drawn_slowly() {
                     self.told_slow = true;
@@ -280,6 +286,10 @@ impl MonitorPane {
             Ok(image) => {
                 self.image = image;
                 self.inexact = !exact;
+                if let Some(why) = self.changed_blend_warning(blend_error) {
+                    log::warn!("preview: an external blend was left out: {why}");
+                    studio.warn(&tf("monitor.previewFailed", &[&why]));
+                }
             }
             Err(error) => {
                 log::warn!(
@@ -298,6 +308,16 @@ impl MonitorPane {
                 }
             }
         }
+    }
+
+    /// Reports a continuing fallback once, and again only if it changes
+    /// or a complete frame has cleared it in between.
+    fn changed_blend_warning(&mut self, next: Option<String>) -> Option<String> {
+        if self.blend_warning == next {
+            return None;
+        }
+        self.blend_warning = next;
+        self.blend_warning.clone()
     }
 
     /// The quality tier for the project's active timeline: 0 full, 1
@@ -453,6 +473,26 @@ fn missing_source(error: &str, media: &[MediaItem]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_blend_warning_is_not_repeated_for_every_frame() {
+        let mut pane = MonitorPane::default();
+        let rejected = "plug.photocopy: invalid shader module".to_owned();
+        assert_eq!(
+            pane.changed_blend_warning(Some(rejected.clone())),
+            Some(rejected.clone())
+        );
+        assert_eq!(pane.changed_blend_warning(Some(rejected.clone())), None);
+        assert_eq!(pane.changed_blend_warning(None), None);
+        assert_eq!(
+            pane.changed_blend_warning(Some(rejected.clone())),
+            Some(rejected)
+        );
+        assert_eq!(
+            pane.changed_blend_warning(Some("plug.other: invalid shader module".to_owned())),
+            Some("plug.other: invalid shader module".to_owned())
+        );
+    }
 
     fn media(path: &str) -> MediaItem {
         MediaItem {

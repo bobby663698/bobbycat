@@ -39,7 +39,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use concat_core::SpeedCurve;
 use concat_core::animate::{Animation, Ease as AnimEase, Key as AnimKey, Track as AnimTrack};
 use concat_core::frame::{Frame, Signal};
-use concat_core::shader::{RevealMap, ShaderPass};
+use concat_core::shader::{BlendPass, RevealMap, ShaderPass};
 use concat_core::time::{FrameRate, Rational};
 use concat_core::timeline::{Clip, ClipId, MediaRef, Timeline, Track, TrackKind, Transform};
 use concat_effects::Catalogue;
@@ -1480,6 +1480,35 @@ fn audio_pieces_of(
         .collect()
 }
 
+/// Missing blend modes that will be rendered as Normal, once per id.
+/// The original ids stay in the request and the project document.
+pub fn blend_notes(clips: &[ExportClip]) -> Vec<String> {
+    let catalogue = Catalogue::builtin();
+    let mut notes = Vec::new();
+    for clip in clips {
+        if !clip.hidden
+            && clip.kind.is_visual()
+            && let Some(note) = blend_note(&clip.blend, catalogue)
+            && !notes.contains(&note)
+        {
+            notes.push(note);
+        }
+    }
+    notes
+}
+
+fn blend_note(id: &str, catalogue: &Catalogue) -> Option<String> {
+    let id = id.trim();
+    if id.is_empty()
+        || concat_core::timeline::card_by_id(id).is_some()
+        || catalogue.blend_pass(id).is_some()
+    {
+        None
+    } else {
+        Some(format!("unknown blend mode {id}; rendered as Normal"))
+    }
+}
+
 /// The plan's layer for one clip at one instant, filled in: the picture
 /// decoded, its effects resolved, on its track, and its crop and flips
 /// where the plan draws them (`geometry`; see `resolve::planned_geometry`),
@@ -1495,12 +1524,14 @@ fn filled(
     geometry: Option<&resolve::PlannedGeometry>,
     transitions: Vec<Transition>,
     stabilized: Option<&resolve::StabilizeJob>,
+    external_blend: Option<&BlendPass>,
 ) -> PlannedLayer {
     let mut filled = PlannedLayer {
         source: Some(frame),
         track,
         effects,
         transitions,
+        external_blend: external_blend.cloned(),
         ..layer.clone()
     };
     if let Some(job) = stabilized {
@@ -1821,6 +1852,9 @@ fn drawn_on<T>(
     draw: impl FnMut(&mut dyn Compositor) -> T,
 ) -> Result<T, String> {
     let (made, left_out) = ladder.draw(draw);
+    if let Some(reason) = ladder.take_blend_error() {
+        return Err(format!("an external blend could not be applied: {reason}"));
+    }
     if strict && left_out {
         return Err(
             "this frame has effects or HDR that cannot be drawn now: the graphics \
@@ -1886,12 +1920,17 @@ fn render_picture(
         shapes,
         ranges,
         chains,
+        blends,
+        blend_notes,
         reveal_maps,
         cutouts,
         stabilized,
         highlight: _,
         backdrops,
-    } = build_timeline(request, rate, visible, transitions);
+    } = build_timeline(request, rate, visible, transitions, Catalogue::builtin());
+    for note in &blend_notes {
+        log::warn!("export: {note}");
+    }
 
     let mut options = EncodeOptions {
         crf: request.crf,
@@ -2070,6 +2109,7 @@ fn render_picture(
                         geometry.get(&layer.clip),
                         shapes_at(&shapes, layer, time, rate),
                         stabilized.get(&layer.clip),
+                        blends.get(&layer.clip),
                     ));
                     continue;
                 }
@@ -2097,6 +2137,7 @@ fn render_picture(
                         geometry.get(&layer.clip),
                         shapes_at(&shapes, layer, time, rate),
                         stabilized.get(&layer.clip),
+                        blends.get(&layer.clip),
                     ));
                 }
             }
@@ -2840,6 +2881,14 @@ impl Held {
             _ => false,
         }
     }
+
+    /// An external blend the device could not apply on the current frame.
+    fn blend_error(&mut self) -> Option<String> {
+        match self.0.as_mut() {
+            Some(Drawer::Gpu(gpu)) => gpu.take_blend_error(),
+            _ => None,
+        }
+    }
 }
 
 /// The export's device and what it takes to keep one: the compositor, the
@@ -2898,6 +2947,12 @@ impl Device<'_> {
             self.compositor.compositor().planar(self.planar);
             frame = draw(&mut self.clock());
         }
+        if let Some(reason) = self.compositor.blend_error() {
+            return Err(format!(
+                "an external blend could not be applied at {:.3}s; the export stops: {reason}",
+                time.as_f64()
+            ));
+        }
         if self.compositor.left_out() {
             return Err(format!(
                 "the GPU device was lost {} time{} part way through the export, and the frame \
@@ -2922,6 +2977,13 @@ impl Device<'_> {
             return Ok(Vec::new());
         };
         let frame = self.compositor.compositor().collect();
+        if !self.compositor.lost()
+            && let Some(reason) = self.compositor.blend_error()
+        {
+            return Err(format!(
+                "an external blend could not be applied; the export stops: {reason}"
+            ));
+        }
         if let Some(frame) = frame
             && !self.compositor.lost()
         {
@@ -3306,6 +3368,8 @@ pub fn preview_sources_of(
         shapes,
         ranges: _,
         chains,
+        blends,
+        blend_notes: _,
         reveal_maps,
         cutouts,
         stabilized,
@@ -3362,6 +3426,7 @@ pub fn preview_sources_of(
                     geometry.get(&layer.clip),
                     shapes_at(shapes, layer, time, rate),
                     stabilized.get(&layer.clip),
+                    blends.get(&layer.clip),
                 ))
             }
             Err(error) => failures.push(format!("{}: {error}", layer.media.display())),
@@ -3430,6 +3495,13 @@ pub struct PreviewPlan {
     output: Signal,
 }
 
+impl PreviewPlan {
+    /// Missing blend modes used by this preview, without changing their ids.
+    pub fn blend_notes(&self) -> &[String] {
+        &self.built.blend_notes
+    }
+}
+
 /// Builds the plan for `clips` at one output size and rate. The costly
 /// half of a preview - transitions resolved, the engine timeline, every
 /// chain and pass, every cutout's masks found on disk - and the half that
@@ -3475,7 +3547,7 @@ pub fn preview_plan(
         clips: Vec::new(),
     };
     PreviewPlan {
-        built: build_timeline(&shim, rate, &visible, transitions),
+        built: build_timeline(&shim, rate, &visible, transitions, Catalogue::builtin()),
         rate,
         width,
         height,
@@ -3873,6 +3945,189 @@ mod tests {
             source_start,
             ..ExportClip::blank(kind_of, start, duration, track)
         }
+    }
+
+    fn blend_request(clips: Vec<ExportClip>) -> ExportRequest {
+        ExportRequest {
+            output: String::new(),
+            width: 8,
+            height: 8,
+            rate_num: 30,
+            rate_den: 1,
+            crf: 18,
+            preset: String::new(),
+            codec: VideoCodec::H264,
+            ten_bit: false,
+            rate_mode: RateMode::Vbr,
+            bitrate_kbps: 0,
+            color_range: concat_media::ColorRange::Limited,
+            color_space: ColorSpace::Sdr,
+            hdr: false,
+            effect_time_offset: 0.0,
+            canvas: [0, 0, 0, 255],
+            clips,
+        }
+    }
+
+    #[test]
+    fn an_external_blend_reaches_the_shared_preview_and_export_layer() {
+        let package = concat_effects::Package::from_folder(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../concat-effects/tests/fixtures/blend-photocopy"),
+        )
+        .expect("loads the external package");
+        let mut catalogue = Catalogue::new();
+        catalogue.add(package).expect("adds the external blend");
+        let mut picture = clip("video", 0, 0.0, 2.0, 0.0);
+        picture.blend = "plug.photocopy".to_owned();
+        let mut request = blend_request(vec![picture]);
+        let rate = FrameRate::THIRTY;
+        let visible: Vec<_> = request.clips.iter().collect();
+        let built = build_timeline(&request, rate, &visible, Vec::new(), &catalogue);
+        assert!(built.blend_notes.is_empty());
+        let plan = plan_frame(&built.timeline, Rational::ZERO);
+        let layer = &plan.layers[0];
+        let drawn = filled(
+            layer,
+            Arc::new(Frame::black(8, 8)),
+            0,
+            Vec::new(),
+            None,
+            Vec::new(),
+            None,
+            built.blends.get(&layer.clip),
+        );
+        assert_eq!(
+            drawn.external_blend.as_ref().expect("the blend").id,
+            "plug.photocopy"
+        );
+        assert_eq!(request.clips[0].blend, "plug.photocopy");
+
+        // A missing package changes the drawing, not the document's identity.
+        let built = build_timeline(&request, rate, &visible, Vec::new(), &Catalogue::new());
+        assert!(built.blends.is_empty());
+        assert_eq!(built.blend_notes.len(), 1);
+        assert!(built.blend_notes[0].contains("plug.photocopy"));
+        assert_eq!(
+            plan_frame(&built.timeline, Rational::ZERO).layers[0].blend,
+            concat_core::Blend::Normal
+        );
+        request.clips.push(request.clips[0].clone());
+        let visible: Vec<_> = request.clips.iter().collect();
+        let built = build_timeline(&request, rate, &visible, Vec::new(), &Catalogue::new());
+        assert_eq!(built.blend_notes.len(), 1, "one note per missing id");
+        assert!(
+            request
+                .clips
+                .iter()
+                .all(|clip| clip.blend == "plug.photocopy")
+        );
+    }
+
+    #[test]
+    fn an_installed_blend_matches_between_a_real_preview_and_export() {
+        let temp = std::env::temp_dir();
+        let dir = temp.join(format!(
+            "bobbycat-blend-export-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("a time")
+                .as_nanos()
+        ));
+        std::fs::create_dir(&dir).expect("creates a new test folder");
+        let packages = dir.join("effects");
+        let package = packages.join("photocopy");
+        std::fs::create_dir_all(&package).expect("creates the package folder");
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../concat-effects/tests/fixtures/blend-photocopy");
+        for name in ["effect.toml", "photocopy.wgsl"] {
+            std::fs::copy(fixture.join(name), package.join(name)).expect("copies the real package");
+        }
+        assert!(Catalogue::install(&packages).is_empty());
+        assert!(Catalogue::builtin().blend_pass("plug.photocopy").is_some());
+
+        let footage = dir.join("grey.mp4");
+        let mut encoder = Encoder::create(
+            &footage,
+            64,
+            64,
+            FrameRate::THIRTY,
+            &EncodeOptions::default(),
+        )
+        .expect("the native test must have a working encoder");
+        let mut grey = Frame::black(64, 64);
+        grey.fill([128, 128, 128, 255]);
+        for _ in 0..30 {
+            encoder.write_frame(&grey).expect("writes the source");
+        }
+        encoder.finish().expect("finishes the source");
+        drop(encoder);
+        let mut lower = clip("video", 0, 0.0, 1.0, 0.0);
+        lower.path = footage.to_string_lossy().into_owned();
+        lower.media_width = Some(64);
+        lower.media_height = Some(64);
+        lower.has_audio = Some(false);
+        let mut upper = lower.clone();
+        upper.track = 1;
+        upper.blend = "plug.photocopy".to_owned();
+        let mut request = blend_request(vec![lower, upper]);
+        request.width = 64;
+        request.height = 64;
+        request.output = dir.join("photocopy.mp4").to_string_lossy().into_owned();
+        let pool = concat_media::ReaderPool::new(16 * 1024 * 1024, 2);
+        let preview = preview_frame(
+            &pool,
+            &PreviewFrameRequest {
+                clips: request.clips.clone(),
+                time: 0.5,
+                width: 64,
+                height: 64,
+                rate_num: 30,
+                rate_den: 1,
+                color_space: ColorSpace::Sdr,
+                canvas: request.canvas,
+            },
+        )
+        .expect("previews the installed blend");
+        let centre = (32 * 64 + 32) * 4;
+        assert!(
+            preview[centre] < 110,
+            "the external formula must darken the grey"
+        );
+        let cancel = AtomicBool::new(false);
+        let mut progress = |_: i64, _: i64, _: &'static str| {};
+        let output = render(
+            &request,
+            Reporter {
+                progress: &mut progress,
+                cancel: &cancel,
+            },
+        )
+        .expect("exports the same blend");
+        let exported = pool
+            .frame(&concat_media::FrameRequest::new(
+                &output,
+                Rational::new(1, 2),
+                64,
+                64,
+            ))
+            .expect("reads the exported frame");
+        for channel in 0..3 {
+            assert!(
+                (i16::from(exported.pixels()[centre + channel])
+                    - i16::from(preview[centre + channel]))
+                .abs()
+                    <= 6,
+                "the encoded output must match the preview within codec rounding"
+            );
+        }
+        drop(pool);
+        assert_eq!(
+            dir.canonicalize().expect("test folder").parent(),
+            Some(temp.canonicalize().expect("temp folder").as_path())
+        );
+        std::fs::remove_dir_all(&dir).expect("cleans only the new test folder");
     }
 
     /// A still - a picture, a title - is read once and held, not paced: its

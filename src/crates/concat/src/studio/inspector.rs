@@ -30,6 +30,18 @@ impl Studio {
         if ids.is_empty() {
             return;
         }
+        let blend = if field == ClipField::Blend {
+            let current = self.clip(&ids[0]).map_or("", |clip| clip.blend.as_str());
+            let choice = blend_menu(current)
+                .id(value.max(0.0) as usize)
+                .map(str::to_owned);
+            if choice.is_none() {
+                return;
+            }
+            choice
+        } else {
+            None
+        };
         self.commit_targets = ids.clone();
         self.begin_echo();
         let value = f64::from(value);
@@ -293,15 +305,9 @@ impl Studio {
                 ClipField::FlipH => clip.flip_h = value != 0.0,
                 ClipField::FlipV => clip.flip_v = value != 0.0,
                 ClipField::Blend => {
-                    let mode = concat_core::Blend::ALL
-                        .get(value.max(0.0) as usize)
-                        .copied()
-                        .unwrap_or_default();
-                    clip.blend = if mode == concat_core::Blend::Normal {
-                        String::new()
-                    } else {
-                        mode.name().to_owned()
-                    };
+                    if let Some(blend) = &blend {
+                        clip.blend.clone_from(blend);
+                    }
                 }
                 ClipField::CropLeft
                 | ClipField::CropTop
@@ -482,6 +488,28 @@ impl Studio {
         self.commit_pending = true;
         self.request_preview();
     }
+}
+
+/// The installed blends, with a placeholder for a selected missing package.
+pub(super) fn blend_menu(current: &str) -> crate::blend_menu::BlendMenu {
+    crate::blend_menu::BlendMenu::new(
+        current,
+        Catalogue::builtin().blends(),
+        [
+            t("clipInspector.normal"),
+            t("clipInspector.multiply"),
+            t("clipInspector.screen"),
+            t("clipInspector.add"),
+            t("clipInspector.lighten"),
+            t("clipInspector.darken"),
+            t("clipInspector.overlay"),
+            t("clipInspector.softLight"),
+            t("clipInspector.hardLight"),
+            t("clipInspector.colorBurn"),
+            t("clipInspector.colorDodge"),
+            t("clipInspector.linearBurn"),
+        ],
+    )
 }
 
 /// One of the Shape section's numbers onto `shape`. A switch turned on

@@ -1261,6 +1261,7 @@ impl Studio {
             }
         };
         let (mask_rows, mask_index) = self.mask_rows(clip);
+        let blend_menu = super::inspector::blend_menu(&clip.blend);
         SelectedClipData {
             present: true,
             batch: targets.len() as i32,
@@ -1307,10 +1308,14 @@ impl Studio {
             preserve_pitch: clip.preserve_pitch,
             flip_h: clip.flip_h,
             flip_v: clip.flip_v,
-            blend: concat_core::Blend::ALL
-                .iter()
-                .position(|mode| *mode == concat_core::Blend::parse(&clip.blend))
-                .unwrap_or(0) as i32,
+            blend: blend_menu.selected as i32,
+            blend_names: ModelRc::new(VecModel::from(
+                blend_menu
+                    .labels
+                    .into_iter()
+                    .map(slint::SharedString::from)
+                    .collect::<Vec<_>>(),
+            )),
             crop_left: clip.crop.map(|crop| crop.left as f32).unwrap_or(0.0),
             crop_top: clip.crop.map(|crop| crop.top as f32).unwrap_or(0.0),
             crop_right: clip.crop.map(|crop| crop.right as f32).unwrap_or(0.0),

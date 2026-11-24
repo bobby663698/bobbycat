@@ -27,7 +27,7 @@ use std::sync::Arc;
 
 use concat_core::frame::{Frame, Signal};
 use concat_core::mask::{MaskStack, MaskUniform, StackUniform};
-use concat_core::shader::ShaderPass;
+use concat_core::shader::{BlendPass, ShaderPass};
 use concat_core::time::Rational;
 use concat_core::timeline::{Blend, ClipId, Timeline, TrackKind, Transform};
 
@@ -293,6 +293,9 @@ pub struct PlannedLayer {
     pub transitions: Vec<Transition>,
     /// How the layer's colour meets what is beneath it.
     pub blend: Blend,
+    /// An external card's blend, resolved by the catalogue. The GPU uses it
+    /// instead of `blend`; a CPU renderer draws the layer with Normal.
+    pub external_blend: Option<BlendPass>,
     /// Blend strength over everything beneath, in `0.0..=1.0`.
     pub opacity: f32,
     /// How many times the frame the picture is, along the axis it is most:
@@ -327,6 +330,7 @@ impl PlannedLayer {
             masks: MaskStack::default(),
             transitions: Vec::new(),
             blend: Blend::Normal,
+            external_blend: None,
             opacity: 1.0,
             overscan: 1.0,
         }
@@ -434,6 +438,7 @@ impl PlannedLayer {
             || self.masks.cuts()
             || !self.transitions.is_empty()
             || self.blend != Blend::Normal
+            || self.external_blend.is_some()
         {
             return false;
         }
@@ -852,6 +857,9 @@ impl FramePlan {
             if layer.blend != Blend::Normal {
                 let _ = write!(words, " {:?}", layer.blend);
             }
+            if let Some(pass) = &layer.external_blend {
+                let _ = write!(words, " blend:{}", pass.id);
+            }
             for pass in &layer.effects {
                 let _ = write!(words, " +{}", pass.package);
             }
@@ -942,6 +950,7 @@ pub fn plan_frame(timeline: &Timeline, time: Rational) -> FramePlan {
             masks: clip.masks_at(time),
             transitions: Vec::new(),
             blend: clip.blend,
+            external_blend: None,
             // The fade ramp multiplies in here, so the compositor only ever
             // sees a per-frame opacity - it has no idea fades exist.
             opacity: (clip.opacity_at(time) * clip.video_fade_factor(time)).clamp(0.0, 1.0),
@@ -969,6 +978,19 @@ mod tests {
 
     fn seconds(value: i64) -> Rational {
         Rational::from_int(value)
+    }
+
+    #[test]
+    fn an_external_blend_does_not_hide_the_ground_it_reads() {
+        let mut layer = PlannedLayer::picture(detached_clip(), Arc::new(Frame::black(4, 4)));
+        assert!(layer.covers(4, 4, true));
+        layer.external_blend = Some(BlendPass {
+            id: "plug.photocopy".into(),
+            key: "plug.photocopy@1".into(),
+            source: Arc::from(""),
+            entry: "blend".into(),
+        });
+        assert!(!layer.covers(4, 4, true));
     }
 
     #[test]

@@ -80,6 +80,148 @@ fn plan(width: u32, height: u32, layers: Vec<PlannedLayer>) -> FramePlan {
     }
 }
 
+fn external_blend(source: &str) -> BlendPass {
+    let manifest = concat_effects::Manifest::parse(include_str!(
+        "../../../concat-effects/tests/fixtures/blend-photocopy/effect.toml"
+    ))
+    .expect("the photocopy manifest");
+    concat_effects::blend::compile(&manifest, source).expect("a pure blend")
+}
+
+const PHOTOCOPY: &str =
+    include_str!("../../../concat-effects/tests/fixtures/blend-photocopy/photocopy.wgsl");
+
+/// Read a composite before its SDR resolve, retaining premultiplied alpha.
+fn blend_pixels(gpu: &mut WgpuCompositor, plan: &FramePlan) -> Vec<[f32; 4]> {
+    let (draws, vertices) = gpu.prepare(plan);
+    gpu.write_vertices(&vertices);
+    let (canvas, texture, view) = gpu.canvas(plan.width, plan.height);
+    let encoder = gpu.encode(&view, &texture, &draws, clear_of(plan.canvas));
+    gpu.queue.submit([encoder.finish()]);
+    let out = read_floats(gpu, (plan.width, plan.height), canvas);
+    gpu.retire();
+    out
+}
+
+#[test]
+fn an_external_photocopy_blend_composites_premultiplied_pixels() {
+    let Some(mut gpu) = gpu() else { return };
+    let pass = external_blend(PHOTOCOPY);
+    assert!(gpu.validate_blend(&pass).is_ok());
+    assert!(gpu.take_blend_error().is_none(), "validation draws nothing");
+    let half = 128.0 / 255.0;
+    // Eight-bit frames carry BT.1886 gamma, not sRGB's transfer curve.
+    let linear = |value: u8| (f32::from(value) / 255.0).powf(2.4);
+    let ink = |fg: u8, bg: u8| (2.0 * linear(fg) * linear(bg)).min(1.0);
+    let faded = 1.0 - half * 0.5 + ink(160, 255) * half * 0.5;
+    for (fg, bg, opacity, expected) in [
+        ([255; 4], [255; 4], 1.0, [1.0; 4]),
+        ([0, 0, 0, 255], [255; 4], 1.0, [0.0, 0.0, 0.0, 1.0]),
+        (
+            [160, 160, 160, 128],
+            [255; 4],
+            0.5,
+            [faded, faded, faded, 1.0],
+        ),
+        (
+            [255, 0, 255, 0],
+            [64, 128, 192, 128],
+            1.0,
+            [
+                linear(64) * half,
+                linear(128) * half,
+                linear(192) * half,
+                half,
+            ],
+        ),
+        ([255, 0, 0, 128], [0; 4], 1.0, [half, 0.0, 0.0, half]),
+        ([255, 0, 255, 0], [0; 4], 1.0, [0.0; 4]),
+        (
+            [128, 160, 192, 255],
+            [192, 128, 160, 255],
+            1.0,
+            [ink(128, 192), ink(160, 128), ink(192, 160), 1.0],
+        ),
+    ] {
+        let mut top = layer(solid(4, 4, fg));
+        top.opacity = opacity;
+        top.external_blend = Some(pass.clone());
+        let plan = FramePlan {
+            canvas: [0; 4],
+            ..plan(4, 4, vec![layer(solid(4, 4, bg)), top])
+        };
+        let pixel = blend_pixels(&mut gpu, &plan)[5];
+        for (got, want) in pixel.into_iter().zip(expected) {
+            assert!(
+                (got - want).abs() < 0.003,
+                "{fg:?} over {bg:?}: {pixel:?}, expected {expected:?}"
+            );
+        }
+        assert!(gpu.blend_error(&pass.key).is_none());
+    }
+    assert_eq!(
+        gpu.external_pipelines.len(),
+        1,
+        "the source is compiled once"
+    );
+}
+
+#[test]
+fn changing_an_external_formula_with_the_same_id_uses_a_new_pipeline() {
+    let Some(mut gpu) = gpu() else { return };
+    let before = external_blend(PHOTOCOPY);
+    let after = external_blend(&PHOTOCOPY.replace(
+        "2.0 * foreground * background",
+        "0.0 * foreground * background",
+    ));
+    assert_eq!(before.id, after.id);
+    assert_ne!(before.key, after.key);
+    let mut top = layer(solid(4, 4, [255; 4]));
+    top.external_blend = Some(before);
+    let mut plan = plan(4, 4, vec![layer(solid(4, 4, [255; 4])), top]);
+    assert!(blend_pixels(&mut gpu, &plan)[5][0] > 0.997);
+    plan.layers[1].external_blend = Some(after);
+    assert!(blend_pixels(&mut gpu, &plan)[5][0] < 0.003);
+    assert_eq!(gpu.external_pipelines.len(), 2);
+}
+
+#[test]
+fn a_refused_external_pipeline_keeps_the_layer_and_the_builtin_pipelines() {
+    let Some(mut gpu) = gpu() else { return };
+    // Valid in the catalogue, but collides with a function in the host wrapper.
+    let pass = external_blend(&format!(
+        "{PHOTOCOPY}\nfn shade(value: vec4<f32>) -> vec4<f32> {{ return value; }}"
+    ));
+    let reason = gpu
+        .validate_blend(&pass)
+        .expect_err("a host-symbol collision");
+    assert!(reason.contains(&pass.id));
+    assert!(
+        gpu.take_blend_error().is_none(),
+        "vetting is not a degraded draw"
+    );
+    let mut top = layer(solid(4, 4, [255, 0, 0, 255]));
+    let plain = plan(4, 4, vec![top.clone()]);
+    let expected = gpu.render(&plain);
+    top.external_blend = Some(pass.clone());
+    let refused = plan(4, 4, vec![top]);
+    for _ in 0..2 {
+        let actual = gpu.render(&refused);
+        assert_eq!(actual.pixels(), expected.pixels());
+        assert_eq!(gpu.take_blend_error().as_deref(), Some(reason.as_str()));
+    }
+    assert!(gpu.blend_error(&pass.key).is_some());
+    assert!(!gpu.is_dead());
+    assert_eq!(gpu.render(&plain).pixels(), expected.pixels());
+    assert!(gpu.take_blend_error().is_none(), "no previous-frame error");
+
+    // A transition prepares two plans before it reports: a clean second
+    // side must not erase the first side's omitted card.
+    let _ = gpu.prepare(&refused);
+    let _ = gpu.prepare(&plain);
+    assert_eq!(gpu.take_blend_error().as_deref(), Some(reason.as_str()));
+}
+
 /// A package's pass: `id` with `body` as its shader and `params` as the
 /// manifest's parameter table, resolved to `values`, drawn on the display
 /// level - the picture a look written by eye reads.
