@@ -4,8 +4,8 @@
 //! A stand-in for `bobbycat-cli api`, for the sheet's tests only.
 //!
 //! It reads one line at a time and writes it back, so a test can check that
-//! a script reaches a child's standard input and that its answers come back
-//! - without a built CLI, a project on disk, or a shell to write a helper
+//! a script reaches a child's standard input and that its answers come back,
+//! with no built CLI, no project on disk, and no shell to write a helper
 //! script in. A shell helper will not do: Windows cannot spawn a `.cmd`
 //! without `cmd /c`, which is why the tests use this binary's own path
 //! (`CARGO_BIN_EXE_concat-script-echo`) instead.
