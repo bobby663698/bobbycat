@@ -125,6 +125,10 @@ pub struct Preferences {
     /// library it happens to be filed in is not part of it.
     #[serde(default)]
     pub favourites: Vec<String>,
+    /// Plugin folder names the person turned off, so the next launch leaves
+    /// them installed but inert. A name no longer installed is harmless.
+    #[serde(default)]
+    pub disabled_plugins: Vec<String>,
     /// The playhead stops at the end of the content instead of going where
     /// it is put. Off by default: a click past the last clip lands there, so
     /// a clip can be dropped at the playhead beyond everything else.

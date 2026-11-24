@@ -1238,6 +1238,8 @@ pub struct Studio {
     pub scripts: crate::panes::scripts::ScriptsPane,
     /// The Scenes sheet: group timelines into named scenes.
     pub scenes: crate::panes::scenes::ScenesPane,
+    /// The Plugins sheet: the programs this app did not write.
+    pub plugins: crate::panes::plugins::PluginsPane,
     /// A file from the library lent the monitor and the speakers; see
     /// `crate::source`.
     pub source: Option<crate::source::Source>,
@@ -3173,6 +3175,7 @@ impl Studio {
             sounds: crate::panes::sounds::SoundsPane::open(&host.dirs),
             scripts: crate::panes::scripts::ScriptsPane::default(),
             scenes: crate::panes::scenes::ScenesPane::default(),
+            plugins: crate::panes::plugins::PluginsPane::default(),
             source: None,
             meters: crate::meters::MeterFeed::default(),
             voiceover: crate::panes::voiceover::VoiceoverPane::default(),

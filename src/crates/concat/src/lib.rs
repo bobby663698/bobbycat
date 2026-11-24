@@ -1800,6 +1800,26 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     app.on_scenes_closed(on_window!(|state| {
         state.handle(Msg::Scenes(ScenesMsg::Close));
     }));
+    // The Plugins sheet: installed programs and what they may do.
+    use panes::plugins::PluginsMsg;
+    app.on_plugins_open(on_window!(|state| {
+        state.handle(Msg::Plugins(PluginsMsg::Open));
+    }));
+    app.on_plugins_close(on_window!(|state| {
+        state.handle(Msg::Plugins(PluginsMsg::Close));
+    }));
+    app.on_plugins_rescan(on_window!(|state| {
+        state.handle(Msg::Plugins(PluginsMsg::Rescan));
+    }));
+    app.on_plugins_enable(on_window!(|state, id: SharedString| {
+        state.handle(Msg::Plugins(PluginsMsg::Enable { id: id.to_string() }));
+    }));
+    app.on_plugins_disable(on_window!(|state, id: SharedString| {
+        state.handle(Msg::Plugins(PluginsMsg::Disable { id: id.to_string() }));
+    }));
+    app.on_plugins_uninstall(on_window!(|state, id: SharedString| {
+        state.handle(Msg::Plugins(PluginsMsg::Uninstall { id: id.to_string() }));
+    }));
     // Text to speech keeps the sample it reads in as a voice of the
     // user's own, with a name and a picture.
     app.on_speech_save_name_edited(on_window!(|state, name: SharedString| {
@@ -2643,6 +2663,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
                         "speech" => state.handle(Msg::Speech(SpeechMsg::Open)),
                         "scripts" => state.handle(Msg::Scripts(panes::scripts::ScriptsMsg::Open)),
                         "scenes" => state.handle(Msg::Scenes(panes::scenes::ScenesMsg::Open)),
+                        "plugins" => state.handle(Msg::Plugins(panes::plugins::PluginsMsg::Open)),
                         "clear-cache" => state.clear_project_cache(),
                         "settings" => state.handle(Msg::Settings(SettingsMsg::Open)),
                         "close-project" => {

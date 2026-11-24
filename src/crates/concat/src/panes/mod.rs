@@ -20,6 +20,7 @@ pub mod glide;
 pub mod media_bin;
 pub mod monitor;
 pub mod pace;
+pub mod plugins;
 pub mod project;
 pub mod relink;
 pub mod scenes;
@@ -62,6 +63,8 @@ pub enum Msg {
     Scripts(scripts::ScriptsMsg),
     /// To the Scenes sheet.
     Scenes(scenes::ScenesMsg),
+    /// To the Plugins sheet.
+    Plugins(plugins::PluginsMsg),
 }
 
 /// What a message says in the log: the activity trail of what the person

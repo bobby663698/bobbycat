@@ -55,6 +55,7 @@ import { SpeechDialog, SpeechSheetData } from "dialogs/speech.slint";
 import { NewVoiceData, NewVoiceDialog } from "dialogs/new-voice.slint";
 import { ScriptsSheetData, ScriptsDialog } from "dialogs/scripts.slint";
 import { SceneChipData, ScenesSheetData, ScenesDialog } from "dialogs/scenes.slint";
+import { PluginData, PluginsSheetData, PluginsDialog } from "dialogs/plugins.slint";
 import { AvatarData } from "primitives/avatar.slint";
 import { VoiceoverData, VoiceoverPanel } from "dialogs/voiceover.slint";
 import { DockDivider, DockSide, SeatBox } from "dock.slint";
@@ -192,6 +193,8 @@ export {
     ScriptsSheetData,
     SceneChipData,
     ScenesSheetData,
+    PluginData,
+    PluginsSheetData,
 }
 export component App inherits Window {
     title: "BobbyCat";
@@ -525,6 +528,15 @@ export component App inherits Window {
     callback scenes-clear-scene();
     callback scenes-add();
     callback scenes-closed();
+
+    /// The Plugins sheet: installed programs and what they may do.
+    in property <PluginsSheetData> plugins;
+    callback plugins-open();
+    callback plugins-close();
+    callback plugins-rescan();
+    callback plugins-enable(id: string);
+    callback plugins-disable(id: string);
+    callback plugins-uninstall(id: string);
 
     /// The voiceover panel; see VoiceoverPanel. Its meter and clock come
     /// on the Editor global, from a timer.
@@ -1193,6 +1205,29 @@ export component App inherits Window {
         clear-scene => { root.scenes-clear-scene(); }
         add => { root.scenes-add(); }
         close-requested => { root.scenes-closed(); }
+    }
+
+    PluginsDialog {
+        fill: root.sheets-fill;
+        floating: !root.sheets-fill;
+        home-right: 100px;
+        home-top: 140px;
+        z: root.plugins.open ? 3 : 0;
+        inset-top: root.safe-area-insets.top;
+        inset-bottom: root.safe-area-insets.bottom;
+        inset-left: root.safe-area-insets.left;
+        inset-right: root.safe-area-insets.right;
+        x: 0;
+        y: root.sheets-top;
+        width: root.width;
+        height: root.height - root.sheets-top;
+        data: root.plugins;
+
+        enable(id) => { root.plugins-enable(id); }
+        disable(id) => { root.plugins-disable(id); }
+        uninstall(id) => { root.plugins-uninstall(id); }
+        rescan => { root.plugins-rescan(); }
+        close-requested => { root.plugins-close(); }
     }
 
     RelinkDialog {

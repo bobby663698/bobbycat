@@ -543,6 +543,11 @@ impl Studio {
                 pane.update(msg, self);
                 self.scenes = pane;
             }
+            crate::panes::Msg::Plugins(msg) => {
+                let mut pane = std::mem::take(&mut self.plugins);
+                pane.update(msg, self);
+                self.plugins = pane;
+            }
             crate::panes::Msg::Relink(msg) => {
                 let mut pane = std::mem::take(&mut self.relink);
                 pane.update(msg, self);

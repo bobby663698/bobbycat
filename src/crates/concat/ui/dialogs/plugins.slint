@@ -1,0 +1,178 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
+
+import { I18n } from "../i18n.slint";
+import { Theme } from "../theme/theme.slint";
+import { Glyph } from "../icons.slint";
+import { ActionPair, DialogSection, Modal } from "../primitives/modal.slint";
+
+// The Plugins sheet: the programs this app did not write. A row is one
+// folder under <data>/plugins. A manifest that will not read is still shown,
+// with the sentence that says why, so a broken plugin can be removed.
+
+export struct PluginData {
+    id: string,
+    name: string,
+    version: string,
+    capabilities: string,
+    /// The handshake verdict, or why the manifest was refused.
+    detail: string,
+    enabled: bool,
+}
+
+export struct PluginsSheetData {
+    open: bool,
+    plugins: [PluginData],
+    error: string,
+}
+
+component TinyButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> danger: false;
+    callback clicked();
+
+    width: txt.preferred-width + 16px;
+    height: 24px;
+    border-radius: Theme.r-xs;
+    background: hit.has-hover ? (root.danger ? Theme.danger-soft : Theme.raised) : Theme.field;
+
+    hit := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+
+        txt := Text {
+            text: root.label;
+            color: root.danger ? Theme.danger : Theme.fg;
+            font-size: Theme.fs-sm;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+component PluginRow inherits Rectangle {
+    in property <PluginData> data;
+    callback enable();
+    callback disable();
+    callback uninstall();
+
+    height: 72px;
+    border-radius: Theme.r-sm;
+    background: Theme.well;
+
+    HorizontalLayout {
+        padding: 10px;
+        spacing: 10px;
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            Text {
+                text: root.data.name;
+                color: Theme.fg;
+                font-size: Theme.fs;
+                overflow: elide;
+            }
+            Text {
+                text: root.data.version + " · " + root.data.capabilities;
+                color: Theme.fg-dim;
+                font-size: Theme.fs-sm;
+                overflow: elide;
+            }
+            Text {
+                text: root.data.detail;
+                color: root.data.enabled ? Theme.fg-muted : Theme.danger;
+                font-size: Theme.fs-sm;
+                overflow: elide;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            if root.data.enabled: TinyButton {
+                label: I18n.t("plugins.disable");
+                danger: true;
+                clicked => { root.disable(); }
+            }
+            if !root.data.enabled: TinyButton {
+                label: I18n.t("plugins.enable");
+                clicked => { root.enable(); }
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            TinyButton {
+                label: I18n.t("plugins.uninstall");
+                danger: true;
+                clicked => { root.uninstall(); }
+            }
+        }
+    }
+}
+
+export component PluginsDialog inherits Modal {
+    in property <PluginsSheetData> data;
+
+    callback enable(id: string);
+    callback disable(id: string);
+    callback uninstall(id: string);
+    callback rescan();
+    callback close-requested();
+
+    open: root.data.open;
+    title: I18n.t("plugins.title");
+    glyph: Glyph.sparkle;
+    surface-width: 640px;
+    dismissable: true;
+    closed => { root.close-requested(); }
+
+    VerticalLayout {
+        DialogSection {
+            first: true;
+            title: I18n.t("plugins.installed");
+
+            if root.data.error != "": Text {
+                text: root.data.error;
+                color: Theme.danger;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+
+            if root.data.plugins.length == 0: Text {
+                text: I18n.t("plugins.empty");
+                color: Theme.fg-muted;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+
+            for plugin in root.data.plugins: PluginRow {
+                data: plugin;
+                enable => { root.enable(plugin.id); }
+                disable => { root.disable(plugin.id); }
+                uninstall => { root.uninstall(plugin.id); }
+            }
+        }
+
+        DialogSection {
+            title: I18n.t("plugins.hint");
+            Text {
+                text: I18n.t("plugins.hintBody");
+                color: Theme.fg-muted;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }
+
+        ActionPair {
+            padding: 14px;
+            cancel-label: I18n.t("plugins.close");
+            cancel-enabled: true;
+            action-glyph: Glyph.reset;
+            action-label: I18n.t("plugins.rescan");
+            action-enabled: true;
+            cancel => { root.close-requested(); }
+            act => { root.rescan(); }
+        }
+    }
+}
