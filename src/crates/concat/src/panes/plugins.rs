@@ -15,7 +15,7 @@
 //! remembered across runs is which plugins the person turned off.
 
 use concat_plugin::loader::{self, LoadConfig};
-use concat_plugin::manifest::{self, Manifest, Problem};
+use concat_plugin::manifest::{Manifest, Problem};
 use concat_plugin::permissions::{Capability, Grant};
 use slint::{ModelRc, SharedString, VecModel};
 
