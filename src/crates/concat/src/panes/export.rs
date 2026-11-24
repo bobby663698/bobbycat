@@ -40,6 +40,8 @@ pub enum ExportMsg {
     HdrChanged(bool),
     /// The target bitrate field, in Mbps: the bitrate becomes a custom one.
     BitrateChanged(f32),
+    /// Which part of the project is exported: see [`ExportScope`].
+    ScopeChanged(i32),
     /// Back to the form after a finished or failed render.
     Again,
     /// Pick the destination folder.
@@ -66,6 +68,37 @@ pub enum ExportMsg {
     Published(Result<String, String>),
 }
 
+/// What part of the project an export writes. Indexed from Slint, so the
+/// order is the order of the labels in `ExportData::scopes`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExportScope {
+    /// Only the active timeline: the export this app has always done.
+    Timeline,
+    /// Every timeline grouped in the active timeline's scene.
+    Scene,
+    /// Every timeline in the project, scenes in strip order, played back to
+    /// back. The duration of the file is the sum of its timelines.
+    AllScenes,
+}
+
+impl ExportScope {
+    fn from_index(index: i32) -> Self {
+        match index {
+            1 => Self::Scene,
+            2 => Self::AllScenes,
+            _ => Self::Timeline,
+        }
+    }
+
+    fn index(self) -> i32 {
+        match self {
+            Self::Timeline => 0,
+            Self::Scene => 1,
+            Self::AllScenes => 2,
+        }
+    }
+}
+
 /// The export sheet's state.
 pub struct ExportPane {
     pub open: bool,
@@ -73,6 +106,8 @@ pub struct ExportPane {
     pub folder: String,
     pub resolution: usize,
     pub rate: usize,
+    /// What part of the project is written; the active timeline by default.
+    pub scope: ExportScope,
     /// The bitrate is the typed one, not the recommended one for the
     /// frame and the rate.
     pub custom: bool,
@@ -108,6 +143,7 @@ impl Default for ExportPane {
             }),
             resolution: 2,
             rate: 0,
+            scope: ExportScope::Timeline,
             custom: false,
             codec: 0,
             ten_bit: false,
@@ -161,6 +197,7 @@ impl ExportPane {
                     self.custom = true;
                 }
             }
+            ExportMsg::ScopeChanged(index) => self.scope = ExportScope::from_index(index),
             ExportMsg::Again => {
                 self.phase = ExportPhase::Idle;
                 self.progress = 0.0;
@@ -431,6 +468,57 @@ impl ExportPane {
         self.hdr(studio) || (self.ten_bit && self.codec(studio).ten_bit_available())
     }
 
+    /// Whether the part of the project this export writes has any clip.
+    /// A scene can be empty while another holds the whole edit, so this
+    /// follows the scope rather than only looking at the active timeline.
+    fn has_content(&self, studio: &Studio) -> bool {
+        match self.scope {
+            ExportScope::Timeline => !studio.timeline().clips.is_empty(),
+            ExportScope::Scene | ExportScope::AllScenes => {
+                self.export_timeline_ids(studio).iter().any(|id| {
+                    studio
+                        .project()
+                        .timelines
+                        .iter()
+                        .find(|timeline| timeline.id == **id)
+                        .is_some_and(|timeline| !timeline.clips.is_empty())
+                })
+            }
+        }
+    }
+
+    /// The timelines this export plays, in order. Scenes come first in strip
+    /// order and ungrouped timelines last, the order `timeline_order` gives;
+    /// a single scene keeps only the timelines grouped in the active one.
+    fn export_timeline_ids(&self, studio: &Studio) -> Vec<&str> {
+        let project = studio.project();
+        let order = concat_export::flatten::timeline_order(project);
+        match self.scope {
+            ExportScope::Timeline => {
+                let active = project.active_timeline_id.as_str();
+                order
+                    .into_iter()
+                    .find(|id| *id == active)
+                    .into_iter()
+                    .collect()
+            }
+            ExportScope::Scene => {
+                let scene = project.active().scene.as_str();
+                order
+                    .into_iter()
+                    .filter(|id| {
+                        project
+                            .timelines
+                            .iter()
+                            .find(|timeline| timeline.id == **id)
+                            .is_some_and(|timeline| timeline.scene == scene)
+                    })
+                    .collect()
+            }
+            ExportScope::AllScenes => order,
+        }
+    }
+
     /// Starts the render on a worker, once the name is a file's and no
     /// file is already there; its reports come back as messages.
     fn start(&mut self, studio: &mut Studio) {
@@ -443,7 +531,7 @@ impl ExportPane {
         if studio.session.is_none() {
             return;
         }
-        if studio.timeline().clips.is_empty() {
+        if !self.has_content(studio) {
             self.phase = ExportPhase::Failed;
             self.message = t("export.nothingTimelineExport");
             return;
@@ -509,6 +597,15 @@ impl ExportPane {
         let (num, den) = self.rate(studio);
         let titles = std::sync::Arc::clone(&studio.host.titles);
         let monitor = studio.host.monitor.clone();
+        // Owned ids for the worker: which timelines this export plays and in
+        // what order. The active timeline alone keeps the old one-timeline
+        // export; a scene or the whole project flattens a run of them.
+        let export_ids: Vec<String> = self
+            .export_timeline_ids(studio)
+            .iter()
+            .map(|id| (*id).to_owned())
+            .collect();
+        let multi = self.scope != ExportScope::Timeline;
 
         studio.pause();
         self.phase = ExportPhase::Running;
@@ -529,8 +626,51 @@ impl ExportPane {
                 let Some(titles) = titles.clips_unless(&project, width, height, cancel) else {
                     return Err("export cancelled".to_owned());
                 };
-                let titles = titles.into_iter().map(|title| title.clip).collect();
-                let mut request = export::request_for(&project, &project_dir, &spec, titles);
+                let painted = titles;
+                let mut request = if multi {
+                    // Flatten the run of timelines back to back, then place
+                    // every painted title at the same point in the run as
+                    // the timeline it belongs to. A title's start is local
+                    // to its own timeline; without this it would sit over
+                    // the first scene no matter where it was authored.
+                    let ids: Vec<&str> = export_ids.iter().map(String::as_str).collect();
+                    let clips =
+                        concat_export::flatten::flatten_scenes(&project, Some(&project_dir), &ids);
+                    let mut offset_of: std::collections::HashMap<&str, f64> =
+                        std::collections::HashMap::new();
+                    let mut at = 0.0_f64;
+                    for id in &ids {
+                        offset_of.insert(*id, at);
+                        if let Some(timeline) = project.timelines.iter().find(|t| t.id == **id) {
+                            at += timeline.duration();
+                        }
+                    }
+                    // Find the timeline a painted title was authored on by
+                    // its source clip's id.
+                    let timeline_of = |clip_id: &str| {
+                        project.timelines.iter().find_map(|timeline| {
+                            timeline
+                                .clips
+                                .iter()
+                                .any(|clip| clip.id == clip_id)
+                                .then_some(timeline.id.as_str())
+                        })
+                    };
+                    let mut all = clips;
+                    for title in painted {
+                        let mut clip = title.clip;
+                        if let Some(id) = timeline_of(&title.clip_id)
+                            && let Some(offset) = offset_of.get(id)
+                        {
+                            clip.start += *offset;
+                        }
+                        all.push(clip);
+                    }
+                    export::request_from_clips(&project, &spec, all)
+                } else {
+                    let titles = painted.into_iter().map(|title| title.clip).collect();
+                    export::request_for(&project, &project_dir, &spec, titles)
+                };
                 request.width = width;
                 request.height = height;
                 request.rate_num = num;
@@ -611,7 +751,19 @@ impl ExportPane {
             .into(),
             format: format!("{width} × {height} · {rate:.2} fps").into(),
             duration: {
-                let whole = studio.duration().max(0.0) as i32;
+                let seconds: f64 = self
+                    .export_timeline_ids(studio)
+                    .iter()
+                    .filter_map(|id| {
+                        studio
+                            .project()
+                            .timelines
+                            .iter()
+                            .find(|timeline| timeline.id == **id)
+                    })
+                    .map(|timeline| timeline.duration())
+                    .sum();
+                let whole = seconds.max(0.0) as i32;
                 format!("{}:{:02}", whole / 60, whole % 60).into()
             },
             contents: if titles > 0 {
@@ -620,6 +772,12 @@ impl ExportPane {
                 tf("export.contentsClips", &[&clips])
             }
             .into(),
+            scope: self.scope.index(),
+            scopes: ModelRc::new(VecModel::from(vec![
+                SharedString::from(t("export.scopeTimeline")),
+                SharedString::from(t("export.scopeScene")),
+                SharedString::from(t("export.scopeAll")),
+            ])),
             resolution: self.resolution as i32,
             resolutions: {
                 let sizes: Vec<SharedString> = Self::ladder(studio)

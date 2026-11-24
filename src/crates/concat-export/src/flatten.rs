@@ -30,6 +30,63 @@ pub fn flatten_timeline(project: &Project, timeline_id: Option<&str>) -> Vec<Exp
     flatten_timeline_in(project, timeline_id, None)
 }
 
+/// The order timelines are played in when a whole project is exported.
+///
+/// Scenes come first, in the order the strip shows them, each scene's
+/// timelines in document order. Timelines left ungrouped play last. A
+/// project made before scenes existed has no scene ids at all, so every
+/// timeline is ungrouped and the order is simply document order - which is
+/// why an old project exports exactly as it always did.
+pub fn timeline_order(project: &Project) -> Vec<&str> {
+    let mut ordered: Vec<&str> = Vec::with_capacity(project.timelines.len());
+    for scene in &project.scenes {
+        for timeline in &project.timelines {
+            if timeline.scene == scene.id {
+                ordered.push(timeline.id.as_str());
+            }
+        }
+    }
+    for timeline in &project.timelines {
+        if timeline.scene.is_empty() {
+            ordered.push(timeline.id.as_str());
+        }
+    }
+    ordered
+}
+
+/// Flattens several timelines into one clip list, played back to back.
+///
+/// This is the export of a range of scenes: each timeline is flattened on
+/// its own - so its own tracks, media and transitions resolve exactly as
+/// they do in a single-timeline export - and then shifted forward by the
+/// total length of everything before it. The result is one continuous
+/// timeline whose duration is the sum of its parts, which is the whole
+/// point of串播. A clip's animation keys stay relative to the clip and a
+/// fade stays at its ends, so neither needs shifting; only `start` moves.
+///
+/// `timeline_ids` are the ids to play, in order (see [`timeline_order`]).
+/// Unknown ids are skipped rather than inventing an empty gap.
+pub fn flatten_scenes(
+    project: &Project,
+    project_dir: Option<&Path>,
+    timeline_ids: &[&str],
+) -> Vec<ExportClip> {
+    let mut clips = Vec::new();
+    let mut offset = 0.0_f64;
+    for id in timeline_ids {
+        let Some(timeline) = project.timelines.iter().find(|timeline| timeline.id == *id) else {
+            continue;
+        };
+        let mut flat = flatten_timeline_in(project, Some(*id), project_dir);
+        for clip in &mut flat {
+            clip.start += offset;
+        }
+        offset += timeline.duration();
+        clips.extend(flat);
+    }
+    clips
+}
+
 /// [`flatten_timeline`], knowing the project folder: a clip with a cutout
 /// is then told where its media's masks are, and renders cut, and a
 /// stabilized one where its media's movement is, and renders steadied.
@@ -574,5 +631,94 @@ mod tests {
         // by asking for a timeline that does not exist.
         assert!(flatten_timeline(editor.project(), None).is_empty());
         assert!(flatten_timeline(editor.project(), Some("nope")).len() <= 1);
+    }
+
+    /// A project of two scenes, one 10-second clip each, built through the
+    /// command layer so the scene grouping is real.
+    fn project_with_two_scenes() -> (Editor, String, String) {
+        let (mut editor, _, _) = project_with_clip(); // tl1 with one 10s clip
+        let first = editor.project().timelines[0].id.clone();
+
+        let sc1 = editor
+            .apply(Command::AddScene)
+            .expect("scene 1")
+            .created_id
+            .expect("mints sc1");
+        editor
+            .apply(Command::MoveTimelineToScene {
+                timeline_id: first.clone(),
+                scene_id: sc1.clone(),
+            })
+            .expect("groups tl1");
+
+        let sc2 = editor
+            .apply(Command::AddScene)
+            .expect("scene 2")
+            .created_id
+            .expect("mints sc2");
+        let second = editor
+            .apply(Command::AddTimeline)
+            .expect("timeline 2")
+            .created_id
+            .expect("mints tl2");
+        editor
+            .apply(Command::MoveTimelineToScene {
+                timeline_id: second.clone(),
+                scene_id: sc2.clone(),
+            })
+            .expect("groups tl2");
+        // Timeline 2 was born with the active timeline's video and inherits
+        // its tracks but no clips; give it a 10-second clip of the same media.
+        let media_id = editor.project().media[0].id.clone();
+        let track_id = editor.project().timelines[1].tracks[0].id.clone();
+        editor
+            .apply(Command::AddClip {
+                media_id,
+                track_id,
+                start: 0.0,
+                ripple: false,
+            })
+            .expect("adds clip to tl2");
+        (editor, first, second)
+    }
+
+    #[test]
+    fn scenes_play_back_to_back_and_the_duration_is_the_sum() {
+        let (editor, first, second) = project_with_two_scenes();
+        let order = timeline_order(editor.project());
+        assert_eq!(order, vec![first.as_str(), second.as_str()]);
+
+        let ids: Vec<&str> = order.iter().map(|id| *id).collect();
+        let flat = flatten_scenes(editor.project(), None, &ids);
+        assert_eq!(flat.len(), 2, "one clip per timeline");
+        assert_eq!(flat[0].start, 0.0);
+        // The second timeline's clip starts after the first one's 10 seconds.
+        assert_eq!(flat[1].start, 10.0, "the second scene is shifted forward");
+
+        let end = flat
+            .iter()
+            .map(|clip| clip.start + clip.duration)
+            .fold(0.0, f64::max);
+        let sum: f64 = order
+            .iter()
+            .map(|id| {
+                editor
+                    .project()
+                    .timelines
+                    .iter()
+                    .find(|t| t.id == *id)
+                    .unwrap()
+                    .duration()
+            })
+            .sum();
+        assert_eq!(end, sum, "the whole export runs as long as its scenes");
+    }
+
+    #[test]
+    fn flatten_scenes_skips_unknown_ids_without_a_gap() {
+        let (editor, first, _) = project_with_two_scenes();
+        let flat = flatten_scenes(editor.project(), None, &["nope", first.as_str()]);
+        assert_eq!(flat.len(), 1, "the unknown id is skipped");
+        assert_eq!(flat[0].start, 0.0, "no gap is left for the skipped id");
     }
 }

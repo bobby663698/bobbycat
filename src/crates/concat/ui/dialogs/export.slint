@@ -36,6 +36,10 @@ export struct ExportData {
     duration: string,
     /// "8 clips · 3 titles"
     contents: string,
+    /// Which part of the project is written: 0 timeline, 1 scene, 2 all.
+    scope: int,
+    /// The scope labels, "This timeline" / "This scene" / "All scenes".
+    scopes: [string],
     resolution: int,
     /// the resolution ladder as this project would come out at each
     /// rung - "1080 × 1920" on a 9:16 edit - with its names, and which
@@ -297,6 +301,7 @@ component DestinationSection inherits DialogSection {
 component OutputSection inherits DialogSection {
     in property <ExportData> data;
 
+    callback scope-changed(index: int);
     callback rate-changed(index: int);
     callback bitrate-changed(mbps: float);
     callback codec-changed(index: int);
@@ -304,6 +309,20 @@ component OutputSection inherits DialogSection {
     callback hdr-changed(on: bool);
 
     title: I18n.t("export.output");
+
+    DialogRow {
+        label: I18n.t("export.scope");
+        Select {
+            current: root.data.scope;
+            options: root.data.scopes;
+            details: [
+                I18n.t("export.scopeTimelineDetail"),
+                I18n.t("export.scopeSceneDetail"),
+                I18n.t("export.scopeAllDetail"),
+            ];
+            changed(index) => { root.scope-changed(index); }
+        }
+    }
 
     DialogRow {
         label: I18n.t("export.resolution");
@@ -602,6 +621,7 @@ export component ExportDialog inherits Rectangle {
     callback closed();
     callback name-edited(name: string);
     callback browse();
+    callback scope-changed(index: int);
     callback rate-changed(index: int);
     callback codec-changed(index: int);
     callback ten-bit-changed(on: bool);
@@ -738,6 +758,7 @@ export component ExportDialog inherits Rectangle {
                         }
                         if !root.running: OutputSection {
                             data: root.data;
+                            scope-changed(index) => { root.scope-changed(index); }
                             bitrate-changed(mbps) => { root.bitrate-changed(mbps); }
                             rate-changed(index) => { root.rate-changed(index); }
                             codec-changed(index) => { root.codec-changed(index); }
@@ -778,6 +799,7 @@ export component ExportDialog inherits Rectangle {
                             OutputSection {
                                 first: true;
                                 data: root.data;
+                                scope-changed(index) => { root.scope-changed(index); }
                                 bitrate-changed(mbps) => { root.bitrate-changed(mbps); }
                                 rate-changed(index) => { root.rate-changed(index); }
                                 codec-changed(index) => { root.codec-changed(index); }
@@ -813,6 +835,7 @@ export component ExportDialog inherits Rectangle {
                             OutputSection {
                                 first: true;
                                 data: root.data;
+                                scope-changed(index) => { root.scope-changed(index); }
                                 bitrate-changed(mbps) => { root.bitrate-changed(mbps); }
                                 rate-changed(index) => { root.rate-changed(index); }
                                 codec-changed(index) => { root.codec-changed(index); }

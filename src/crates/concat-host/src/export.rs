@@ -82,9 +82,25 @@ pub fn request_for(
     spec: &ExportSpec,
     titles: Vec<ExportClip>,
 ) -> ExportRequest {
-    let video = project.active().video;
     let mut clips = concat_export::flatten::flatten_timeline_in(project, None, Some(project_dir));
     clips.extend(titles);
+    request_from_clips(project, spec, clips)
+}
+
+/// [`request_for`] with the clip list already built by the caller.
+///
+/// The window uses this when it exports more than the active timeline: it
+/// flattens a run of scenes into one clip list with
+/// [`concat_export::flatten::flatten_scenes`] and hands that over, instead of
+/// the single timeline [`request_for`] flattens. The frame, rate and colour
+/// still come from the active timeline - the project's export settings - so
+/// every scene in the run is rendered into the same file.
+pub fn request_from_clips(
+    project: &concat_project::model::Project,
+    spec: &ExportSpec,
+    clips: Vec<ExportClip>,
+) -> ExportRequest {
+    let video = project.active().video;
     ExportRequest {
         output: spec.output.clone(),
         width: video.width,
