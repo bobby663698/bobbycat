@@ -233,12 +233,130 @@ impl Blend {
         let name = name.trim();
         Blend::ALL
             .into_iter()
-            .find(|mode| {
-                let canonical = mode.name();
-                canonical == name || canonical.replace('-', "_") == name
-            })
+            .find(|mode| mode.matches_name(name))
             .unwrap_or_default()
     }
+
+    /// Whether `name` is a spelling of this mode: its [`Blend::name`], or
+    /// that name with `-` written as `_` (Jianying's `nameId` spelling).
+    fn matches_name(self, name: &str) -> bool {
+        let canonical = self.name();
+        canonical == name || canonical.replace('-', "_") == name
+    }
+
+    /// This mode's slot in [`Blend::ALL`] - the mode number `blend_composite`
+    /// switches on, and the index of every per-mode table in the renderer and
+    /// the exporter.
+    pub fn index(self) -> usize {
+        BLEND_CARDS
+            .iter()
+            .position(|card| card.mode == self)
+            .unwrap_or(0)
+    }
+
+    /// This mode's card: what a compositor needs to know about it, kept as
+    /// data rather than as a branch in the renderer.
+    pub fn card(self) -> &'static BlendCard {
+        &BLEND_CARDS[self.index()]
+    }
+}
+
+/// One blend mode as data: the row a compositor, a menu and the exporter all
+/// read, so a mode is described in one place instead of in a `match` in each
+/// crate that has to know about it.
+///
+/// The set and its order are [`Blend::ALL`]'s - [`Blend::card`] finds a card
+/// by index, so the two cannot disagree, and a mode added to the enum without
+/// a card here leaves [`Blend::index`] reading someone else's row (a test in
+/// this module fails first).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BlendCard {
+    /// The mode this card describes.
+    pub mode: Blend,
+    /// The fragment entry point that weighs the layer against a copy of the
+    /// stack beneath it, when the mode needs one. `None` for the modes
+    /// wgpu's own blender expresses - and for Lighten and Darken, whose
+    /// formulas are `BlendState`'s `Max` and `Min` but which still need the
+    /// ground as a texture to clamp against.
+    pub ground: Option<&'static str>,
+    /// True when the fragment stage returns the *complete* composite, so the
+    /// pipeline must write it with no blending at all. False for a mode whose
+    /// shader returns a layer the blender then composites (Lighten, Darken).
+    pub non_linear: bool,
+}
+
+/// Every card, in [`Blend::ALL`]'s order.
+///
+/// Adding a mode means adding a card here and a `.wgsl` entry point beside
+/// it; nothing in `concat-render` names a mode by hand any more.
+pub const BLEND_CARDS: [BlendCard; Blend::ALL.len()] = [
+    BlendCard {
+        mode: Blend::Normal,
+        ground: None,
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Multiply,
+        ground: None,
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Screen,
+        ground: None,
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Add,
+        ground: None,
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Lighten,
+        ground: Some("fs_lighten"),
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Darken,
+        ground: Some("fs_darken"),
+        non_linear: false,
+    },
+    BlendCard {
+        mode: Blend::Overlay,
+        ground: Some("fs_overlay"),
+        non_linear: true,
+    },
+    BlendCard {
+        mode: Blend::SoftLight,
+        ground: Some("fs_soft_light"),
+        non_linear: true,
+    },
+    BlendCard {
+        mode: Blend::HardLight,
+        ground: Some("fs_hard_light"),
+        non_linear: true,
+    },
+    BlendCard {
+        mode: Blend::ColorBurn,
+        ground: Some("fs_color_burn"),
+        non_linear: true,
+    },
+    BlendCard {
+        mode: Blend::ColorDodge,
+        ground: Some("fs_color_dodge"),
+        non_linear: true,
+    },
+    BlendCard {
+        mode: Blend::LinearBurn,
+        ground: Some("fs_linear_burn"),
+        non_linear: true,
+    },
+];
+
+/// The card a document's `blend` string names, in either spelling
+/// [`Blend::parse`] reads; `None` for a name no mode has.
+pub fn card_by_id(id: &str) -> Option<&'static BlendCard> {
+    let id = id.trim();
+    BLEND_CARDS.iter().find(|card| card.mode.matches_name(id))
 }
 
 /// A clip's placement in the output frame.
@@ -847,5 +965,102 @@ mod tests {
         );
         assert_eq!(orphan, None);
         assert_eq!(timeline.clip_count(), 0);
+    }
+
+    /// The cards are the modes, in the modes' order: `Blend::index` finds a
+    /// card by scanning them, so a card missing or out of place would make
+    /// every table keyed off the index read the wrong mode's row.
+    #[test]
+    fn the_cards_are_the_modes_in_menu_order() {
+        assert_eq!(BLEND_CARDS.len(), Blend::ALL.len());
+        for (index, card) in BLEND_CARDS.iter().enumerate() {
+            assert_eq!(card.mode, Blend::ALL[index], "card {index}");
+            assert_eq!(card.mode.index(), index, "{:?}", card.mode);
+            assert_eq!(card.mode.card(), card, "{:?}", card.mode);
+        }
+    }
+
+    /// A document's `blend` string names a card through either spelling, and
+    /// a string no mode has names nothing - `Blend::parse` still answers
+    /// Normal for it, which is what an old file with a mode since removed
+    /// needs, but a caller looking up a card is told the truth.
+    #[test]
+    fn a_card_answers_to_the_names_a_document_may_write() {
+        assert_eq!(
+            card_by_id("soft-light").map(|card| card.mode),
+            Some(Blend::SoftLight)
+        );
+        assert_eq!(
+            card_by_id("soft_light").map(|card| card.mode),
+            Some(Blend::SoftLight),
+            "Jianying's nameId spelling"
+        );
+        assert_eq!(
+            card_by_id(" linear-burn ").map(|card| card.mode),
+            Some(Blend::LinearBurn),
+            "surrounding space is not part of the name"
+        );
+        assert!(card_by_id("lightning").is_none());
+        assert!(card_by_id("").is_none());
+    }
+
+    /// Eight modes weigh the layer against a copy of the stack; the six
+    /// whose formula no `BlendState` can express return the complete
+    /// composite. The renderer reads these two fields for every pass break
+    /// and every `blend: None`, so they are asserted here rather than only
+    /// where they are used.
+    #[test]
+    fn eight_cards_read_the_ground_and_six_of_those_are_non_linear() {
+        let reading: Vec<Blend> = BLEND_CARDS
+            .iter()
+            .filter(|card| card.ground.is_some())
+            .map(|card| card.mode)
+            .collect();
+        assert_eq!(
+            reading,
+            vec![
+                Blend::Lighten,
+                Blend::Darken,
+                Blend::Overlay,
+                Blend::SoftLight,
+                Blend::HardLight,
+                Blend::ColorBurn,
+                Blend::ColorDodge,
+                Blend::LinearBurn,
+            ]
+        );
+        let non_linear: Vec<Blend> = BLEND_CARDS
+            .iter()
+            .filter(|card| card.non_linear)
+            .map(|card| card.mode)
+            .collect();
+        assert_eq!(non_linear.len(), 6);
+        assert!(
+            BLEND_CARDS
+                .iter()
+                .filter(|card| card.non_linear)
+                .all(|card| card.ground.is_some()),
+            "a complete composite has to be computed against the ground"
+        );
+
+        for card in BLEND_CARDS.iter() {
+            let should_read_ground = !matches!(
+                card.mode,
+                Blend::Normal | Blend::Multiply | Blend::Screen | Blend::Add
+            );
+            assert_eq!(card.ground.is_some(), should_read_ground, "{:?}", card.mode);
+        }
+    }
+
+    /// Each entry point is named once: two cards sharing a name would build
+    /// two pipelines from one function, and the second mode would silently
+    /// draw the first's formula.
+    #[test]
+    fn every_ground_entry_point_has_one_card() {
+        let mut names: Vec<&str> = BLEND_CARDS.iter().filter_map(|card| card.ground).collect();
+        let count = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), count);
     }
 }

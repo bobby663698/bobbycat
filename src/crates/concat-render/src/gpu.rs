@@ -38,83 +38,38 @@ use concat_core::mask::{MaskStack, MaskUniform, StackUniform};
 /// What the mask pass's pipeline is cached under.
 const MASK_STACK_KEY: &str = "concat.mask-stack/1";
 use concat_core::shader::{Lut, RevealMap, ShaderPass, TransitionPass};
-use concat_core::timeline::Blend;
+use concat_core::timeline::{BLEND_CARDS, Blend};
 
 // Which blends need the stack beneath them as a texture. Two different
 // questions, deliberately kept apart:
 //
-//   reads_ground(blend)  - does this draw need a copy of the stack as it
+//   the card's `ground`  - does this draw need a copy of the stack as it
 //     stood before it? Eight modes: Lighten and Darken weigh the layer
 //     against the ground with Max/Min, and the six non-linear modes
 //     evaluate their formula in the fragment stage. This decides where a
 //     render pass breaks.
-//   is_non_linear(blend) - of those eight, which six have no BlendState at
-//     all and return a *complete* composite from the shader, so the
+//   the card's `non_linear` - of those eight, which six have no BlendState
+//     at all and return a *complete* composite from the shader, so the
 //     pipeline must write without blending? This decides `blend: None`.
 //
-// Both are keyed off `Blend::ALL`'s index, never off a second hand-written
-// list of names: adding a mode without a line here is a test failure, not
-// a silent fallback to source-over.
-
-/// The fragment entry point for a mode that reads the ground, indexed as
-/// `Blend::ALL` is. `None` for the six fixed-function modes.
-const GROUND_ENTRIES: [Option<&str>; 12] = [
-    None,
-    None,
-    None,
-    None,
-    Some("fs_lighten"),
-    Some("fs_darken"),
-    Some("fs_overlay"),
-    Some("fs_soft_light"),
-    Some("fs_hard_light"),
-    Some("fs_color_burn"),
-    Some("fs_color_dodge"),
-    Some("fs_linear_burn"),
-];
-
-/// The index of `blend` in `Blend::ALL`: the mode number WGSL's
-/// `blend_composite` switches on, and the slot of both pipeline arrays.
-fn blend_index(blend: Blend) -> usize {
-    Blend::ALL
-        .iter()
-        .position(|mode| *mode == blend)
-        .unwrap_or(0)
-}
+// Both are fields of the mode's card in `concat-core` (`BlendCard`,
+// `BLEND_CARDS`), not a second list kept here: a mode added without a card
+// leaves `Blend::index` reading someone else's row, which the tests in
+// `timeline.rs` catch. This module only reads the card.
 
 /// Whether this draw must see the stack beneath it. Decides the pass break.
 fn reads_ground(blend: Blend) -> bool {
-    GROUND_ENTRIES[blend_index(blend)].is_some()
-}
-
-/// Whether the fragment stage returns the complete composite, and the
-/// pipeline must therefore write it unblended. Decides `blend: None`.
-fn is_non_linear(blend: Blend) -> bool {
-    matches!(
-        blend,
-        Blend::Overlay
-            | Blend::SoftLight
-            | Blend::HardLight
-            | Blend::ColorBurn
-            | Blend::ColorDodge
-            | Blend::LinearBurn
-    )
+    blend.card().ground.is_some()
 }
 
 /// The ground pipeline's slot for a mode that has one, or `None`.
 fn ground_slot(blend: Blend) -> Option<usize> {
-    let index = blend_index(blend);
-    GROUND_ENTRIES[index].map(|_| index)
+    blend.card().ground.map(|_| blend.index())
 }
 
 #[cfg(test)]
 mod ground_mode_tests {
     use super::*;
-
-    #[test]
-    fn the_ground_table_is_the_same_length_as_the_enum() {
-        assert_eq!(GROUND_ENTRIES.len(), Blend::ALL.len());
-    }
 
     #[test]
     fn eight_modes_read_the_ground_and_six_of_them_are_non_linear() {
@@ -140,7 +95,7 @@ mod ground_mode_tests {
         let nonlinear: Vec<Blend> = reading
             .iter()
             .copied()
-            .filter(|blend| is_non_linear(*blend))
+            .filter(|blend| blend.card().non_linear)
             .collect();
         assert_eq!(nonlinear.len(), 6);
         assert!(nonlinear.iter().all(|blend| ground_slot(*blend).is_some()));
@@ -157,14 +112,54 @@ mod ground_mode_tests {
     }
 
     #[test]
-    fn every_entry_is_a_real_mode_number_and_lighten_darken_are_not_non_linear() {
-        for (index, entry) in GROUND_ENTRIES.iter().enumerate() {
+    fn every_card_is_a_real_mode_number_and_lighten_darken_are_not_non_linear() {
+        for (index, card) in BLEND_CARDS.iter().enumerate() {
             let blend = Blend::ALL[index];
-            assert_eq!(reads_ground(blend), entry.is_some(), "{blend:?}");
-            assert_eq!(ground_slot(blend), entry.map(|_| index), "{blend:?}");
+            assert_eq!(card.mode, blend, "card {index} describes another mode");
+            assert_eq!(blend.index(), index, "{blend:?}");
+            assert_eq!(reads_ground(blend), card.ground.is_some(), "{blend:?}");
+            assert_eq!(ground_slot(blend), card.ground.map(|_| index), "{blend:?}");
         }
-        assert!(!is_non_linear(Blend::Lighten));
-        assert!(!is_non_linear(Blend::Darken));
+        assert!(!Blend::Lighten.card().non_linear);
+        assert!(!Blend::Darken.card().non_linear);
+    }
+
+    /// The card names an entry point, and the shader has it: a card whose
+    /// `ground` was renamed or mistyped would otherwise reach the pipeline
+    /// creation and fail there, on a device, in a test that had to have a GPU.
+    #[test]
+    fn every_ground_entry_point_is_a_fragment_stage_in_the_shader() {
+        for card in BLEND_CARDS.iter().filter(|card| card.ground.is_some()) {
+            let entry = card.ground.unwrap_or_default();
+            let definition = format!("fn {entry}(in: VsOut) -> @location(0) vec4<f32>");
+            assert!(
+                SHADER.contains(&definition),
+                "{:?} names {entry}, which the shader does not define",
+                card.mode
+            );
+        }
+    }
+
+    /// The six non-linear entry points pass the mode number `blend_composite`
+    /// switches on, and that number is the card's index: the one place the
+    /// two lists still meet by hand, so it is the one place a test can catch
+    /// them disagreeing.
+    #[test]
+    fn each_non_linear_card_passes_its_own_mode_number_to_the_shader() {
+        for card in BLEND_CARDS.iter().filter(|card| card.non_linear) {
+            let entry = card.ground.unwrap_or_default();
+            let index = card.mode.index();
+            let start = SHADER
+                .find(&format!("fn {entry}(in: VsOut)"))
+                .unwrap_or_else(|| panic!("{entry} is not in the shader"));
+            let body = &SHADER[start..];
+            let body = &body[..body.find("\n}").unwrap_or(body.len())];
+            assert!(
+                body.contains(&format!("composite_against_ground({index}u, in)")),
+                "{:?} should pass {index}u, its index in Blend::ALL",
+                card.mode
+            );
+        }
     }
 }
 
@@ -2069,8 +2064,9 @@ impl WgpuCompositor {
             immediate_size: 0,
         });
         let ground_pipelines: [Option<wgpu::RenderPipeline>; 12] = std::array::from_fn(|index| {
-            let entry = GROUND_ENTRIES[index]?;
-            let blend = if is_non_linear(Blend::ALL[index]) {
+            let card = &BLEND_CARDS[index];
+            let entry = card.ground?;
+            let blend = if card.non_linear {
                 None
             } else {
                 Some(wgpu::BlendState {
@@ -3111,7 +3107,7 @@ impl WgpuCompositor {
                     pass.set_bind_group(2, &self.pool[&size][ground].bind_group, &[]);
                 }
                 None => {
-                    pass.set_pipeline(&self.pipelines[blend_index(draw.blend)]);
+                    pass.set_pipeline(&self.pipelines[draw.blend.index()]);
                 }
             }
             pass.set_bind_group(0, &self.pool[&draw.size][draw.texture].bind_group, &[]);
