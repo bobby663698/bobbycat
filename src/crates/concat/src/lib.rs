@@ -1776,7 +1776,9 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     // The Scenes sheet: group timelines into named scenes.
     use panes::scenes::ScenesMsg;
     app.on_scenes_scene_selected(on_window!(|state, id: SharedString| {
-        state.handle(Msg::Scenes(ScenesMsg::Select { scene_id: id.to_string() }));
+        state.handle(Msg::Scenes(ScenesMsg::Select {
+            scene_id: id.to_string(),
+        }));
     }));
     app.on_scenes_scene_renamed(on_window!(|state, id: SharedString, name: SharedString| {
         state.handle(Msg::Scenes(ScenesMsg::Rename {
@@ -1785,7 +1787,9 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         }));
     }));
     app.on_scenes_scene_removed(on_window!(|state, id: SharedString| {
-        state.handle(Msg::Scenes(ScenesMsg::Remove { scene_id: id.to_string() }));
+        state.handle(Msg::Scenes(ScenesMsg::Remove {
+            scene_id: id.to_string(),
+        }));
     }));
     app.on_scenes_clear_scene(on_window!(|state| {
         state.handle(Msg::Scenes(ScenesMsg::ClearScene));
