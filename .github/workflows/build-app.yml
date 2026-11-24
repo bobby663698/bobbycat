@@ -60,6 +60,7 @@ on:
         type: choice
         options:
           - windows-only
+          - linux-only
           - all
         default: windows-only
   workflow_call:
@@ -153,6 +154,8 @@ jobs:
           ]}'
           if [ "$TARGETS" = "all" ]; then
             printf 'matrix=%s\n' "$all" >> "$GITHUB_OUTPUT"
+          elif [ "$TARGETS" = "linux-only" ]; then
+            printf 'matrix=%s\n' "$(printf '%s' "$all" | jq -c '{include: [.include[] | select(.platform == "linux")]}')" >> "$GITHUB_OUTPUT"
           else
             printf 'matrix=%s\n' "$(printf '%s' "$all" | jq -c '{include: [.include[] | select(.platform == "windows")]}')" >> "$GITHUB_OUTPUT"
           fi
