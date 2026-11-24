@@ -10,6 +10,7 @@
 //! runs is a picture in and a picture out, so that is all the surface it
 //! needs; what each model's tensors mean lives beside the model.
 
+use ort::environment::Environment;
 use ort::session::Session;
 use ort::value::Tensor;
 
@@ -58,31 +59,37 @@ pub struct Output {
 /// so does every model download: a gigabyte fetched for a runtime that
 /// cannot run it is a gigabyte wasted.
 ///
-/// Only an Intel Mac has anything to do. Its runtime is loaded now rather
+/// An Intel Mac's runtime is loaded now rather
 /// than at launch (see [`crate::onnx`]), and not at all on a macOS older
 /// than the one it is built for, where loading it is what closed the app.
-/// The answer is kept: neither changes while the process runs.
+/// The environment is kept and shared by every session in the process.
 pub fn ready() -> Result<(), String> {
-    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-    {
-        static LOADED: std::sync::OnceLock<Result<(), String>> = std::sync::OnceLock::new();
-        LOADED
-            .get_or_init(|| {
+    environment().map(|_| ())
+}
+
+/// The shared ONNX Runtime environment, initialized once before any session.
+pub fn environment() -> Result<&'static Environment, String> {
+    static ENVIRONMENT: std::sync::OnceLock<Result<Environment, String>> =
+        std::sync::OnceLock::new();
+    ENVIRONMENT
+        .get_or_init(|| {
+            #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+            let builder = {
                 if let Some(why) = crate::onnx::unavailable() {
                     return Err(why.to_string());
                 }
                 let library = crate::onnx::library();
-                // `commit` is false when an environment is already set,
-                // which is nothing to report: the library is loaded.
-                let _ = ort::init_from(&library)
+                ort::init_from(&library)
                     .map_err(|error| format!("could not load ONNX Runtime: {error}"))?
-                    .commit();
-                Ok(())
-            })
-            .clone()
-    }
-    #[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
-    Ok(())
+            };
+            #[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+            let builder = ort::init();
+            builder
+                .build()
+                .map_err(|error| format!("onnx runtime: {error}"))
+        })
+        .as_ref()
+        .map_err(Clone::clone)
 }
 
 /// A loaded model.
@@ -119,9 +126,9 @@ impl Model {
     /// core that kept 220 MB a core of ten-second chunks' worth, three
     /// times what the tensors need, for as long as the sessions lived.
     pub fn from_bytes_on_cpu(bytes: &[u8], threads: usize) -> Result<Model, String> {
-        ready()?;
+        let environment = environment()?;
         let fail = |error: &dyn std::fmt::Display| format!("onnx runtime: {error}");
-        let session = Session::builder()
+        let session = Session::builder(environment)
             .map_err(|error| fail(&error))?
             .with_execution_providers([ort::ep::CPU::default().with_arena_allocator(false).build()])
             .map_err(|error| fail(&error))?
@@ -141,8 +148,9 @@ impl Model {
         dims: &[(&str, i64)],
         providers: Vec<ort::ep::ExecutionProviderDispatch>,
     ) -> Result<Model, String> {
-        ready()?;
-        let mut builder = Session::builder().map_err(|error| format!("onnx runtime: {error}"))?;
+        let environment = environment()?;
+        let mut builder =
+            Session::builder(environment).map_err(|error| format!("onnx runtime: {error}"))?;
         for (name, size) in dims {
             builder = builder
                 .with_dimension_override(*name, *size)
