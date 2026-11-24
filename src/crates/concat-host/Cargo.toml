@@ -34,13 +34,13 @@ concat-vision = { workspace = true, features = ["infer"] }
 png = "0.18"
 # `socks-proxy` for a SOCKS proxy named by the environment or the system
 # (Clash, v2rayN and ssh -D all offer one); see route.rs. The `socks` crate
-# it pulls is already in the tree for ureq 3.
-ureq = { version = "3", features = ["socks-proxy"] }
+# it pulls carries the SOCKS connection; see route.rs.
+ureq = { version = "2", features = ["socks-proxy"] }
 # The TLS ureq speaks, configured here to trust the system's roots beside
 # the shipped ones; see net.rs. The same rustls, ring and webpki-roots as
 # ureq's, so nothing is built twice.
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
-webpki-roots = "1.0"
+webpki-roots = "0.26"
 rustls-native-certs = "0.8"
 # A finished download is checked against the digest its table carries
 # before anything is allowed to call it installed; see models.rs.
@@ -57,7 +57,7 @@ serde_json.workspace = true
 
 # Engine-owned audio playback: cpal talks to the output device, memmap2 keeps
 # decoded PCM disk-backed instead of resident.
-cpal = "0.18"
+cpal = "0.16"
 memmap2 = "0.9"
 
 # The machine's memory, for sizing the caches to it; see memory.rs.
