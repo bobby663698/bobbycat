@@ -1429,7 +1429,6 @@ dependencies = [
 name = "concat-script"
 version = "0.2.16"
 dependencies = [
- "serde_json",
  "tempfile",
 ]
 

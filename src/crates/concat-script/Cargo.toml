@@ -6,8 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 description = "The editor's script sheet: run a script through the CLI and collect its answers."
 
-[dependencies]
-serde_json.workspace = true
+[[bin]]
+name = "concat-script-echo"
+path = "src/bin/echo_cli.rs"
+doc = false
 
 [dev-dependencies]
 tempfile = "3"

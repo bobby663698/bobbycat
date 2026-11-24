@@ -139,59 +139,6 @@ fn tail(text: &str, n: usize) -> String {
 mod tests {
     use super::*;
 
-    /// A fake CLI that echoes each input line back, so a test needs no
-    /// built `bobbycat-cli` and no project on disk.
-    fn fake_cli() -> (tempfile::TempDir, String) {
-        let dir = tempfile::tempdir().expect("scratch");
-        #[cfg(windows)]
-        {
-            let path = dir.path().join("fake-cli.cmd");
-            // `more` echoes stdin verbatim and ignores the `api` argument
-            // run() passes. findstr /n "^" loses its caret to CMD escaping.
-            std::fs::write(&path, "@echo off\r\nmore\r\n").expect("write fake");
-            (dir, path.to_string_lossy().into_owned())
-        }
-        #[cfg(not(windows))]
-        {
-            let path = dir.path().join("fake-cli.sh");
-            std::fs::write(&path, "#!/bin/sh\ncat -n\n").expect("write fake");
-            use std::os::unix::fs::PermissionsExt;
-            let mut perms = std::fs::metadata(&path).expect("stat").permissions();
-            perms.set_mode(0o755);
-            std::fs::set_permissions(&path, perms).expect("chmod");
-            (dir, path.to_string_lossy().into_owned())
-        }
-    }
-
-    fn config(command: String) -> Config {
-        Config {
-            command,
-            directory: None,
-        }
-    }
-
-    #[test]
-    fn a_script_is_echoed_back_line_by_line() {
-        let (_dir, command) = fake_cli();
-        let outcome = run(
-            "{\"method\":\"version\"}\n{\"method\":\"project\"}\n",
-            &config(command),
-        )
-        .expect("the fake CLI ran");
-        // The fake CLI echoes stdin; shell helpers may add a blank line or a
-        // page break, so check what was carried rather than an exact count.
-        let echoed = outcome.lines.join("\n");
-        assert!(echoed.contains("version"), "{:?}", outcome.lines);
-        assert!(echoed.contains("project"), "{:?}", outcome.lines);
-        assert_eq!(outcome.exit, Some(0));
-    }
-
-    #[test]
-    fn a_missing_command_is_a_spawn_failure_not_a_panic() {
-        let cfg = config("no-such-bobbycat-cli-binary".to_owned());
-        assert!(matches!(run("{}", &cfg), Err(Failure::Spawn(_))));
-    }
-
     #[test]
     fn the_stderr_tail_steps_back_over_a_partial_character() {
         let text = format!("{}{}", "x".repeat(1999), "é");
@@ -201,11 +148,11 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_script_closes_stdin_and_returns() {
-        let (_dir, command) = fake_cli();
-        // The point is that stdin is closed and the child exits; a shell
-        // helper may echo one blank line for an empty stream, which is fine.
-        let outcome = run("", &config(command)).expect("the fake CLI ran");
-        assert_eq!(outcome.exit, Some(0));
+    fn a_missing_command_is_a_spawn_failure_not_a_panic() {
+        let cfg = Config {
+            command: "no-such-bobbycat-cli-binary".to_owned(),
+            directory: None,
+        };
+        assert!(matches!(run("{}", &cfg), Err(Failure::Spawn(_))));
     }
 }
