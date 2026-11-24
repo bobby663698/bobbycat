@@ -108,18 +108,24 @@ jobs:
       # lavapipe, a software GPU, so the compositor's parity suite runs
       # here rather than skipping for want of an adapter.
       # A mirror that stops answering mid-download leaves apt waiting on a
-      # socket with no deadline of its own: the step then runs until the
-      # job's 200 minutes are gone and reports nothing. Three tries and a
-      # 20 second socket timeout turn that into a red step in minutes, and
-      # the step's own timeout bounds the rest.
+      # socket with no deadline of its own, and a mirror that is merely slow
+      # looks the same from here. The log of the run that first showed this
+      # says which: 564 kB/s from us-east-2, libclang-18-dev's 28 MB taking
+      # four and a half minutes, mesa-vulkan-drivers' 17 MB two more. Nothing
+      # is stuck; the whole set simply takes longer than the step was given.
+      # So the step's bound is generous, the socket timeout is generous too (a
+      # big package on a slow link is slow all the way through, not stalled),
+      # the retries are for the mirror that really does stop, and the
+      # recommends are skipped: the -dev packages pull a hundred of them and
+      # the build links against none.
       - name: System libraries
-        timeout-minutes: 20
+        timeout-minutes: 45
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20"
+          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=60 -o Acquire::https::Timeout=60"
           sudo apt-get $APT_OPTS update
-          sudo apt-get $APT_OPTS install -y \
+          sudo apt-get $APT_OPTS install -y --no-install-recommends \
             libfontconfig1-dev libfreetype6-dev libxkbcommon-dev libgl1-mesa-dev \
             libgtk-3-dev libasound2-dev libclang-dev cmake \
             libvulkan1 mesa-vulkan-drivers
