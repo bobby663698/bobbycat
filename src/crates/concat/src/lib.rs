@@ -1773,6 +1773,29 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
     app.on_scripts_closed(on_window!(|state| {
         state.handle(Msg::Scripts(ScriptsMsg::Close));
     }));
+    // The Scenes sheet: group timelines into named scenes.
+    use panes::scenes::ScenesMsg;
+    app.on_scenes_scene_selected(on_window!(|state, id: SharedString| {
+        state.handle(Msg::Scenes(ScenesMsg::Select { scene_id: id.to_string() }));
+    }));
+    app.on_scenes_scene_renamed(on_window!(|state, id: SharedString, name: SharedString| {
+        state.handle(Msg::Scenes(ScenesMsg::Rename {
+            scene_id: id.to_string(),
+            name: name.to_string(),
+        }));
+    }));
+    app.on_scenes_scene_removed(on_window!(|state, id: SharedString| {
+        state.handle(Msg::Scenes(ScenesMsg::Remove { scene_id: id.to_string() }));
+    }));
+    app.on_scenes_clear_scene(on_window!(|state| {
+        state.handle(Msg::Scenes(ScenesMsg::ClearScene));
+    }));
+    app.on_scenes_add(on_window!(|state| {
+        state.handle(Msg::Scenes(ScenesMsg::Add));
+    }));
+    app.on_scenes_closed(on_window!(|state| {
+        state.handle(Msg::Scenes(ScenesMsg::Close));
+    }));
     // Text to speech keeps the sample it reads in as a voice of the
     // user's own, with a name and a picture.
     app.on_speech_save_name_edited(on_window!(|state, name: SharedString| {
@@ -2612,6 +2635,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
                         "template" => state.save_template(),
                         "speech" => state.handle(Msg::Speech(SpeechMsg::Open)),
                         "scripts" => state.handle(Msg::Scripts(panes::scripts::ScriptsMsg::Open)),
+                        "scenes" => state.handle(Msg::Scenes(panes::scenes::ScenesMsg::Open)),
                         "clear-cache" => state.clear_project_cache(),
                         "settings" => state.handle(Msg::Settings(SettingsMsg::Open)),
                         "close-project" => {

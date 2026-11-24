@@ -54,6 +54,7 @@ import { CaptionsDialog, CaptionsSheetData } from "dialogs/captions.slint";
 import { SpeechDialog, SpeechSheetData } from "dialogs/speech.slint";
 import { NewVoiceData, NewVoiceDialog } from "dialogs/new-voice.slint";
 import { ScriptsSheetData, ScriptsDialog } from "dialogs/scripts.slint";
+import { SceneChipData, ScenesSheetData, ScenesDialog } from "dialogs/scenes.slint";
 import { AvatarData } from "primitives/avatar.slint";
 import { VoiceoverData, VoiceoverPanel } from "dialogs/voiceover.slint";
 import { DockDivider, DockSide, SeatBox } from "dock.slint";
@@ -189,6 +190,8 @@ export {
     VoiceCardData,
     NewVoiceData,
     ScriptsSheetData,
+    SceneChipData,
+    ScenesSheetData,
 }
 export component App inherits Window {
     title: "BobbyCat";
@@ -512,6 +515,15 @@ export component App inherits Window {
     callback scripts-run();
     callback scripts-clear();
     callback scripts-closed();
+
+    /// The Scenes sheet: group timelines into named scenes.
+    in property <ScenesSheetData> scenes;
+    callback scenes-scene-selected(id: string);
+    callback scenes-scene-renamed(id: string, name: string);
+    callback scenes-scene-removed(id: string);
+    callback scenes-clear-scene();
+    callback scenes-add();
+    callback scenes-closed();
 
     /// The voiceover panel; see VoiceoverPanel. Its meter and clock come
     /// on the Editor global, from a timer.
@@ -1155,6 +1167,30 @@ export component App inherits Window {
         run => { root.scripts-run(); }
         clear => { root.scripts-clear(); }
         closed => { root.scripts-closed(); }
+    }
+
+    ScenesDialog {
+        fill: root.sheets-fill;
+        floating: !root.sheets-fill;
+        home-right: 100px;
+        home-top: 140px;
+        z: root.scenes.open ? 3 : 0;
+        inset-top: root.safe-area-insets.top;
+        inset-bottom: root.safe-area-insets.bottom;
+        inset-left: root.safe-area-insets.left;
+        inset-right: root.safe-area-insets.right;
+        x: 0;
+        y: root.sheets-top;
+        width: root.width;
+        height: root.height - root.sheets-top;
+        data: root.scenes;
+
+        scene-selected(id) => { root.scenes-scene-selected(id); }
+        scene-renamed(id, name) => { root.scenes-scene-renamed(id, name); }
+        scene-removed(id) => { root.scenes-scene-removed(id); }
+        clear-scene => { root.scenes-clear-scene(); }
+        add => { root.scenes-add(); }
+        close-requested => { root.scenes-closed(); }
     }
 
     RelinkDialog {

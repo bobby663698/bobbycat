@@ -1236,6 +1236,8 @@ pub struct Studio {
     pub sounds: crate::panes::sounds::SoundsPane,
     /// The Script page: API requests run through the CLI.
     pub scripts: crate::panes::scripts::ScriptsPane,
+    /// The Scenes sheet: group timelines into named scenes.
+    pub scenes: crate::panes::scenes::ScenesPane,
     /// A file from the library lent the monitor and the speakers; see
     /// `crate::source`.
     pub source: Option<crate::source::Source>,
@@ -3170,6 +3172,7 @@ impl Studio {
             speech: crate::panes::speech::SpeechPane::with_saved(&host.dirs),
             sounds: crate::panes::sounds::SoundsPane::open(&host.dirs),
             scripts: crate::panes::scripts::ScriptsPane::default(),
+            scenes: crate::panes::scenes::ScenesPane::default(),
             source: None,
             meters: crate::meters::MeterFeed::default(),
             voiceover: crate::panes::voiceover::VoiceoverPane::default(),

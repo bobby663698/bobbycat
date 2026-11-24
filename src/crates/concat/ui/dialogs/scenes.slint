@@ -1,0 +1,234 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah and BobbyCat contributors
+
+import { I18n } from "../i18n.slint";
+import { Theme } from "../theme/theme.slint";
+import { Focus } from "../util.slint";
+import { Glyph, Icon } from "../icons.slint";
+import { ActionPair, DialogSection, Modal } from "../primitives/modal.slint";
+
+// The Scenes sheet: one chip per scene in the project. A scene is a group
+// of timelines, so clicking a chip puts the active timeline in that group;
+// the highlighted chip is the one the active timeline belongs to. An
+// "ungrouped" chip takes it back out. Double-click renames in place and
+// commits on blur, the same rule the timeline tabs follow. Removing a
+// scene never deletes its timelines - they fall back to ungrouped.
+
+export struct SceneChipData {
+    id: string,
+    name: string,
+    current: bool,
+    count: int,
+}
+
+export struct ScenesSheetData {
+    open: bool,
+    scenes: [SceneChipData],
+    /// Whether the strip also shows the ungrouped chip.
+    ungrouped: bool,
+    /// The active timeline belongs to no scene.
+    no-scene: bool,
+}
+
+component Chip inherits Rectangle {
+    in property <string> label;
+    in property <bool> current;
+    in property <int> count;
+    in property <bool> removable;
+    in property <bool> show-count;
+
+    callback selected();
+    callback renamed(name: string);
+    callback remove-requested();
+
+    property <bool> renaming;
+    property <length> text-w: Math.min(140px, caption.preferred-width);
+
+    width: root.renaming ? 132px : root.text-w + (root.show-count ? 58px : 22px);
+    height: 30px;
+    border-radius: Theme.r-sm;
+    background: root.current ? Theme.raised
+        : hit.has-hover ? Theme.field
+        : Colors.transparent;
+
+    animate background { duration: 100ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+
+    hit := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.selected(); }
+        double-clicked => {
+            if (root.removable) { root.renaming = true; }
+        }
+
+        HorizontalLayout {
+            padding-left: 10px;
+            padding-right: 10px;
+            spacing: 6px;
+            alignment: center;
+
+            caption := Text {
+                text: root.label;
+                color: root.current ? Theme.fg : Theme.fg-muted;
+                font-size: Theme.fs;
+                vertical-alignment: center;
+                overflow: elide;
+                visible: !root.renaming;
+            }
+            if root.show-count: Text {
+                text: "\{root.count}";
+                color: Theme.fg-dim;
+                font-size: Theme.fs-sm;
+                vertical-alignment: center;
+                visible: !root.renaming;
+            }
+        }
+
+        if root.removable && hit.has-hover && !root.renaming: Rectangle {
+            x: parent.width - self.width - 4px;
+            y: (parent.height - self.height) / 2;
+            width: 16px;
+            height: 16px;
+            border-radius: Theme.r-xs;
+            background: shut.has-hover ? Theme.danger-soft : Colors.transparent;
+
+            Icon {
+                glyph: Glyph.close;
+                size: 10px;
+                tint: shut.has-hover ? Theme.danger : Theme.fg-dim;
+            }
+
+            shut := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.remove-requested(); }
+            }
+        }
+    }
+
+    if root.renaming: Rectangle {
+        x: 4px;
+        y: 4px;
+        width: parent.width - 8px;
+        height: parent.height - 8px;
+        border-radius: Theme.r-xs;
+        background: Theme.well;
+        border-width: 1px;
+        border-color: Theme.accent;
+        clip: true;
+
+        editor := TextInput {
+            x: 5px;
+            y: (parent.height - self.height) / 2;
+            width: parent.width - 10px;
+            height: self.preferred-height;
+            text: root.label;
+            color: Theme.fg;
+            font-size: Theme.fs;
+            single-line: true;
+            selection-background-color: Theme.accent;
+            selection-foreground-color: Theme.on-accent;
+
+            init => {
+                self.focus();
+                self.select-all();
+            }
+
+            // Commit on blur: clicking away saves, Escape restores.
+            changed has-focus => {
+                if (!self.has-focus && root.renaming) {
+                    root.renamed(self.text);
+                    root.renaming = false;
+                }
+            }
+
+            accepted => { Focus.release(); }
+
+            key-pressed(event) => {
+                if (event.text == Key.Escape) {
+                    self.text = root.label;
+                    Focus.release();
+                    return EventResult.accept;
+                }
+                return EventResult.reject;
+            }
+        }
+    }
+}
+
+export component ScenesDialog inherits Modal {
+    in property <ScenesSheetData> data;
+
+    callback scene-selected(id: string);
+    callback scene-renamed(id: string, name: string);
+    callback scene-removed(id: string);
+    callback clear-scene();
+    callback add();
+    callback close-requested();
+
+    open: root.data.open;
+    title: I18n.t("scenes.title");
+    glyph: Glyph.film;
+    surface-width: 560px;
+    dismissable: true;
+
+    // Modal's own dismiss (scrim / Escape) is the same as Close: no scene
+    // data is dirty here - every click applies through a command at once.
+    closed => { root.close-requested(); }
+
+    VerticalLayout {
+        DialogSection {
+            first: true;
+            title: I18n.t("scenes.strip");
+
+            HorizontalLayout {
+                spacing: 3px;
+                alignment: start;
+
+                if root.data.ungrouped: Chip {
+                    label: I18n.t("scenes.ungrouped");
+                    current: root.data.no-scene;
+                    count: 0;
+                    removable: false;
+                    show-count: false;
+                    selected => { root.clear-scene(); }
+                }
+
+                for scene[index] in root.data.scenes: Chip {
+                    label: scene.name;
+                    current: scene.current;
+                    count: scene.count;
+                    removable: true;
+                    show-count: true;
+                    selected => { root.scene-selected(scene.id); }
+                    renamed(name) => { root.scene-renamed(scene.id, name); }
+                    remove-requested => { root.scene-removed(scene.id); }
+                }
+            }
+        }
+
+        DialogSection {
+            title: I18n.t("scenes.hint");
+            Text {
+                text: I18n.t("scenes.hintBody");
+                color: Theme.fg-muted;
+                font-size: Theme.fs-sm;
+                wrap: word-wrap;
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: Theme.line;
+        }
+
+        ActionPair {
+            padding: 14px;
+            cancel-label: I18n.t("scenes.close");
+            cancel-enabled: true;
+            action-glyph: Glyph.plus;
+            action-label: I18n.t("scenes.add");
+            action-enabled: true;
+            cancel => { root.close-requested(); }
+            act => { root.add(); }
+        }
+    }
+}

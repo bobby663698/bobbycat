@@ -22,6 +22,7 @@ pub mod monitor;
 pub mod pace;
 pub mod project;
 pub mod relink;
+pub mod scenes;
 pub mod scripts;
 pub mod settings;
 pub mod sounds;
@@ -59,6 +60,8 @@ pub enum Msg {
     Sounds(sounds::SoundsMsg),
     /// To the Script page.
     Scripts(scripts::ScriptsMsg),
+    /// To the Scenes sheet.
+    Scenes(scenes::ScenesMsg),
 }
 
 /// What a message says in the log: the activity trail of what the person
