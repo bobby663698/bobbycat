@@ -688,7 +688,7 @@ mod tests {
         let order = timeline_order(editor.project());
         assert_eq!(order, vec![first.as_str(), second.as_str()]);
 
-        let ids: Vec<&str> = order.iter().map(|id| *id).collect();
+        let ids: Vec<&str> = order.iter().copied().collect();
         let flat = flatten_scenes(editor.project(), None, &ids);
         assert_eq!(flat.len(), 2, "one clip per timeline");
         assert_eq!(flat[0].start, 0.0);

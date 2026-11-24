@@ -490,7 +490,7 @@ impl ExportPane {
     /// The timelines this export plays, in order. Scenes come first in strip
     /// order and ungrouped timelines last, the order `timeline_order` gives;
     /// a single scene keeps only the timelines grouped in the active one.
-    fn export_timeline_ids(&self, studio: &Studio) -> Vec<&str> {
+    fn export_timeline_ids<'a>(&self, studio: &'a Studio) -> Vec<&'a str> {
         let project = studio.project();
         let order = concat_export::flatten::timeline_order(project);
         match self.scope {
