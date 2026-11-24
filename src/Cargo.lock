@@ -1168,6 +1168,7 @@ dependencies = [
  "concat-log",
  "concat-mcp",
  "concat-media",
+ "concat-plugin",
  "concat-project",
  "concat-render",
  "concat-script",
