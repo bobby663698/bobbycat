@@ -688,12 +688,20 @@ mod tests {
         let order = timeline_order(editor.project());
         assert_eq!(order, vec![first.as_str(), second.as_str()]);
 
-        let ids: Vec<&str> = order.iter().copied().collect();
+        let ids = order.to_vec();
         let flat = flatten_scenes(editor.project(), None, &ids);
         assert_eq!(flat.len(), 2, "one clip per timeline");
-        assert_eq!(flat[0].start, 0.0);
-        // The second timeline's clip starts after the first one's 10 seconds.
-        assert_eq!(flat[1].start, 10.0, "the second scene is shifted forward");
+        // The first timeline keeps its own local start; the second is moved
+        // forward by the first timeline's whole length.
+        let first_start = editor.project().timelines[0].clips[0].start;
+        let second_start = editor.project().timelines[1].clips[0].start;
+        let first_duration = editor.project().timelines[0].duration();
+        assert_eq!(flat[0].start, first_start);
+        assert_eq!(
+            flat[1].start,
+            second_start + first_duration,
+            "the second scene is shifted forward by the first one's length"
+        );
 
         let end = flat
             .iter()
@@ -719,6 +727,10 @@ mod tests {
         let (editor, first, _) = project_with_two_scenes();
         let flat = flatten_scenes(editor.project(), None, &["nope", first.as_str()]);
         assert_eq!(flat.len(), 1, "the unknown id is skipped");
-        assert_eq!(flat[0].start, 0.0, "no gap is left for the skipped id");
+        assert_eq!(
+            flat[0].start,
+            editor.project().timelines[0].clips[0].start,
+            "no gap is left for the skipped id"
+        );
     }
 }
