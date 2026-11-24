@@ -46,7 +46,7 @@ impl ScenesPane {
         let active_scene = project.active().scene.clone();
         let no_scene = active_scene.is_empty();
 
-        let mut counts = std::collections::HashMap::new();
+        let mut counts: std::collections::HashMap<&str, i32> = std::collections::HashMap::new();
         for timeline in &project.timelines {
             if !timeline.scene.is_empty() {
                 *counts.entry(timeline.scene.as_str()).or_insert(0) += 1;
@@ -60,7 +60,7 @@ impl ScenesPane {
                 id: SharedString::from(scene.id.clone()),
                 name: SharedString::from(scene.name.clone()),
                 current: scene.id == active_scene,
-                count: *counts.get(scene.id.as_str()).unwrap_or(&0) as i32,
+                count: *counts.get(scene.id.as_str()).unwrap_or(&0),
             })
             .collect();
 
