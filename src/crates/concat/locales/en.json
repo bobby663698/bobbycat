@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "The name has to be a file name: not empty, and none of / \\ : * ? \" < > |",
   "export.noTransparency": "This format keeps no transparency: the clear parts come out black. ProRes 4444 or VP9 alpha keep it.",
   "export.notOnThisDevice": "Not on this device",
+  "export.note.unknownBlend": "Unknown blend mode {0}; rendered as Normal",
   "export.nothingTimelineExport": "There is nothing on the timeline to export",
   "export.nothingToExport": "Nothing to export",
   "export.output": "Output",

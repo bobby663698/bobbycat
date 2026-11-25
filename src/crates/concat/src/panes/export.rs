@@ -13,6 +13,7 @@
 //! pane reads and asks things of but never reaches into for its own
 //! fields.
 
+use concat_export::{ExportReport, Note};
 use concat_host::export::{self, ExportSpec};
 use concat_media::ColorRange;
 
@@ -61,8 +62,8 @@ pub enum ExportMsg {
         /// What it is doing, in the person's language.
         stage: String,
     },
-    /// The render's worker is done: the file written, or why not.
-    Finished(Result<String, String>),
+    /// The render's worker is done: the file and its notes, or why it failed.
+    Finished(Result<ExportReport, String>),
     /// The phone has moved the file to where it shows it - the path under
     /// the phone's storage - or could not, and the file is where it was.
     Published(Result<String, String>),
@@ -122,6 +123,7 @@ pub struct ExportPane {
     pub progress: f32,
     pub stage: String,
     pub message: String,
+    notes: Vec<Note>,
     /// Where the finished file is, for Reveal.
     pub written: String,
     /// When the render started, for a real ETA.
@@ -153,6 +155,7 @@ impl Default for ExportPane {
             progress: 0.0,
             stage: String::new(),
             message: String::new(),
+            notes: Vec::new(),
             written: String::new(),
             started_at: None,
         }
@@ -170,6 +173,7 @@ impl ExportPane {
                 self.open = true;
                 self.phase = ExportPhase::Idle;
                 self.message.clear();
+                self.notes.clear();
                 // The timeline's own size: the one rung that can be picked;
                 // and its own rate, first on the rate list.
                 self.resolution = Self::own_rung(studio);
@@ -201,6 +205,7 @@ impl ExportPane {
             ExportMsg::Again => {
                 self.phase = ExportPhase::Idle;
                 self.progress = 0.0;
+                self.notes.clear();
             }
             // The picker runs with the studio unborrowed and answers as a
             // message of its own; see `host::after_dialog`.
@@ -243,13 +248,14 @@ impl ExportPane {
                     self.stage = stage;
                 }
             }
-            ExportMsg::Finished(Ok(written)) => {
+            ExportMsg::Finished(Ok(ExportReport { path, notes })) => {
                 self.phase = ExportPhase::Done;
                 self.progress = 1.0;
-                self.written = written.clone();
+                self.written = path.clone();
+                self.notes = notes;
                 // A phone moves the file to where its gallery shows it, and
                 // the sheet says "finished" once it is there.
-                let handed = platform::publish_export(written.into(), |result| {
+                let handed = platform::publish_export(path.into(), |result| {
                     on_ui(move |studio, _, _| {
                         studio.handle(Msg::Export(ExportMsg::Published(result)));
                     });
@@ -612,6 +618,7 @@ impl ExportPane {
         self.progress = 0.0;
         self.stage = t("export.preparing");
         self.message.clear();
+        self.notes.clear();
         self.written.clear();
         self.started_at = Some(std::time::Instant::now());
 
@@ -699,7 +706,7 @@ impl ExportPane {
                 // thread (#324); see `Monitor::off_thread`. None there or
                 // without a GPU, and the render then opens what it can.
                 let compositor = monitor.off_thread();
-                export::run_on(&request, compositor, cancel, |progress| {
+                export::run_report_on(&request, compositor, cancel, |progress| {
                     let fraction = if progress.total > 0 {
                         progress.frame as f32 / progress.total as f32
                     } else {
@@ -869,9 +876,21 @@ impl ExportPane {
                 slint::SharedString::new()
             },
             message: self.message.as_str().into(),
+            notes: ModelRc::new(VecModel::from(
+                self.notes
+                    .iter()
+                    .map(|note| SharedString::from(note_text(note)))
+                    .collect::<Vec<_>>(),
+            )),
             done_size: bytes(self.size_bytes(studio)).into(),
             empty: clips == 0,
         }
+    }
+}
+
+fn note_text(note: &Note) -> String {
+    match note {
+        Note::UnknownBlend { id } => tf("export.note.unknownBlend", &[id]),
     }
 }
 

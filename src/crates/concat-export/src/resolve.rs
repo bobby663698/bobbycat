@@ -164,7 +164,7 @@ pub(crate) struct BuiltTimeline {
     /// External blend programs, frozen with the timeline for both preview and export.
     pub(crate) blends: HashMap<ClipId, BlendPass>,
     /// Missing blend ids rendered as Normal, without rewriting the document.
-    pub(crate) blend_notes: Vec<String>,
+    pub(crate) blend_notes: Vec<Note>,
     /// A title's per-word reveal order, for the clips that have one -
     /// carried beside `chains` rather than inside it, since it is baked
     /// once by the host and never resolved per frame the way effects are.

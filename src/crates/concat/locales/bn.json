@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "নামটি অবশ্যই ফাইলের নাম হতে হবে: খালি নয়, আর / \\ : * ? \" < > | এর কোনোটিই নয়",
   "export.noTransparency": "এই ফরম্যাট স্বচ্ছতা রাখে না: স্বচ্ছ অংশ কালো হয়ে যায়। ProRes 4444 বা VP9 alpha তা রাখে।",
   "export.notOnThisDevice": "এই ডিভাইসে নেই",
+  "export.note.unknownBlend": "অজানা মিশ্রণ মোড {0}; স্বাভাবিক মোডে রেন্ডার করা হয়েছে",
   "export.nothingTimelineExport": "এক্সপোর্ট করার মতো কিছু টাইমলাইনে নেই",
   "export.nothingToExport": "এক্সপোর্ট করার কিছু নেই",
   "export.output": "আউটপুট",

@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "O nome precisa ser um nome de arquivo: não vazio e sem / \\ : * ? \" < > |",
   "export.noTransparency": "Este formato não mantém a transparência: as partes transparentes saem pretas. ProRes 4444 ou VP9 alpha mantêm.",
   "export.notOnThisDevice": "Indisponível neste dispositivo",
+  "export.note.unknownBlend": "Modo de mesclagem desconhecido {0}; renderizado no modo Normal",
   "export.nothingTimelineExport": "Não há nada na linha do tempo para exportar",
   "export.nothingToExport": "Nada para exportar",
   "export.output": "Saída",

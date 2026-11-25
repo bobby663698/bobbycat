@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "يجب أن يكون الاسم اسم ملف: غير فارغ، ولا يحتوي أيًّا من / \\ : * ? \" < > |",
   "export.noTransparency": "هذه الصيغة لا تحفظ الشفافية: الأجزاء الشفافة تظهر سوداء. ProRes 4444 أو VP9 alpha تحفظانها.",
   "export.notOnThisDevice": "غير متوفر على هذا الجهاز",
+  "export.note.unknownBlend": "وضع المزج {0} غير معروف؛ عُرض بالوضع العادي",
   "export.nothingTimelineExport": "لا يوجد شيء على المخطط الزمني لتصديره",
   "export.nothingToExport": "لا شيء للتصدير",
   "export.output": "الإخراج",

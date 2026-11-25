@@ -11,7 +11,7 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use concat_export::{ExportClip, ExportRequest, Reporter, render_on};
+use concat_export::{ExportClip, ExportReport, ExportRequest, Reporter, render_report_on};
 pub use concat_media::{ColorRange, RateMode, VideoCodec};
 pub use concat_render::WgpuCompositor;
 
@@ -144,8 +144,18 @@ pub fn run_on(
     request: &ExportRequest,
     compositor: Option<WgpuCompositor>,
     cancel: &AtomicBool,
-    mut progress: impl FnMut(Progress),
+    progress: impl FnMut(Progress),
 ) -> Result<String, String> {
+    run_report_on(request, compositor, cancel, progress).map(|report| report.path)
+}
+
+/// The written file and its notes, for the window's export report.
+pub fn run_report_on(
+    request: &ExportRequest,
+    compositor: Option<WgpuCompositor>,
+    cancel: &AtomicBool,
+    mut progress: impl FnMut(Progress),
+) -> Result<ExportReport, String> {
     // What a death part way through needs to be read: what was asked for,
     // which stage it was in, and how far that stage had got. The stages
     // and every quarter of one are a handful of lines an export.
@@ -180,7 +190,7 @@ pub fn run_on(
             stage,
         });
     };
-    let result = render_on(
+    let result = render_report_on(
         request,
         compositor,
         Reporter {

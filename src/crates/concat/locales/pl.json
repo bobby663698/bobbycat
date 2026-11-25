@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Nazwa musi być nazwą pliku: niepusta i bez znaków / \\ : * ? \" < > |",
   "export.noTransparency": "Ten format nie zachowuje przezroczystości: przezroczyste części będą czarne. ProRes 4444 lub VP9 alpha ją zachowują.",
   "export.notOnThisDevice": "Niedostępne na tym urządzeniu",
+  "export.note.unknownBlend": "Nieznany tryb mieszania {0}; wyrenderowano w trybie Normalnym",
   "export.nothingTimelineExport": "Na osi czasu nie ma nic do wyeksportowania",
   "export.nothingToExport": "Nic do wyeksportowania",
   "export.output": "Wyjście",

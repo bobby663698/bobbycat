@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Ad fayl adı olmalıdır: boş olmamalı və / \\ : * ? \" < > | simvollarından heç birini ehtiva etməməlidir",
   "export.noTransparency": "Bu format şəffaflığı saxlamır: şəffaf hissələr qara çıxır. ProRes 4444 və ya VP9 alpha onu saxlayır.",
   "export.notOnThisDevice": "Bu cihazda yoxdur",
+  "export.note.unknownBlend": "Naməlum qarışdırma rejimi {0}; Normal rejimdə render edildi",
   "export.nothingTimelineExport": "Zaman xəttində ixrac ediləcək heç nə yoxdur",
   "export.nothingToExport": "İxrac ediləcək heç nə yoxdur",
   "export.output": "Çıxış",

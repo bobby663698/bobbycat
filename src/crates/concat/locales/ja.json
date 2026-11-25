@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "名前はファイル名にしてください。空にせず、/ \\ : * ? \" < > | は使えません",
   "export.noTransparency": "この形式は透明を保持しません。透明な部分は黒になります。ProRes 4444 か VP9 alpha なら保持します。",
   "export.notOnThisDevice": "このデバイスでは使用不可",
+  "export.note.unknownBlend": "不明な描画モード {0} は通常モードでレンダリングしました",
   "export.nothingTimelineExport": "タイムラインに書き出すものがありません",
   "export.nothingToExport": "書き出すものがありません",
   "export.output": "出力",

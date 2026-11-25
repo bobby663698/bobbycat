@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Tên phải là tên tệp hợp lệ: không để trống và không chứa ký tự nào trong / \\ : * ? \" < > |",
   "export.noTransparency": "Định dạng này không giữ độ trong suốt: phần trong suốt sẽ thành màu đen. ProRes 4444 hoặc VP9 alpha giữ được.",
   "export.notOnThisDevice": "Không có trên thiết bị này",
+  "export.note.unknownBlend": "Không nhận ra chế độ hòa trộn {0}; đã kết xuất ở chế độ Bình thường",
   "export.nothingTimelineExport": "Không có gì trên timeline để xuất",
   "export.nothingToExport": "Không có gì để xuất",
   "export.output": "Đầu ra",

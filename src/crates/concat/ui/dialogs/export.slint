@@ -93,6 +93,8 @@ export struct ExportData {
     eta: string,
     /// why it failed, when it did
     message: string,
+    /// Localized notes from the completed export.
+    notes: [string],
     done-size: string,
     /// nothing on the timeline to export
     empty: bool,
@@ -747,6 +749,17 @@ export component ExportDialog inherits Rectangle {
                 Measure {
                     padding-top: 8px;
                     padding-bottom: 16px;
+
+                    if root.data.phase == ExportPhase.done && root.data.notes.length > 0: VerticalLayout {
+                        padding: 12px;
+                        spacing: 6px;
+                        for note in root.data.notes: Text {
+                            text: note;
+                            color: Theme.warn;
+                            font-size: Theme.fs;
+                            wrap: word-wrap;
+                        }
+                    }
 
                     if root.running || root.columns == 1: VerticalLayout {
                         SummarySection { first: true; data: root.data; }

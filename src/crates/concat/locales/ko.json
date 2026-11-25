@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "이름은 파일 이름이어야 합니다. 비워 둘 수 없고 / \\ : * ? \" < > | 는 쓸 수 없습니다",
   "export.noTransparency": "이 형식은 투명도를 유지하지 않습니다. 투명한 부분은 검게 나옵니다. ProRes 4444 또는 VP9 alpha는 유지합니다.",
   "export.notOnThisDevice": "이 기기에서 사용 불가",
+  "export.note.unknownBlend": "알 수 없는 혼합 모드 {0}을(를) 일반 모드로 렌더링했습니다",
   "export.nothingTimelineExport": "타임라인에 내보낼 것이 없습니다",
   "export.nothingToExport": "내보낼 것이 없습니다",
   "export.output": "출력",

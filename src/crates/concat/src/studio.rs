@@ -986,7 +986,7 @@ same_with_models! {
     same_chain_choice: crate::ui::ChainChoiceData => options, values;
     same_transition_choice: crate::ui::TransitionChoiceData => options, values;
     same_key_row: crate::ui::KeyRowData => keys;
-    same_export: crate::ui::ExportData => resolutions, rates, rate_details;
+    same_export: crate::ui::ExportData => resolutions, rates, rate_details, notes;
     same_settings: crate::ui::SettingsData => shortcuts;
     same_relink: crate::ui::RelinkData => items;
     same_start: crate::ui::StartData => rate_options;

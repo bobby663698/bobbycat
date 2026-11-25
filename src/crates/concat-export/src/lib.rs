@@ -1027,6 +1027,15 @@ fn tail_handle(clip: &ExportClip, frame: f64) -> f64 {
     })
 }
 
+/// The published export file and the diagnostics from the timeline drawn.
+#[derive(Clone, Debug)]
+pub struct ExportReport {
+    /// The path of the file written.
+    pub path: String,
+    /// Diagnostics from the timeline drawn for this export.
+    pub notes: Vec<Note>,
+}
+
 /// Renders `request` and returns the path written, drawing on a device of
 /// its own; [`render_on`] draws on one the caller lends.
 pub fn render(request: &ExportRequest, reporter: Reporter<'_>) -> Result<String, String> {
@@ -1048,8 +1057,18 @@ pub fn render(request: &ExportRequest, reporter: Reporter<'_>) -> Result<String,
 pub fn render_on(
     request: &ExportRequest,
     compositor: Option<WgpuCompositor>,
-    mut reporter: Reporter<'_>,
+    reporter: Reporter<'_>,
 ) -> Result<String, String> {
+    render_report_on(request, compositor, reporter).map(|report| report.path)
+}
+
+/// Renders as [`render_on`], returning the notes from the rendered timeline
+/// only after the finished file has been written to its destination.
+pub fn render_report_on(
+    request: &ExportRequest,
+    compositor: Option<WgpuCompositor>,
+    mut reporter: Reporter<'_>,
+) -> Result<ExportReport, String> {
     // A clear canvas bound for a format that keeps no alpha is laid over
     // black first, as the frame is drawn, rather than having its alpha
     // dropped by the encoder after: dropped, a soft edge or a glow keeps
@@ -1199,9 +1218,9 @@ pub fn render_on(
     // way the file was made. The mux used to write it directly, and a mux
     // that failed - the disk full, a read error - left a truncated file
     // where the previous export had been (audit 2026-10-09, finding 4).
-    let result = (|| -> Result<(), String> {
+    let result = (|| -> Result<Vec<Note>, String> {
         op.step("render");
-        render_picture(
+        let notes = render_picture(
             request,
             compositor,
             rate,
@@ -1232,11 +1251,12 @@ pub fn render_on(
         };
         op.end_step();
         std::fs::rename(finished, &output)
-            .map_err(|error| format!("could not write {}: {error}", output.display()))
+            .map_err(|error| format!("could not write {}: {error}", output.display()))?;
+        Ok(notes)
     })();
     spent.note(&mut op);
     match &result {
-        Ok(()) => {
+        Ok(_) => {
             let fps = spent.frames as f64 / op.elapsed().as_secs_f64().max(1e-9);
             op.done(format_args!(
                 "{} frames at {fps:.1} fps{}",
@@ -1256,7 +1276,10 @@ pub fn render_on(
     let _ = std::fs::remove_file(&mixed);
     let _ = std::fs::remove_file(&muxed);
 
-    result.map(|()| output.to_string_lossy().into_owned())
+    result.map(|notes| ExportReport {
+        path: output.to_string_lossy().into_owned(),
+        notes,
+    })
 }
 
 /// The timeline's end and how many frames it runs for, on the frame grid the
@@ -1480,9 +1503,29 @@ fn audio_pieces_of(
         .collect()
 }
 
+/// A non-fatal export or preview diagnostic, for the caller to present.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Note {
+    /// A missing blend mode is rendered as Normal without changing its id.
+    UnknownBlend {
+        /// The blend mode id held in the project.
+        id: String,
+    },
+}
+
+impl std::fmt::Display for Note {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownBlend { id } => {
+                write!(formatter, "unknown blend mode {id}; rendered as Normal")
+            }
+        }
+    }
+}
+
 /// Missing blend modes that will be rendered as Normal, once per id.
 /// The original ids stay in the request and the project document.
-pub fn blend_notes(clips: &[ExportClip]) -> Vec<String> {
+pub fn blend_notes(clips: &[ExportClip]) -> Vec<Note> {
     let catalogue = Catalogue::builtin();
     let mut notes = Vec::new();
     for clip in clips {
@@ -1497,7 +1540,7 @@ pub fn blend_notes(clips: &[ExportClip]) -> Vec<String> {
     notes
 }
 
-fn blend_note(id: &str, catalogue: &Catalogue) -> Option<String> {
+fn blend_note(id: &str, catalogue: &Catalogue) -> Option<Note> {
     let id = id.trim();
     if id.is_empty()
         || concat_core::timeline::card_by_id(id).is_some()
@@ -1505,7 +1548,7 @@ fn blend_note(id: &str, catalogue: &Catalogue) -> Option<String> {
     {
         None
     } else {
-        Some(format!("unknown blend mode {id}; rendered as Normal"))
+        Some(Note::UnknownBlend { id: id.to_owned() })
     }
 }
 
@@ -1877,7 +1920,7 @@ fn render_picture(
     destination: &Path,
     reporter: &mut Reporter<'_>,
     spent: &mut Spent,
-) -> Result<(), String> {
+) -> Result<Vec<Note>, String> {
     let effect_offset = quantise(request.effect_time_offset, rate);
     // Whether the window lent its device: a death under the export is then
     // answered on that device again before anything else (see `recovered`).
@@ -2281,7 +2324,7 @@ fn render_picture(
                 spent.picture = begun.elapsed();
                 spent.sought_decoded = sought.stats().decoded;
                 spent.sought_ways = sought.readers_opened();
-                return Ok(());
+                return Ok(blend_notes);
             }
             Err((written, error)) => {
                 again_in_software(&error, &mut options, written, total_frames)?;
@@ -3497,7 +3540,7 @@ pub struct PreviewPlan {
 
 impl PreviewPlan {
     /// Missing blend modes used by this preview, without changing their ids.
-    pub fn blend_notes(&self) -> &[String] {
+    pub fn blend_notes(&self) -> &[Note] {
         &self.built.blend_notes
     }
 }
@@ -4007,7 +4050,12 @@ mod tests {
         let built = build_timeline(&request, rate, &visible, Vec::new(), &Catalogue::new());
         assert!(built.blends.is_empty());
         assert_eq!(built.blend_notes.len(), 1);
-        assert!(built.blend_notes[0].contains("plug.photocopy"));
+        assert_eq!(
+            built.blend_notes,
+            [Note::UnknownBlend {
+                id: "plug.photocopy".to_owned()
+            }]
+        );
         assert_eq!(
             plan_frame(&built.timeline, Rational::ZERO).layers[0].blend,
             concat_core::Blend::Normal
@@ -4021,6 +4069,64 @@ mod tests {
                 .clips
                 .iter()
                 .all(|clip| clip.blend == "plug.photocopy")
+        );
+
+        let restored = build_timeline(&request, rate, &visible, Vec::new(), &catalogue);
+        assert!(restored.blend_notes.is_empty());
+        assert_eq!(blend_note("plug.photocopy", &catalogue), None);
+    }
+
+    #[test]
+    fn unknown_blend_notes_keep_distinct_ids_and_deduplicate_repeats() {
+        let mut first = clip("video", 0, 0.0, 2.0, 0.0);
+        first.blend = "plug.missing-first".to_owned();
+        let mut second = first.clone();
+        second.track = 1;
+        second.blend = "plug.missing-second".to_owned();
+        let mut repeated = first.clone();
+        repeated.track = 2;
+        let request = blend_request(vec![first, second, repeated]);
+        let expected = vec![
+            Note::UnknownBlend {
+                id: "plug.missing-first".to_owned(),
+            },
+            Note::UnknownBlend {
+                id: "plug.missing-second".to_owned(),
+            },
+        ];
+        assert_eq!(blend_notes(&request.clips), expected);
+        assert_eq!(
+            expected[0].to_string(),
+            "unknown blend mode plug.missing-first; rendered as Normal"
+        );
+
+        let visible: Vec<_> = request.clips.iter().collect();
+        let built = build_timeline(
+            &request,
+            FrameRate::THIRTY,
+            &visible,
+            Vec::new(),
+            &Catalogue::new(),
+        );
+        assert_eq!(built.blend_notes, expected);
+        let plan = plan_frame(&built.timeline, Rational::ZERO);
+        assert_eq!(plan.layers.len(), 3);
+        assert!(
+            plan.layers
+                .iter()
+                .all(|layer| layer.blend == concat_core::Blend::Normal)
+        );
+        assert_eq!(
+            request
+                .clips
+                .iter()
+                .map(|clip| clip.blend.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "plug.missing-first",
+                "plug.missing-second",
+                "plug.missing-first"
+            ]
         );
     }
 
@@ -4097,14 +4203,17 @@ mod tests {
         );
         let cancel = AtomicBool::new(false);
         let mut progress = |_: i64, _: i64, _: &'static str| {};
-        let output = render(
+        let report = render_report_on(
             &request,
+            None,
             Reporter {
                 progress: &mut progress,
                 cancel: &cancel,
             },
         )
         .expect("exports the same blend");
+        assert!(report.notes.is_empty(), "the installed package has no note");
+        let output = report.path;
         let exported = pool
             .frame(&concat_media::FrameRequest::new(
                 &output,
@@ -4122,6 +4231,34 @@ mod tests {
                 "the encoded output must match the preview within codec rounding"
             );
         }
+
+        request.clips[1].blend = "plug.missing".to_owned();
+        let mut repeated = request.clips[1].clone();
+        repeated.track = 2;
+        request.clips.push(repeated);
+        request.output = dir.join("missing.mp4").to_string_lossy().into_owned();
+        let report = render_report_on(
+            &request,
+            None,
+            Reporter {
+                progress: &mut progress,
+                cancel: &cancel,
+            },
+        )
+        .expect("exports a missing blend as Normal");
+        assert_eq!(report.path, request.output);
+        assert!(Path::new(&report.path).is_file());
+        assert_eq!(
+            report.notes,
+            [Note::UnknownBlend {
+                id: "plug.missing".to_owned(),
+            }]
+        );
+        assert!(
+            request.clips[1..]
+                .iter()
+                .all(|clip| clip.blend == "plug.missing")
+        );
         drop(pool);
         assert_eq!(
             dir.canonicalize().expect("test folder").parent(),

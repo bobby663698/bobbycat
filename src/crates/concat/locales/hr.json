@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Naziv mora biti naziv datoteke: ne prazan i bez / \\ : * ? \" < > |",
   "export.noTransparency": "Ovaj format ne čuva prozirnost: prozirni dijelovi izlaze crni. ProRes 4444 ili VP9 alpha je čuvaju.",
   "export.notOnThisDevice": "Nije na ovom uređaju",
+  "export.note.unknownBlend": "Nepoznat način stapanja {0}; renderirano u načinu Normalno",
   "export.nothingTimelineExport": "Na vremenskoj liniji nema ničega za izvoz",
   "export.nothingToExport": "Ništa za izvoz",
   "export.output": "Izlaz",

@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "ชื่อต้องเป็นชื่อไฟล์ที่ใช้ได้: ห้ามว่าง และห้ามมี / \\ : * ? \" < > |",
   "export.noTransparency": "รูปแบบนี้ไม่เก็บความโปร่งใส ส่วนที่โปร่งใสจะเป็นสีดำ ProRes 4444 หรือ VP9 alpha เก็บไว้ได้",
   "export.notOnThisDevice": "ไม่มีในอุปกรณ์นี้",
+  "export.note.unknownBlend": "ไม่รู้จักโหมดผสม {0} จึงเรนเดอร์ด้วยโหมดปกติ",
   "export.nothingTimelineExport": "ไม่มีอะไรบนไทม์ไลน์ให้ส่งออก",
   "export.nothingToExport": "ไม่มีอะไรให้ส่งออก",
   "export.output": "เอาต์พุต",

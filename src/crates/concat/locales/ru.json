@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Имя должно быть именем файла: не пустым и без / \\ : * ? \" < > |",
   "export.noTransparency": "Этот формат не сохраняет прозрачность: прозрачные места будут чёрными. ProRes 4444 или VP9 alpha сохраняют её.",
   "export.notOnThisDevice": "Недоступно на этом устройстве",
+  "export.note.unknownBlend": "Неизвестный режим наложения {0}; выполнен рендеринг в обычном режиме",
   "export.nothingTimelineExport": "На таймлайне нечего экспортировать",
   "export.nothingToExport": "Нечего экспортировать",
   "export.output": "Вывод",

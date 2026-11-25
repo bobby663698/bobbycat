@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "نام باید نام یک فایل باشد: خالی نباشد و بدون / \\ : * ? \" < > |",
   "export.noTransparency": "این قالب شفافیت را نگه نمی‌دارد: بخش‌های شفاف سیاه می‌شوند. ProRes 4444 یا VP9 alpha آن را نگه می‌دارند.",
   "export.notOnThisDevice": "در این دستگاه نیست",
+  "export.note.unknownBlend": "حالت ترکیب {0} ناشناخته است؛ در حالت عادی رندر شد",
   "export.nothingTimelineExport": "چیزی روی تایم‌لاین برای خروجی گرفتن وجود ندارد",
   "export.nothingToExport": "چیزی برای خروجی گرفتن وجود ندارد",
   "export.output": "خروجی",

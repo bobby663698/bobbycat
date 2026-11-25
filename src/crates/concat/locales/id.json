@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "Nama harus berupa nama file: tidak kosong, dan tanpa / \\ : * ? \" < > |",
   "export.noTransparency": "Format ini tidak menyimpan transparansi: bagian transparan jadi hitam. ProRes 4444 atau VP9 alpha menyimpannya.",
   "export.notOnThisDevice": "Tidak tersedia di perangkat ini",
+  "export.note.unknownBlend": "Mode pencampuran {0} tidak dikenal; dirender dalam mode Normal",
   "export.nothingTimelineExport": "Tidak ada apa pun di linimasa untuk diekspor",
   "export.nothingToExport": "Tidak ada yang bisa diekspor",
   "export.output": "Keluaran",

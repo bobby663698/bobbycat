@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "名称必须是文件名：不能为空，也不能含有 / \\ : * ? \" < > |",
   "export.noTransparency": "此格式不保留透明：透明部分会变成黑色。ProRes 4444 或 VP9 alpha 可以保留。",
   "export.notOnThisDevice": "此设备不支持",
+  "export.note.unknownBlend": "未知混合模式 {0}，按正常渲染",
   "export.nothingTimelineExport": "时间线上没有可导出的内容",
   "export.nothingToExport": "没有可导出的内容",
   "export.output": "输出",

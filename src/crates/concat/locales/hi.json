@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "नाम एक फ़ाइल नाम होना चाहिए: खाली नहीं, और इनमें से कोई चिह्न नहीं: / \\ : * ? \" < > |",
   "export.noTransparency": "यह फ़ॉर्मैट पारदर्शिता नहीं रखता: पारदर्शी हिस्से काले आते हैं। ProRes 4444 या VP9 alpha इसे रखते हैं।",
   "export.notOnThisDevice": "इस डिवाइस पर उपलब्ध नहीं",
+  "export.note.unknownBlend": "अज्ञात मिश्रण मोड {0}; सामान्य मोड में रेंडर किया गया",
   "export.nothingTimelineExport": "टाइमलाइन पर एक्सपोर्ट करने के लिए कुछ नहीं है",
   "export.nothingToExport": "एक्सपोर्ट करने के लिए कुछ नहीं",
   "export.output": "आउटपुट",

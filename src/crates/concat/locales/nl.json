@@ -279,6 +279,7 @@
   "export.nameNeedsToBeAFileName": "De naam moet een bestandsnaam zijn: niet leeg, en zonder / \\ : * ? \" < > |",
   "export.noTransparency": "Dit formaat houdt geen transparantie: doorzichtige delen worden zwart. ProRes 4444 of VP9 alpha houden die wel.",
   "export.notOnThisDevice": "Niet op dit apparaat",
+  "export.note.unknownBlend": "Onbekende overvloeimodus {0}; gerenderd in de modus Normaal",
   "export.nothingTimelineExport": "Er staat niets op de tijdlijn om te exporteren",
   "export.nothingToExport": "Niets om te exporteren",
   "export.output": "Uitvoer",
