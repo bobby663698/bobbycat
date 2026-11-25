@@ -16,18 +16,21 @@ pub const MAX_SOURCE_BYTES: usize = 64 * 1024;
 /// Parse, validate and bind one package's ordinary two-colour function.
 pub fn compile(manifest: &Manifest, source: &str) -> Result<BlendPass, String> {
     let table = manifest.blend.as_ref().ok_or("missing [blend] table")?;
-    let fail = |span: naga::Span, why: &str| {
-        let location = span.location(source);
+    let fail_at = |location: naga::SourceLocation, why: &str| {
         format!(
             "{}:{}:{}: {why}",
             table.file, location.line_number, location.line_position
         )
     };
+    let fail = |span: naga::Span, why: &str| fail_at(span.location(source), why);
     if source.len() > MAX_SOURCE_BYTES {
         return Err(fail(naga::Span::UNDEFINED, "blend source exceeds 64 KiB"));
     }
-    let module = naga::front::wgsl::parse_str(source)
-        .map_err(|error| format!("{}: {}", table.file, error.emit_to_string(source)))?;
+    let module =
+        naga::front::wgsl::parse_str(source).map_err(|error| match error.location(source) {
+            Some(location) => fail_at(location, error.message()),
+            None => format!("{}: {}", table.file, error.emit_to_string(source)),
+        })?;
     if !module.entry_points.is_empty() {
         return Err(fail(
             naga::Span::UNDEFINED,
@@ -205,7 +208,12 @@ mod tests {
         let endless = "fn blend(fg: vec4<f32>, bg: vec4<f32>) -> vec4<f32> { loop {} return fg; }";
         assert!(compile(&manifest, endless).unwrap_err().contains("loops"));
         let error = compile(&manifest, "\n\nfn blend( ?").unwrap_err();
-        assert!(error.contains("photocopy.wgsl"), "{error}");
-        assert!(error.contains(":3:"), "{error}");
+        assert!(error.starts_with("photocopy.wgsl:3:"), "{error}");
+        assert!(
+            !error
+                .split_whitespace()
+                .any(|word| word.starts_with("wgsl:3:")),
+            "{error}"
+        );
     }
 }
