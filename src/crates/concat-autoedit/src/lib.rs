@@ -10,6 +10,8 @@
 //! - [`candidate`] - what a model proposes: a run of commands and the words
 //!   that say why;
 //! - [`director`] - the prompt that asks for one, and the parse of the reply;
+//! - [`agent`] - the call between those two ends, made through
+//!   `concat-agent`;
 //! - [`preview`] - a copy of the project folder, what the commands come to
 //!   on it, and how the copy is adopted back;
 //! - [`commit`] - the check a candidate passes before it may be adopted.
@@ -26,16 +28,19 @@
 //!    A candidate that has to be looked at *before* it is adopted needs a
 //!    folder of its own, which is what [`preview`] gives it.
 //!
-//! Nothing here runs a model. [`director::prompt`] and [`director::parse`]
-//! are the two ends of a call the host makes with whatever client it has
-//! (`concat-agent` today).
+//! One call is [`agent::propose`]: the prompt out through `concat-agent`, the
+//! reply back through [`director::parse`]. A host with another route to a
+//! model - the Codex CLI, a fixture, a hand-written reply - skips that and
+//! joins [`director::parse`] to [`commit::check`] itself.
 
+pub mod agent;
 pub mod candidate;
 pub mod commit;
 pub mod director;
 pub mod expand;
 pub mod preview;
 
+pub use agent::{ProposeError, messages, propose, propose_streaming, timeline_of};
 pub use candidate::{Candidate, Part, Score};
 pub use commit::{Rejection, Verdict, adopt, check, guard_pending_asr};
 pub use director::{Brief, ParseError, parse, prompt};

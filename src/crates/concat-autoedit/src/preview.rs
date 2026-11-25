@@ -226,7 +226,7 @@ impl Diff {
 }
 
 /// The manifest a folder actually uses, current name first.
-fn manifest_path(root: &Path) -> PathBuf {
+pub(crate) fn manifest_path(root: &Path) -> PathBuf {
     let current = root.join(MANIFEST);
     if current.is_file() {
         return current;
