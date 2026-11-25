@@ -285,8 +285,8 @@ fn session(path: &Path, accelerated: bool) -> Result<Session, String> {
         .map(|count| count.get())
         .unwrap_or(1)
         .clamp(1, 8);
-    concat_vision::runtime::ready()?;
-    let mut builder = Session::builder()
+    let environment = concat_vision::runtime::environment()?;
+    let mut builder = Session::builder(environment)
         .map_err(|error| format!("onnx runtime: {error}"))?
         .with_intra_threads(threads)
         .map_err(|error| format!("onnx runtime: {error}"))?;

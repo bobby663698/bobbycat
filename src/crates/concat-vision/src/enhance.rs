@@ -892,7 +892,8 @@ mod coreml_probe {
                 .with_specialization_strategy(SpecializationStrategy::FastPrediction)
                 .with_compute_units(units)
                 .build();
-            let mut session = ort::session::Session::builder()
+            let environment = crate::runtime::environment().expect("an ONNX Runtime environment");
+            let mut session = ort::session::Session::builder(environment)
                 .expect("a builder")
                 .with_dimension_override("height", side as i64)
                 .expect("height")

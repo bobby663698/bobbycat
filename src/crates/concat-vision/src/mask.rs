@@ -164,7 +164,7 @@ impl Mask {
         let mut decoder = png::Decoder::new(Cursor::new(bytes));
         decoder.set_transformations(png::Transformations::normalize_to_color8());
         let mut reader = decoder.read_info().ok()?;
-        let mut buffer = vec![0u8; reader.output_buffer_size()];
+        let mut buffer = vec![0u8; reader.output_buffer_size()?];
         let info = reader.next_frame(&mut buffer).ok()?;
         let channels = info.color_type.samples();
         let count = info.width as usize * info.height as usize;

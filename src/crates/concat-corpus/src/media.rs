@@ -152,7 +152,10 @@ pub fn read_png(bytes: &[u8]) -> Result<Frame, String> {
     let mut reader = decoder
         .read_info()
         .map_err(|error| format!("the preview is not a PNG: {error}"))?;
-    let mut data = vec![0; reader.output_buffer_size()];
+    let size = reader
+        .output_buffer_size()
+        .ok_or_else(|| "the preview's PNG output buffer is too large".to_owned())?;
+    let mut data = vec![0; size];
     let info = reader
         .next_frame(&mut data)
         .map_err(|error| format!("the preview does not decode: {error}"))?;
