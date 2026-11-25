@@ -22,6 +22,7 @@ pub mod frame;
 pub mod mask;
 pub mod motion;
 pub mod retime;
+pub mod roi;
 pub mod shader;
 #[cfg(test)]
 mod speed_curve_tests;

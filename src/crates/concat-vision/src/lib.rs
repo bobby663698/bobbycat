@@ -49,6 +49,7 @@ pub mod apply;
 pub mod brush;
 pub mod compact;
 pub mod enhance;
+pub mod follow;
 pub mod mask;
 pub mod models;
 pub mod onnx;

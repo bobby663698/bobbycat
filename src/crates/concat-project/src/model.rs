@@ -1423,6 +1423,53 @@ impl Mask {
         self.keys.remove(number).is_some_and(|run| !run.is_empty())
     }
 
+    /// Puts a tracked path on this mask: where the box's centre was on each
+    /// frame, keyed on `x` and `y`, at the size the box was drawn.
+    ///
+    /// The mask becomes a rectangle if it was not one - a tracked box is a
+    /// box - and whatever it had keyed on `x` and `y` is replaced: running
+    /// the tracker again is a correction, not a second opinion, and two
+    /// runs merged into one curve would be neither.
+    ///
+    /// Each `at` is a fraction of the clip, as every key's is; the caller
+    /// turns a frame number into one. A path that holds its size writes
+    /// `width` and `height` as fields rather than keys, because a key per
+    /// frame on two numbers that never change is a file a third larger for
+    /// nothing.
+    pub fn follow(&mut self, path: &[(f64, concat_core::roi::RoiFractions)]) {
+        let Some(&(_, first)) = path.first() else {
+            return;
+        };
+        let same_size = path
+            .iter()
+            .all(|(_, numbers)| numbers.width == first.width && numbers.height == first.height);
+        if self.shape() != Some(MaskShape::Rectangle) {
+            self.source = MaskSource::Shape {
+                shape: MaskShape::Rectangle,
+                width: first.width,
+                height: first.height,
+                roundness: 0.0,
+            };
+        }
+        for number in ["x", "y", "width", "height"] {
+            self.clear_keys(number);
+        }
+        self.set("width", first.width);
+        self.set("height", first.height);
+        for &(at, numbers) in path {
+            if !same_size {
+                self.set_key("width", at, numbers.width, KeyEase::LINEAR);
+                self.set_key("height", at, numbers.height, KeyEase::LINEAR);
+            }
+            self.set_key("x", at, numbers.x, KeyEase::LINEAR);
+            self.set_key("y", at, numbers.y, KeyEase::LINEAR);
+        }
+        // The fields keep the path's first stop, which is what a number
+        // falls back to with its keys taken off.
+        self.set("x", first.x);
+        self.set("y", first.y);
+    }
+
     /// Writes a number the way an edit means it: the field while it has no
     /// keys, and once it rides, a key at `at` with the ease of the key
     /// behind it.
@@ -4014,5 +4061,108 @@ mod shape_tests {
             Some(LineHead::Arrow)
         );
         assert!(ShapeStyle::preset("nonsense").is_none());
+    }
+}
+
+#[cfg(test)]
+mod mask_follow_tests {
+    use super::*;
+    use concat_core::roi::RoiFractions;
+
+    /// Three frames of a target drifting right and down, its size held.
+    fn path() -> Vec<(f64, RoiFractions)> {
+        let at = |x: f64, y: f64| RoiFractions {
+            x,
+            y,
+            width: 0.2,
+            height: 0.2,
+        };
+        vec![
+            (0.0, at(-0.2, 0.0)),
+            (0.5, at(-0.1, 0.05)),
+            (1.0, at(0.0, 0.1)),
+        ]
+    }
+
+    fn close(left: f64, right: f64) -> bool {
+        (left - right).abs() < 1e-9
+    }
+
+    #[test]
+    fn a_path_becomes_keys_on_the_masks_centre() {
+        let mut mask = Mask::of("mask-1", "", MaskShape::Circle);
+        mask.follow(&path());
+        assert_eq!(
+            mask.shape(),
+            Some(MaskShape::Rectangle),
+            "a tracked box is a box"
+        );
+        assert_eq!(mask.keys_on("x").len(), 3);
+        assert_eq!(mask.keys_on("y").len(), 3);
+        assert!(
+            mask.keys_on("width").is_empty(),
+            "a size that never changes is a field, not a key per frame"
+        );
+        assert!(
+            close(mask.value_at("x", 0.0), -0.2),
+            "{}",
+            mask.value_at("x", 0.0)
+        );
+        assert!(close(mask.value_at("x", 1.0), 0.0));
+        assert!(close(mask.value_at("y", 0.5), 0.05));
+        assert_eq!(mask.get("width"), Some(0.2));
+    }
+
+    #[test]
+    fn a_second_run_replaces_the_first_rather_than_mixing() {
+        let mut mask = Mask::of("", "", MaskShape::Rectangle);
+        mask.follow(&path());
+        mask.follow(&[(
+            0.0,
+            RoiFractions {
+                x: 0.3,
+                y: -0.3,
+                width: 0.2,
+                height: 0.2,
+            },
+        )]);
+        assert_eq!(mask.keys_on("x").len(), 1);
+        assert!(close(mask.value_at("x", 0.0), 0.3));
+        assert!(close(mask.value_at("x", 1.0), 0.3));
+    }
+
+    #[test]
+    fn a_path_that_changes_size_keys_the_size_too() {
+        let mut mask = Mask::of("", "", MaskShape::Rectangle);
+        mask.follow(&[
+            (
+                0.0,
+                RoiFractions {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 0.2,
+                    height: 0.2,
+                },
+            ),
+            (
+                1.0,
+                RoiFractions {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 0.4,
+                    height: 0.4,
+                },
+            ),
+        ]);
+        assert_eq!(mask.keys_on("width").len(), 2);
+        assert!(close(mask.value_at("width", 1.0), 0.4));
+    }
+
+    #[test]
+    fn an_empty_path_changes_nothing() {
+        let mut mask = Mask::of("", "", MaskShape::Circle);
+        let before = mask.clone();
+        mask.follow(&[]);
+        assert_eq!(mask, before);
     }
 }
