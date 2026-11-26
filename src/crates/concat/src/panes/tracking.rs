@@ -311,6 +311,9 @@ impl TrackingPane {
         if lost {
             log::info!("tracking: lost the target after {stops} stops, kept {kept:.2}");
             studio.notify(&tf("tracking.lost", &[&stops]), true);
+        } else if kept < 0.5 {
+            log::info!("tracking: low confidence after {stops} stops, kept {kept:.2}");
+            studio.warn(&tf("tracking.lowConfidence", &[&stops]));
         } else {
             log::info!("tracking: {stops} stops, kept {kept:.2}");
             studio.notify(&tf("tracking.followed", &[&stops]), false);

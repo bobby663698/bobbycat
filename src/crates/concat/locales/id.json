@@ -1053,6 +1053,7 @@
   "tracking.following": "Following…",
   "tracking.hint": "Drag on the picture to frame what to follow; at least 8 pixels each way.",
   "tracking.lost": "The target was lost part way; the path stops at {0} stops.",
+  "tracking.lowConfidence": "Tracking confidence is low. Review the {0} stops.",
   "tracking.outside": "Start the drag on the picture; the bars around it are not the picture.",
   "tracking.pickAClip": "Pick a video clip first.",
   "tracking.reading": "Reading the frame…",

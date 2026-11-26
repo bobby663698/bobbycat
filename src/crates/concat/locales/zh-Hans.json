@@ -1053,6 +1053,7 @@
   "tracking.following": "正在跟随…",
   "tracking.hint": "在画面上拖出要跟随的目标；宽高至少各 8 像素。",
   "tracking.lost": "跟随中途丢失目标，路径停在 {0} 个停点。",
+  "tracking.lowConfidence": "跟随置信度较低，请检查写入的 {0} 个停点。",
   "tracking.outside": "请在实际画面内开始拖动，黑边不算画面。",
   "tracking.pickAClip": "请先选中一个视频片段。",
   "tracking.reading": "正在读取画面…",

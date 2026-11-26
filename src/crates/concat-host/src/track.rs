@@ -82,7 +82,7 @@ pub fn follow(request: &Request, mut progress: impl FnMut(f32)) -> Result<Path, 
             None => {
                 let started = Follower::new(&frame, request.roi)
                     .ok_or_else(|| "the box is not one that can be followed".to_owned())?;
-                let roi = started.roi();
+                let roi = Some(started.roi());
                 follower = Some(started);
                 roi
             }
@@ -98,19 +98,18 @@ pub fn follow(request: &Request, mut progress: impl FnMut(f32)) -> Result<Path, 
                 }
                 kept += step.kept;
                 measured += 1;
-                step.roi
+                step.accepted.then_some(step.roi)
             }
         };
-        if let Some(numbers) = roi.fractions(picture.0, picture.1) {
+        if let Some(numbers) = roi.and_then(|roi| roi.fractions(picture.0, picture.1)) {
             stops.push((at, numbers));
         }
         progress(at as f32);
     }
 
-    // Fewer stops than reads is a picture that vanished mid-run: a path of
-    // one stop is a box that never moved, which is a true answer and a
-    // useless one, so it is refused rather than drawn over the clip.
-    if stops.len() < 2 {
+    // A loss can leave only the initial box. Keep it so the window can
+    // report where the follow ended.
+    if stops.is_empty() || (stops.len() == 1 && !lost) {
         return Err("the clip had no picture to follow".to_owned());
     }
     Ok(Path {

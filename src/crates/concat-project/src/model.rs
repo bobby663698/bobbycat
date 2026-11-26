@@ -1450,10 +1450,8 @@ impl Mask {
     ///
     /// The stops are placed, not merged: two a tenth of a second apart are
     /// two answers, and only a stop at the same instant as one already
-    /// there replaces it. `KEY_EPSILON` is a fifth of a second wide at the
-    /// clip lengths this is read at, which is twice the gap between stops
-    /// on a sixty-second clip - merging by it kept one key of the three
-    /// hundred.
+    /// there replaces it. On a sixty-second clip `KEY_EPSILON` spans
+    /// 0.12 seconds, longer than the 0.1-second gap between samples.
     pub fn follow(&mut self, path: &[(f64, concat_core::roi::RoiFractions)]) {
         let Some(&(_, first)) = path.first() else {
             return;
@@ -1558,9 +1556,8 @@ mod key_runs {
 
     use super::{KEY_EPSILON, KeyEase, ParamKey};
 
-    /// Two keys this close are the same key at the same instant: a
-    /// thousandth of a millisecond on a minute-long clip. Distinct enough
-    /// from a tenth of a second that a machine's samples never collide.
+    /// Two keys within this clip fraction describe the same instant.
+    /// The window is 0.06 milliseconds on a minute-long clip.
     const SAME_INSTANT: f64 = 1e-6;
 
     /// The run for `name`, empty when it has none.
