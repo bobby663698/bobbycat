@@ -49,13 +49,13 @@ jobs:
 
       - name: Upload it for SignPath to take
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unsigned-for-signpath
           path: unsigned.zip
 
       - name: Sign
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
@@ -75,7 +75,7 @@ jobs:
           cat SHA256SUMS.txt
 
       - name: Publish
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-x86_64-signed
           path: signed/*
