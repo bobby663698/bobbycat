@@ -59,6 +59,8 @@ pub struct Run {
     pub stops: Vec<(f64, RoiFractions)>,
     /// The share of the box's points that kept up.
     pub kept: f32,
+    /// True when the target was covered or gone and the path ends there.
+    pub lost: bool,
 }
 
 /// What is being followed: the clip, its file, and the source seconds the
@@ -247,6 +249,7 @@ impl TrackingPane {
                     to,
                     stops: path.stops,
                     kept: path.kept,
+                    lost: path.lost,
                 })
             },
             |studio, _, _, result| {
@@ -287,6 +290,7 @@ impl TrackingPane {
         // second mask rather than renaming the first.
         let masks = Mask::tidy_all(masks);
         let stops = path.len();
+        let lost = run.lost;
         let kept = run.kept;
         studio.apply(Command::UpdateClip {
             clip_id: run.clip_id,
@@ -301,11 +305,14 @@ impl TrackingPane {
         self.picture = None;
         self.target = None;
         self.image = slint::Image::default();
-        // A run that lost its target halfway is worth saying: the mask is
-        // there, and the person should know to look at its tail.
-        if kept < 0.5 {
+        // A run that lost its target is worth saying: the mask is there and
+        // stops where the target did, and the person should know its tail
+        // is not the whole clip rather than find out by scrubbing.
+        if lost {
+            log::info!("tracking: lost the target after {stops} stops, kept {kept:.2}");
             studio.notify(&tf("tracking.lost", &[&stops]), true);
         } else {
+            log::info!("tracking: {stops} stops, kept {kept:.2}");
             studio.notify(&tf("tracking.followed", &[&stops]), false);
         }
     }

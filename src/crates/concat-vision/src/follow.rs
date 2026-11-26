@@ -18,9 +18,14 @@
 //! background costs the median nothing, and the mean everything.
 //!
 //! A box that loses its points - the target left the frame, or turned away
-//! from the light - stays where it was and says so in `kept`. The caller
-//! decides what that means for the clip; this does not stop the run, since
-//! a target that comes back is usually worth following from where it was.
+//! from the light - stays where it was and says so in `kept`. Geometry is
+//! not enough on its own: a box sitting over the background still follows
+//! the background after the target that was in it has gone, and every point
+//! keeps up while reporting a target that is not there. So each frame also
+//! asks whether the box still holds the same thing, by comparing its own
+//! insides with the frame before: a covered target reads near nought, and
+//! two frames of that in a row ends the run (`lost`), since there is
+//! nothing left to follow from.
 //!
 //! The box's size never changes here. Scale is a second question, and one
 //! the crop of a mask answers better than a tracker.
@@ -42,6 +47,10 @@ pub struct Followed {
     /// [`Follower::KEPT`] the box did not move: the number is then the
     /// reason, and a caller showing a path can break it there.
     pub kept: f32,
+    /// True when the box stopped holding what it was drawn around: covered,
+    /// replaced, or gone. The box then stands at the last frame that did
+    /// hold it, `kept` is nought, and the run has nothing more to say.
+    pub lost: bool,
 }
 
 /// Follows one box, one frame at a time.
@@ -54,6 +63,11 @@ pub struct Follower {
     roi: Roi,
     /// Frames followed so far.
     frame: u32,
+    /// What the box held on the last frame believed, so the next one can be
+    /// asked whether it still holds it.
+    look: Option<Look>,
+    /// Frames in a row that did not.
+    strikes: u32,
 }
 
 impl Follower {
@@ -61,6 +75,18 @@ impl Follower {
     /// believed: a quarter. Lower would let three points of twelve drag a
     /// box across the frame on noise.
     pub const KEPT: f32 = 0.25;
+
+    /// How much this frame's box has to look like the last one's, as the
+    /// correlation of their samples. A covered target reads near nought, a
+    /// frame of motion blur reads well above this, and a box being followed
+    /// through a pan reads above nine tenths.
+    pub const ALIKE: f32 = 0.40;
+
+    /// How many frames in a row may look unlike the box before the run is
+    /// over: two, so one blurred or flashing frame does not end a follow,
+    /// while a target that is actually covered ends it in a fifth of a
+    /// second at the rate this is read at.
+    pub const STRIKES: u32 = 2;
 
     /// The most points a box is followed by. Enough that no single wrong
     /// one moves the median, few enough that a frame costs a millisecond.
@@ -85,11 +111,14 @@ impl Follower {
         }
         let pyramid = Pyramid::of(Gray::of_frame(frame));
         let points = seed(&pyramid, roi);
+        let look = Some(Look::of(pyramid.base(), roi));
         Some(Follower {
             previous: Some(pyramid),
             points,
             roi,
             frame: 0,
+            look,
+            strikes: 0,
         })
     }
 
@@ -105,6 +134,7 @@ impl Follower {
     /// points were found on a frame this one does not continue.
     pub fn step(&mut self, frame: &Frame) -> Followed {
         self.frame += 1;
+        let before = self.roi;
         let next = Pyramid::of(Gray::of_frame(frame));
         let Some(previous) = self.previous.take() else {
             // Only reachable if a caller builds a Follower and clears it,
@@ -114,6 +144,7 @@ impl Follower {
                 frame: self.frame,
                 roi: self.roi,
                 kept: 0.0,
+                lost: false,
             };
         };
 
@@ -148,6 +179,30 @@ impl Follower {
             self.roi = self.roi.moved_to(x as u32, y as u32);
         }
 
+        // Geometry that kept up is not the same as the target still being
+        // there: a box over the background follows the background. Ask the
+        // box's own insides whether they are still the thing they were.
+        let look = Look::of(next.base(), self.roi);
+        let alike = self
+            .look
+            .as_ref()
+            .is_none_or(|held| held.alike(&look) >= Self::ALIKE);
+        if alike {
+            // Only a frame that still holds the target becomes the one the
+            // next is measured against: measuring the cover against itself
+            // would call the cover the target from the second frame on.
+            self.strikes = 0;
+            self.look = Some(look);
+        } else {
+            self.strikes += 1;
+        }
+        let lost = self.strikes >= Self::STRIKES;
+        if lost {
+            // The box goes back to the last frame that did hold the target,
+            // which is where a path should end.
+            self.roi = before;
+        }
+
         // The points that kept up carry on; when too few did, the box is
         // re-seeded where it now stands rather than followed by the three
         // that are left, which would report the same three for ever.
@@ -160,7 +215,8 @@ impl Follower {
         Followed {
             frame: self.frame,
             roi: self.roi,
-            kept,
+            kept: if lost { 0.0 } else { kept },
+            lost,
         }
     }
 }
@@ -171,6 +227,73 @@ fn limit(frame_side: u32, box_side: u32) -> f32 {
     frame_side.saturating_sub(box_side) as f32
 }
 
+/// What a box holds, as a grid of brightness readings: enough identity to
+/// ask the next frame whether it is still looking at the same thing, and
+/// cheap enough to take on every frame.
+///
+/// A grid rather than every pixel because a target that is covered is
+/// covered everywhere; a few dozen readings across the box say so as well
+/// as all of them would, and cost nothing.
+#[derive(Clone, Debug)]
+struct Look {
+    /// Row by row across the box, from its middle outward.
+    samples: Vec<f32>,
+}
+
+impl Look {
+    /// The box `roi` as it stands in `picture`.
+    fn of(picture: &Gray, roi: Roi) -> Look {
+        const GRID: usize = 8;
+        let mut samples = Vec::with_capacity(GRID * GRID);
+        for row in 0..GRID {
+            for column in 0..GRID {
+                let x = roi.x as f32 + roi.width as f32 * (column as f32 + 0.5) / GRID as f32;
+                let y = roi.y as f32 + roi.height as f32 * (row as f32 + 0.5) / GRID as f32;
+                samples.push(at(picture, x, y));
+            }
+        }
+        Look { samples }
+    }
+
+    /// How much `other` is this look again, `-1..=1`: one when the readings
+    /// move together, nought when they do not.
+    ///
+    /// A look with no contrast of its own is nothing to compare against -
+    /// a box drawn on flat paint - and answers one, leaving the points to
+    /// say where it went. Readings that went flat where the target had
+    /// detail answer nought: whatever is there now is not the target.
+    fn alike(&self, other: &Look) -> f32 {
+        let count = self.samples.len().min(other.samples.len());
+        if count == 0 {
+            return 1.0;
+        }
+        let mean = |values: &[f32]| values[..count].iter().sum::<f32>() / count as f32;
+        let (mean_self, mean_other) = (mean(&self.samples), mean(&other.samples));
+        let (mut covariance, mut spread_self, mut spread_other) = (0.0f32, 0.0f32, 0.0f32);
+        for index in 0..count {
+            let a = self.samples[index] - mean_self;
+            let b = other.samples[index] - mean_other;
+            covariance += a * b;
+            spread_self += a * a;
+            spread_other += b * b;
+        }
+        if spread_self <= f32::EPSILON {
+            return 1.0;
+        }
+        if spread_other <= f32::EPSILON {
+            return 0.0;
+        }
+        covariance / (spread_self.sqrt() * spread_other.sqrt())
+    }
+}
+
+/// One reading of `picture`, held at its edges.
+fn at(picture: &Gray, x: f32, y: f32) -> f32 {
+    let across = (x.max(0.0) as usize).min(picture.width.saturating_sub(1));
+    let down = (y.max(0.0) as usize).min(picture.height.saturating_sub(1));
+    picture.data[down * picture.width + across]
+}
+
 /// Follows `frames`, in order, from the box drawn on the first, and
 /// answers the path a mask is given: each stop a fraction of the run and
 /// the box's numbers there.
@@ -178,6 +301,12 @@ fn limit(frame_side: u32, box_side: u32) -> f32 {
 /// `picture` is the size the frames are decoded at, which is what the
 /// fractions are relative to. A run of one frame answers one stop at zero,
 /// and a run of none answers nothing.
+///
+/// The run ends at the first frame whose box no longer holds the target,
+/// and the stops answer the frames that did: each is a fraction of the
+/// frames the run *set out* to read, not of the ones it managed, so a path
+/// that stopped a third of the way through ends a third of the way along
+/// the clip rather than stretched over all of it.
 pub fn run(
     frames: impl IntoIterator<Item = Frame>,
     roi: Roi,
@@ -191,10 +320,16 @@ pub fn run(
         return Vec::new();
     };
     let mut boxes = vec![follower.roi()];
+    let mut planned = 1usize;
     for frame in frames {
-        boxes.push(follower.step(&frame).roi);
+        planned += 1;
+        let step = follower.step(&frame);
+        if step.lost {
+            break;
+        }
+        boxes.push(step.roi);
     }
-    let last = boxes.len().saturating_sub(1).max(1) as f64;
+    let last = planned.saturating_sub(1).max(1) as f64;
     boxes
         .into_iter()
         .enumerate()
@@ -435,6 +570,79 @@ mod tests {
             height: 48,
         };
         assert!(Follower::new(&picture, inside).is_some());
+    }
+
+    #[test]
+    fn a_target_that_is_covered_ends_the_run() {
+        let first = frame(320, 240, 0.0, 0.0);
+        let roi = Roi {
+            x: 100,
+            y: 80,
+            width: 60,
+            height: 60,
+        };
+        let mut follower = Follower::new(&first, roi).expect("a box inside the frame");
+
+        // The target travels two pixels right a frame, and from the fourth
+        // frame on something flat comes over it and stays.
+        let mut lost_at = None;
+        for step in 1..=12u32 {
+            let mut next = frame(320, 240, 2.0 * step as f64, 0.0);
+            if step >= 4 {
+                let (x, y) = (100 + 2 * step, 80);
+                for down in y..y + roi.height {
+                    for across in x..x + roi.width {
+                        next.set_pixel(across, down, [70, 70, 70, 255]);
+                    }
+                }
+            }
+            let followed = follower.step(&next);
+            if followed.lost {
+                lost_at = Some(step);
+                break;
+            }
+        }
+        let at = lost_at.expect("a covered box is a lost one");
+        assert!(at <= 6, "lost at frame {at}, wanted by six");
+        assert!(
+            follower.roi().x < 100 + 2 * at,
+            "the box went after the cover: {} at frame {at}",
+            follower.roi().x
+        );
+    }
+
+    #[test]
+    fn a_run_that_loses_its_target_stops_where_it_did() {
+        let roi = Roi {
+            x: 100,
+            y: 80,
+            width: 60,
+            height: 60,
+        };
+        let frames: Vec<Frame> = (0..=10u32)
+            .map(|step| {
+                let mut picture = frame(320, 240, 2.0 * step as f64, 0.0);
+                if step >= 5 {
+                    let (x, y) = (100 + 2 * step, 80);
+                    for down in y..y + roi.height {
+                        for across in x..x + roi.width {
+                            picture.set_pixel(across, down, [70, 70, 70, 255]);
+                        }
+                    }
+                }
+                picture
+            })
+            .collect();
+        let path = run(frames, roi, (320, 240));
+        assert!(
+            path.len() < 11,
+            "the run went on over the cover: {}",
+            path.len()
+        );
+        let last = path.last().expect("a path of at least one stop");
+        // Stops answer the frames the run set out to read, so a run that
+        // stopped halfway ends halfway, not at the clip's end.
+        assert!(last.0 < 0.9, "the path was stretched to {}", last.0);
     }
 
     #[test]

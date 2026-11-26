@@ -53,6 +53,9 @@ pub struct Path {
     /// The share of the box's points that kept up, averaged: one is a
     /// target that was always there, nought one that never was.
     pub kept: f32,
+    /// True when the box stopped holding the target: the path ends where
+    /// the target was last seen, not where the run meant to read to.
+    pub lost: bool,
 }
 
 /// Follows `request`'s box, calling `progress` with the fraction done after
@@ -67,6 +70,7 @@ pub fn follow(request: &Request, mut progress: impl FnMut(f32)) -> Result<Path, 
     let mut kept = 0.0f32;
     let mut measured = 0u32;
     let mut frames = 0u32;
+    let mut lost = false;
 
     for index in 0..count {
         let at = index as f64 / f64::from(count - 1);
@@ -84,6 +88,14 @@ pub fn follow(request: &Request, mut progress: impl FnMut(f32)) -> Result<Path, 
             }
             Some(following) => {
                 let step = following.step(&frame);
+                // The box stopped holding the target: the stop it would
+                // have written is the cover, not the target, so the run
+                // ends at the frame before it rather than following the
+                // background for the rest of the clip.
+                if step.lost {
+                    lost = true;
+                    break;
+                }
                 kept += step.kept;
                 measured += 1;
                 step.roi
@@ -109,6 +121,7 @@ pub fn follow(request: &Request, mut progress: impl FnMut(f32)) -> Result<Path, 
         } else {
             kept / measured as f32
         },
+        lost,
     })
 }
 

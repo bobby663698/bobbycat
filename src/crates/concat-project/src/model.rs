@@ -1412,6 +1412,17 @@ impl Mask {
         key_runs::set(&mut self.keys, number, at, Self::clamp(number, value), ease);
     }
 
+    /// Sets a key on a number held to its range, next to its neighbours
+    /// rather than in place of them: only a key at the same instant is
+    /// replaced. For a path a machine writes, where a sample is an answer
+    /// and not a correction.
+    fn place_key(&mut self, number: &str, at: f64, value: f64, ease: KeyEase) {
+        if self.get(number).is_none() {
+            return;
+        }
+        key_runs::place(&mut self.keys, number, at, Self::clamp(number, value), ease);
+    }
+
     /// Removes this number's key at `at`, if there is one. True when a key
     /// went.
     pub fn clear_key(&mut self, number: &str, at: f64) -> bool {
@@ -1436,6 +1447,13 @@ impl Mask {
     /// `width` and `height` as fields rather than keys, because a key per
     /// frame on two numbers that never change is a file a third larger for
     /// nothing.
+    ///
+    /// The stops are placed, not merged: two a tenth of a second apart are
+    /// two answers, and only a stop at the same instant as one already
+    /// there replaces it. `KEY_EPSILON` is a fifth of a second wide at the
+    /// clip lengths this is read at, which is twice the gap between stops
+    /// on a sixty-second clip - merging by it kept one key of the three
+    /// hundred.
     pub fn follow(&mut self, path: &[(f64, concat_core::roi::RoiFractions)]) {
         let Some(&(_, first)) = path.first() else {
             return;
@@ -1458,11 +1476,11 @@ impl Mask {
         self.set("height", first.height);
         for &(at, numbers) in path {
             if !same_size {
-                self.set_key("width", at, numbers.width, KeyEase::LINEAR);
-                self.set_key("height", at, numbers.height, KeyEase::LINEAR);
+                self.place_key("width", at, numbers.width, KeyEase::LINEAR);
+                self.place_key("height", at, numbers.height, KeyEase::LINEAR);
             }
-            self.set_key("x", at, numbers.x, KeyEase::LINEAR);
-            self.set_key("y", at, numbers.y, KeyEase::LINEAR);
+            self.place_key("x", at, numbers.x, KeyEase::LINEAR);
+            self.place_key("y", at, numbers.y, KeyEase::LINEAR);
         }
         // The fields keep the path's first stop, which is what a number
         // falls back to with its keys taken off.
@@ -1540,6 +1558,11 @@ mod key_runs {
 
     use super::{KEY_EPSILON, KeyEase, ParamKey};
 
+    /// Two keys this close are the same key at the same instant: a
+    /// thousandth of a millisecond on a minute-long clip. Distinct enough
+    /// from a tenth of a second that a machine's samples never collide.
+    const SAME_INSTANT: f64 = 1e-6;
+
     /// The run for `name`, empty when it has none.
     pub fn on<'a>(runs: &'a BTreeMap<String, Vec<ParamKey>>, name: &str) -> &'a [ParamKey] {
         runs.get(name).map_or(&[], Vec::as_slice)
@@ -1589,6 +1612,37 @@ mod key_runs {
         let slot = self::at(runs, name, at);
         let run = runs.entry(name.to_owned()).or_default();
         match slot {
+            Some(index) => run[index] = ParamKey { at, value, ease },
+            None => run.push(ParamKey { at, value, ease }),
+        }
+        run.sort_by(|a, b| a.at.total_cmp(&b.at));
+    }
+
+    /// Sets a key at `at` without absorbing its neighbours: only a key at
+    /// the same instant is replaced.
+    ///
+    /// [`set`] is for a person pressing a key, where two a tenth of a
+    /// second apart are meant as one and the second is a correction. This
+    /// is for the paths a machine writes, where every sample is meant and
+    /// dropping one is dropping the answer: at ten samples a second on a
+    /// minute-long clip the samples are 0.1 s apart, and `KEY_EPSILON`
+    /// there is 0.12 s - [`set`] would keep only the last of them.
+    pub fn place(
+        runs: &mut BTreeMap<String, Vec<ParamKey>>,
+        name: &str,
+        at: f64,
+        value: f64,
+        ease: KeyEase,
+    ) {
+        if !at.is_finite() || !value.is_finite() {
+            return;
+        }
+        let at = at.clamp(0.0, 1.0);
+        let run = runs.entry(name.to_owned()).or_default();
+        match run
+            .iter()
+            .position(|held| (held.at - at).abs() <= SAME_INSTANT)
+        {
             Some(index) => run[index] = ParamKey { at, value, ease },
             None => run.push(ParamKey { at, value, ease }),
         }
@@ -4164,5 +4218,47 @@ mod mask_follow_tests {
         let before = mask.clone();
         mask.follow(&[]);
         assert_eq!(mask, before);
+    }
+
+    #[test]
+    fn a_path_ten_a_second_survives_a_clip_where_the_merge_window_is_wider() {
+        // Three hundred stops a half of the clip long, ten a second: 0.0017
+        // of the clip apart, which is inside `KEY_EPSILON` (0.002). Merged
+        // the way a person's key presses are, they collapse into the last
+        // one - which is what a sixty-second clip did to a thirty-second
+        // run: one key on each of `x` and `y`, at the clip's end.
+        let mut mask = Mask::of("", "", MaskShape::Rectangle);
+        let stops = 301;
+        let path: Vec<(f64, RoiFractions)> = (0..stops)
+            .map(|index| {
+                let at = 0.5 + 0.5 * f64::from(index) / f64::from(stops - 1);
+                (
+                    at,
+                    RoiFractions {
+                        x: 0.1,
+                        y: 0.1 + 0.001 * f64::from(index),
+                        width: 0.2,
+                        height: 0.2,
+                    },
+                )
+            })
+            .collect();
+        mask.follow(&path);
+        assert_eq!(mask.keys_on("x").len() as u32, stops);
+        assert_eq!(mask.keys_on("y").len() as u32, stops);
+    }
+
+    #[test]
+    fn two_stops_at_the_same_instant_are_one_key() {
+        let mut mask = Mask::of("", "", MaskShape::Rectangle);
+        let at = |x: f64| RoiFractions {
+            x,
+            y: 0.0,
+            width: 0.2,
+            height: 0.2,
+        };
+        mask.follow(&[(0.25, at(0.1)), (0.25, at(0.2))]);
+        assert_eq!(mask.keys_on("x").len(), 1);
+        assert!(close(mask.value_at("x", 0.25), 0.2), "the later stop wins");
     }
 }
