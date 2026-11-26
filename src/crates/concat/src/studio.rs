@@ -982,6 +982,23 @@ macro_rules! same_with_models {
     )+};
 }
 
+/// Equal when the tracking sheet would look the same: every field it
+/// draws, and the picture it draws on. `set_changed` writes the sheet only
+/// when this says it changed, because a fresh clone of the frame's
+/// `slint::Image` on every publish would reset the sheet mid-drag.
+pub fn same_track(a: &crate::ui::TrackingData, b: &crate::ui::TrackingData) -> bool {
+    a.open == b.open
+        && a.show_box == b.show_box
+        && a.status == b.status
+        && a.busy == b.busy
+        && a.confirmable == b.confirmable
+        && a.box_x == b.box_x
+        && a.box_y == b.box_y
+        && a.box_width == b.box_width
+        && a.box_height == b.box_height
+        && a.picture == b.picture
+}
+
 same_with_models! {
     same_chain_choice: crate::ui::ChainChoiceData => options, values;
     same_transition_choice: crate::ui::TransitionChoiceData => options, values;
@@ -1081,6 +1098,9 @@ pub struct Studio {
     pub export: crate::panes::export::ExportPane,
     pub settings: crate::panes::settings::SettingsPane,
     pub relink: crate::panes::relink::RelinkPane,
+    /// The tracking sheet: a frame of the selected clip, the box drawn on
+    /// it, and the run that follows it.
+    pub track: crate::panes::tracking::TrackingPane,
     /// The notice that part of the project cannot be shown, held back while
     /// the relink dialog the same open raised is up; raised when it closes.
     pub unread_pending: Option<String>,
@@ -3120,6 +3140,7 @@ impl Studio {
             export: Default::default(),
             settings: crate::panes::settings::SettingsPane::default(),
             relink: crate::panes::relink::RelinkPane::default(),
+            track: crate::panes::tracking::TrackingPane::default(),
             unread_pending: None,
             confirm: None,
             transition_selected: None,

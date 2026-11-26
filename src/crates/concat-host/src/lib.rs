@@ -53,6 +53,7 @@ pub mod sounds;
 pub mod stabilize;
 pub mod templates;
 pub mod titles;
+pub mod track;
 pub mod updates;
 pub mod voices;
 

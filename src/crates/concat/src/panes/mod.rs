@@ -30,6 +30,7 @@ pub mod sounds;
 pub mod speech;
 pub mod start;
 pub mod timeline;
+pub mod tracking;
 pub mod voiceover;
 
 /// One thing that happened, to one pane.
@@ -65,6 +66,8 @@ pub enum Msg {
     Scenes(scenes::ScenesMsg),
     /// To the Plugins sheet.
     Plugins(plugins::PluginsMsg),
+    /// To the tracking sheet.
+    Tracking(tracking::TrackingMsg),
 }
 
 /// What a message says in the log: the activity trail of what the person

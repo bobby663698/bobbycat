@@ -2053,6 +2053,9 @@ impl Studio {
             same_relink,
             |data| app.set_relink(data),
         );
+        set_changed(app.get_tracking(), self.track.data(), same_track, |data| {
+            app.set_tracking(data)
+        });
         app.set_confirm(self.confirm_data());
 
         // The speech sheets, and the lists they choose from.
@@ -2644,6 +2647,15 @@ impl Studio {
                 row("scripts", t("studio.scripts"), Glyph::Play, "", true),
                 row("scenes", t("studio.scenes"), Glyph::Film, "", true),
                 row("plugins", t("studio.plugins"), Glyph::Sparkle, "", true),
+                // Draw a box on the selected clip's own frame and follow
+                // it: the mask it writes is a mask like any other.
+                row(
+                    "track",
+                    t("studio.trackTarget"),
+                    Glyph::Frame,
+                    "",
+                    !self.selection.is_empty(),
+                ),
                 row(
                     "clear-cache",
                     t("studio.clearProjectCache"),

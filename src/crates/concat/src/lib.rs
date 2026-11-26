@@ -121,6 +121,7 @@ use panes::sounds::SoundsMsg;
 use panes::speech::SpeechMsg;
 use panes::start::StartMsg;
 use panes::timeline::TimelineMsg;
+use panes::tracking::TrackingMsg;
 use panes::voiceover::VoiceoverMsg;
 use studio::{ASPECTS, Models, OUTPUTS, RATES, SIZES, Studio};
 use ui::*;
@@ -2185,6 +2186,23 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
         state.handle(Msg::Relink(RelinkMsg::Dismiss));
     }));
 
+    // ── the tracking sheet ──
+    // A press, a move and a release on the picture each land here with the
+    // pointer and the room it is in; the pane works out which pixel that is.
+    app.on_tracking_pointed(on_window!(
+        |state, phase: i32, x: f32, y: f32, width: f32, height: f32| {
+            state.handle(Msg::Tracking(TrackingMsg::Point(
+                phase, x, y, width, height,
+            )));
+        }
+    ));
+    app.on_tracking_confirmed(on_window!(|state| {
+        state.handle(Msg::Tracking(TrackingMsg::Follow));
+    }));
+    app.on_tracking_dismiss(on_window!(|state| {
+        state.handle(Msg::Tracking(TrackingMsg::Dismiss));
+    }));
+
     // ── the dialogs ──
     app.on_export_clicked(on_window!(|state| {
         state.handle(Msg::Export(ExportMsg::Open));
@@ -2665,6 +2683,7 @@ fn start(project: Option<std::path::PathBuf>, smoke: Smoke) -> Result<(), slint:
                         "scripts" => state.handle(Msg::Scripts(panes::scripts::ScriptsMsg::Open)),
                         "scenes" => state.handle(Msg::Scenes(panes::scenes::ScenesMsg::Open)),
                         "plugins" => state.handle(Msg::Plugins(panes::plugins::PluginsMsg::Open)),
+                        "track" => state.handle(Msg::Tracking(TrackingMsg::Pick)),
                         "clear-cache" => state.clear_project_cache(),
                         "settings" => state.handle(Msg::Settings(SettingsMsg::Open)),
                         "close-project" => {

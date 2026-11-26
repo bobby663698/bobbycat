@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 Jareer Abdullah
+
+import { I18n } from "../i18n.slint";
+import { Theme } from "../theme/theme.slint";
+import { Glyph } from "../icons.slint";
+import { Button, Modal } from "../primitives/modal.slint";
+
+export struct TrackingData {
+    open: bool,
+    /// The source frame the box is drawn on: the clip alone, as it plays.
+    picture: image,
+    /// The box in the surface's own coordinates, worked out by the caller
+    /// from the frame's pixels and the room the picture got - this file
+    /// does no arithmetic with them, so what is drawn and what is kept are
+    /// the same numbers.
+    box-x: length,
+    box-y: length,
+    box-width: length,
+    box-height: length,
+    show-box: bool,
+    /// What to tell the person: the box's pixels, why it cannot be taken,
+    /// or what the tracker is doing.
+    status: string,
+    /// A frame is being decoded, or the clip is being followed: nothing on
+    /// this sheet can be pressed meanwhile.
+    busy: bool,
+    confirmable: bool,
+}
+
+// Drawing a target box on the clip's own frame, and the run that follows
+// it.
+//
+// The frame is the clip's picture with nothing above it - no other track,
+// no title - so what is drawn on is what will be followed. A box is
+// dragged from one corner to the other, either way round; eight pixels a
+// side is the floor, because a smaller box holds no pattern to follow.
+// The bars around a picture of another shape are not the picture, and a
+// drag that starts there does not begin one.
+export component TrackingDialog inherits Modal {
+    in property <TrackingData> data;
+
+    /// The pointer on the picture's room: 0 down, 1 move, 2 up or taken
+    /// away. Positions and the room's size are this file's own; which
+    /// pixel they mean is the caller's to work out.
+    callback pointed(phase: int, x: length, y: length, width: length, height: length);
+    /// Follow the box through the clip.
+    callback confirmed();
+    callback dismiss();
+
+    open: root.data.open;
+    title: I18n.t("tracking.title");
+    glyph: Glyph.frame;
+    surface-width: 760px;
+    surface-height: 640px;
+    dismissable: !root.data.busy;
+
+    closed => {
+        if (!root.data.busy) {
+            root.dismiss();
+        }
+    }
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+
+        Text {
+            text: I18n.t("tracking.hint");
+            color: Theme.fg-dim;
+            font-size: Theme.fs-sm;
+            wrap: word-wrap;
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            clip: true;
+            border-radius: Theme.r-sm;
+            background: Theme.well;
+
+            Image {
+                source: root.data.picture;
+                image-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+
+            if root.data.show-box: Rectangle {
+                x: root.data.box-x;
+                y: root.data.box-y;
+                width: root.data.box-width;
+                height: root.data.box-height;
+                border-width: 2px;
+                border-color: Theme.accent;
+                background: #2a71aeff;
+            }
+
+            surface := TouchArea {
+                mouse-cursor: crosshair;
+                enabled: !root.data.busy;
+
+                pointer-event(event) => {
+                    if (event.kind == PointerEventKind.down) {
+                        root.pointed(0, self.mouse-x, self.mouse-y, self.width, self.height);
+                    } else if (event.kind == PointerEventKind.up) {
+                        root.pointed(2, self.mouse-x, self.mouse-y, self.width, self.height);
+                    } else if (event.kind == PointerEventKind.cancel) {
+                        root.pointed(2, self.mouse-x, self.mouse-y, self.width, self.height);
+                    }
+                }
+
+                moved => {
+                    if (self.pressed) {
+                        root.pointed(1, self.mouse-x, self.mouse-y, self.width, self.height);
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: root.data.status;
+            color: Theme.fg-muted;
+            font-size: Theme.fs-sm;
+            wrap: word-wrap;
+        }
+
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+
+            Button {
+                label: I18n.t("tracking.cancel");
+                enabled: !root.data.busy;
+                clicked => { root.dismiss(); }
+            }
+
+            Button {
+                label: I18n.t("tracking.follow");
+                primary: true;
+                enabled: root.data.confirmable && !root.data.busy;
+                clicked => { root.confirmed(); }
+            }
+        }
+    }
+}
