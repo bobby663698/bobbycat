@@ -346,8 +346,8 @@ impl Studio {
                 let span = knob.maximum - knob.minimum;
                 let (marks, curve, ease_index) =
                     marks_and_curve(&keys, &|value| (value - knob.minimum) / span);
-                let before = |key: &&model::ParamKey| key.at < at - model::KEY_EPSILON;
-                let after = |key: &&model::ParamKey| key.at > at + model::KEY_EPSILON;
+                let before = |key: &&model::ParamKey| key.at < at - model::KEY_INSTANT;
+                let after = |key: &&model::ParamKey| key.at > at + model::KEY_INSTANT;
                 rows.push(KeyRowData {
                     field,
                     param: mask.id.as_str().into(),
@@ -914,13 +914,13 @@ impl Studio {
             candidates
                 .iter()
                 .copied()
-                .filter(|&key_at| key_at < at - model::KEY_EPSILON)
+                .filter(|&key_at| key_at < at - model::KEY_INSTANT)
                 .reduce(f64::max)
         } else {
             candidates
                 .iter()
                 .copied()
-                .filter(|&key_at| key_at > at + model::KEY_EPSILON)
+                .filter(|&key_at| key_at > at + model::KEY_INSTANT)
                 .reduce(f64::min)
         };
         let Some(target) = target else {
@@ -1048,12 +1048,12 @@ impl Studio {
             let target = if delta < 0 {
                 times
                     .into_iter()
-                    .filter(|&key| key < at - model::KEY_EPSILON)
+                    .filter(|&key| key < at - model::KEY_INSTANT)
                     .reduce(f64::max)
             } else {
                 times
                     .into_iter()
-                    .filter(|&key| key > at + model::KEY_EPSILON)
+                    .filter(|&key| key > at + model::KEY_INSTANT)
                     .reduce(f64::min)
             };
             if let Some(target) = target {

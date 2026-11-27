@@ -374,9 +374,9 @@ impl AppliedFilter {
         let mut before: Option<f64> = None;
         let mut after: Option<f64> = None;
         for held in self.keys_on(key) {
-            if held.at < at - KEY_EPSILON {
+            if held.at < at - KEY_INSTANT {
                 before = Some(before.map_or(held.at, |seen: f64| seen.max(held.at)));
-            } else if held.at > at + KEY_EPSILON {
+            } else if held.at > at + KEY_INSTANT {
                 after = Some(after.map_or(held.at, |seen: f64| seen.min(held.at)));
             }
         }
@@ -1886,6 +1886,16 @@ pub struct ClipKey {
 /// being a question a user can answer by looking.
 pub const KEY_EPSILON: f64 = 0.002;
 
+/// How near two instants have to be to be the same instant rather than a
+/// neighbour: the key the playhead is standing on.
+///
+/// [`KEY_EPSILON`] answers a different question - whether a key press lands
+/// on a key already there, which wants to be generous - and spans 0.12 s on
+/// a minute-long clip. The stops a tracker writes are 0.1 s apart, so a
+/// chevron looking for the next key with that width finds the one two along
+/// and steps over its neighbour. A thousandth of a millisecond cannot.
+pub const KEY_INSTANT: f64 = 1e-6;
+
 /// One point of a speed curve.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
@@ -3298,9 +3308,9 @@ impl Clip {
         let mut before: Option<f64> = None;
         let mut after: Option<f64> = None;
         for key in self.keys_on(property) {
-            if key.at < at - KEY_EPSILON {
+            if key.at < at - KEY_INSTANT {
                 before = Some(before.map_or(key.at, |seen: f64| seen.max(key.at)));
-            } else if key.at > at + KEY_EPSILON {
+            } else if key.at > at + KEY_INSTANT {
                 after = Some(after.map_or(key.at, |seen: f64| seen.min(key.at)));
             }
         }
@@ -4257,5 +4267,49 @@ mod mask_follow_tests {
         mask.follow(&[(0.25, at(0.1)), (0.25, at(0.2))]);
         assert_eq!(mask.keys_on("x").len(), 1);
         assert!(close(mask.value_at("x", 0.25), 0.2), "the later stop wins");
+    }
+}
+
+#[cfg(test)]
+mod key_step_tests {
+    use super::*;
+
+    #[test]
+    fn a_chevron_steps_over_a_trackers_stops_one_at_a_time() {
+        // Three hundred stops over half a minute, a tenth of a second apart:
+        // 0.0017 of the clip, which is inside `KEY_EPSILON`. A chevron
+        // looking for the key after one of them with that width found the
+        // one two along and stepped over its neighbour.
+        let mut link = AppliedFilter {
+            id: "exposure".to_owned(),
+            params: BTreeMap::new(),
+            enabled: true,
+            keys: BTreeMap::new(),
+        };
+        let stops = 300;
+        let at = |index: u32| 0.5 + 0.5 * f64::from(index) / f64::from(stops - 1);
+        // Planted rather than set: `set_key` is the one that merges a press
+        // into its neighbour, which is what a path does not want.
+        link.keys.insert(
+            "exposure".to_owned(),
+            (0..stops)
+                .map(|index| ParamKey {
+                    at: at(index),
+                    value: 0.1 + 0.001 * f64::from(index),
+                    ease: KeyEase::LINEAR,
+                })
+                .collect(),
+        );
+        assert_eq!(
+            link.keys_on("exposure").len() as u32,
+            stops,
+            "every stop is kept"
+        );
+        let (before, after) = link.keys_around("exposure", at(150));
+        assert_eq!(before, Some(at(149)), "the key just behind");
+        assert_eq!(after, Some(at(151)), "the key just ahead");
+        let (before, after) = link.keys_around("exposure", at(0));
+        assert_eq!(before, None, "nothing behind the first");
+        assert_eq!(after, Some(at(1)));
     }
 }
