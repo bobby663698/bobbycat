@@ -7,6 +7,7 @@
 //! everything these arms share lives in the parent module.
 
 use super::*;
+use concat_core::roi::RoiFractions;
 
 /// Applies one of this module's commands. Any other is a routing error.
 pub(super) fn apply(
@@ -433,6 +434,47 @@ pub(super) fn apply(
             Ok(Outcome {
                 created_id: None,
                 applied,
+            })
+        }
+
+        Command::FollowMask {
+            clip_id,
+            mask_id,
+            path,
+        } => {
+            if path.is_empty() {
+                return Ok(Outcome::default());
+            }
+            let timeline = project.active_mut();
+            let Some(mask) = timeline
+                .clip_mut(&clip_id)
+                .and_then(|clip| clip.masks.iter_mut().find(|mask| mask.id == mask_id))
+            else {
+                return Ok(Outcome::default());
+            };
+            // The first stop is what the mask's fields fall back to, so the
+            // order the tracker reported in cannot decide it.
+            let mut path = path;
+            path.sort_by(|a, b| a.at.total_cmp(&b.at));
+            let stops: Vec<(f64, RoiFractions)> = path
+                .iter()
+                .map(|point| {
+                    (
+                        point.at.clamp(0.0, 1.0),
+                        RoiFractions {
+                            x: point.x,
+                            y: point.y,
+                            width: point.width,
+                            height: point.height,
+                        },
+                    )
+                })
+                .collect();
+            let before = mask.keys.clone();
+            mask.follow(&stops);
+            Ok(Outcome {
+                created_id: None,
+                applied: mask.keys != before,
             })
         }
 

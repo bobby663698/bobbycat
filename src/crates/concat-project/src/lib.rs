@@ -40,8 +40,8 @@ pub mod srt;
 pub mod unread;
 
 pub use commands::{
-    Command, CommandError, Outcome, PlayheadSide, consolidation_clips, delete_to_playhead,
-    why_not_merge,
+    Command, CommandError, FollowPoint, Outcome, PlayheadSide, consolidation_clips,
+    delete_to_playhead, why_not_merge,
 };
 pub use doc::{DOCUMENT_VERSION, DocumentSettings, document_version, from_document, to_document};
 pub use editor::{Editor, RetiredFields};

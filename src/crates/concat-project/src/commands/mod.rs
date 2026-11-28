@@ -260,6 +260,29 @@ pub struct NewMedia {
     pub color_space: ColorSpace,
 }
 
+/// One stop on a tracked path: where the box was, in a mask's own numbers.
+///
+/// The tracker works in source pixels; a command travels as fractions, on the
+/// same terms as [`Mask`]'s `x`, `y`, `width` and `height` - see
+/// `concat_core::roi::RoiFractions`, which this mirrors so that the command
+/// enum needs no geometry type it cannot derive a schema for.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FollowPoint {
+    /// Where in the clip, `0..=1`.
+    pub at: f64,
+    /// The box's centre across, as a fraction of the picture's width from its
+    /// middle.
+    pub x: f64,
+    /// The same, down its height.
+    pub y: f64,
+    /// The box's width, as a fraction of the picture's shorter side.
+    pub width: f64,
+    /// The box's height, on the same terms.
+    pub height: f64,
+}
+
 /// Every edit, as the window sends it: a tagged `op` plus camelCase
 /// fields. [`apply`] is the single place each variant's meaning lives; the
 /// notes here state the contract - clamps, tolerances, what gets minted -
@@ -607,6 +630,26 @@ pub enum Command {
         mask_id: String,
         /// Which number.
         number: String,
+    },
+    /// Puts a tracked path on a mask: where the box was at each stop, keyed
+    /// on the mask's `x`, `y`, `width` and `height`.
+    ///
+    /// The path is computed outside this crate - a tracker reads pixels, and
+    /// nothing here does - so the command carries it rather than running it.
+    /// An empty path is a no-op, and so is a clip or mask the project does
+    /// not hold.
+    ///
+    /// The points are put in order of `at` before they are written, because
+    /// the first one is what the mask's fields fall back to when its keys are
+    /// taken off. Whatever the mask had keyed on those four numbers is
+    /// replaced: a second run is a correction, not a second opinion.
+    FollowMask {
+        /// The clip holding the mask. An unknown id is a no-op.
+        clip_id: String,
+        /// The mask to follow with. One the clip does not hold is a no-op.
+        mask_id: String,
+        /// The path, in whatever order the tracker found it.
+        path: Vec<FollowPoint>,
     },
     /// Sets or clears a picture's cutout: the mask that takes its
     /// background away. Tidied on the way in; see [`Cutout::tidy`].
@@ -1281,6 +1324,9 @@ impl Command {
             Command::ClearClipKey { at, .. }
             | Command::ClearEffectKey { at, .. }
             | Command::ClearMaskKey { at, .. } => bad([*at]),
+            Command::FollowMask { path, .. } => path
+                .iter()
+                .any(|point| bad([point.at, point.x, point.y, point.width, point.height])),
             Command::SetClipCutout { cutout, .. } => cutout.as_ref().is_some_and(|cutout| {
                 bad([cutout.feather]) || cutout.strokes.iter().any(bad_stroke)
             }),
@@ -1458,6 +1504,7 @@ pub fn apply(
         | Command::SetMaskKey { .. }
         | Command::ClearMaskKey { .. }
         | Command::ClearMaskKeys { .. }
+        | Command::FollowMask { .. }
         | Command::SetClipSpeedCurve { .. }
         | Command::SetClipTransform { .. }
         | Command::FrameClip { .. }) => properties::apply(project, mint, command),
