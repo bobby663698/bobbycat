@@ -698,10 +698,12 @@ impl Studio {
             return;
         };
         let link = &clip.video_effects[entry];
-        // The knob is keyed here when its own key - a wheel's master - is.
+        // The knob is keyed here when its own key - a wheel's master - is,
+        // and only when that key is on the playhead itself: a press between
+        // two keys sets a key, it does not take off a neighbour.
         let on = names
             .last()
-            .is_some_and(|(name, _)| link.key_at(name, at).is_some());
+            .is_some_and(|(name, _)| link.key_instant(name, at));
         let mut commands: Vec<Command> = names
             .iter()
             .filter_map(|(name, default)| {
