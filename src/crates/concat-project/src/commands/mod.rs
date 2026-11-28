@@ -651,6 +651,41 @@ pub enum Command {
         /// The path, in whatever order the tracker found it.
         path: Vec<FollowPoint>,
     },
+    /// Makes a clip follow a mask's tracked path: where the mask's centre
+    /// went, the clip's offset goes with it, keeping the distance the clip
+    /// had from the box when this ran.
+    ///
+    /// The path is the one [`Command::FollowMask`] wrote, keyed on the mask's
+    /// `x` and `y` as fractions of *that* clip's length. The driven clip's
+    /// keys are fractions of its own length and it may start later, so a stop
+    /// outside it is dropped rather than clamped onto an edge: the clip was
+    /// not on screen then, and a key at zero would pin it there.
+    ///
+    /// Whatever the clip had keyed on its two offsets is replaced. A mask with
+    /// no path, a clip that is not there and a mask that is not there all
+    /// leave the document alone.
+    BindClipToMask {
+        /// The clip to move along the path.
+        clip_id: String,
+        /// The clip holding the mask.
+        mask_clip_id: String,
+        /// The mask whose `x` and `y` keys are the path.
+        mask_id: String,
+        /// How far from the mask's centre the clip sits, as a fraction of
+        /// the frame. Zero - the default - puts it on the box, which is what
+        /// a sticker covering a face wants; a sticker above a head asks for
+        /// a negative `shiftY`.
+        ///
+        /// It is a parameter and not the clip's current offset on purpose: a
+        /// second binding with the same numbers lands in the same place,
+        /// where reading the clip's own position would drift by however far
+        /// the first binding moved it.
+        #[serde(default)]
+        shift_x: f64,
+        /// The same, down the frame.
+        #[serde(default)]
+        shift_y: f64,
+    },
     /// Sets or clears a picture's cutout: the mask that takes its
     /// background away. Tidied on the way in; see [`Cutout::tidy`].
     SetClipCutout {
@@ -1327,6 +1362,7 @@ impl Command {
             Command::FollowMask { path, .. } => path
                 .iter()
                 .any(|point| bad([point.at, point.x, point.y, point.width, point.height])),
+            Command::BindClipToMask { .. } => false,
             Command::SetClipCutout { cutout, .. } => cutout.as_ref().is_some_and(|cutout| {
                 bad([cutout.feather]) || cutout.strokes.iter().any(bad_stroke)
             }),
@@ -1505,6 +1541,7 @@ pub fn apply(
         | Command::ClearMaskKey { .. }
         | Command::ClearMaskKeys { .. }
         | Command::FollowMask { .. }
+        | Command::BindClipToMask { .. }
         | Command::SetClipSpeedCurve { .. }
         | Command::SetClipTransform { .. }
         | Command::FrameClip { .. }) => properties::apply(project, mint, command),

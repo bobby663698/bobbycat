@@ -478,6 +478,82 @@ pub(super) fn apply(
             })
         }
 
+        Command::BindClipToMask {
+            clip_id,
+            mask_clip_id,
+            mask_id,
+            shift_x,
+            shift_y,
+        } => {
+            // The path and both spans are read before the driven clip is
+            // borrowed mutably: they are two different clips.
+            let (source_start, source_duration, x_run, y_run) = {
+                let timeline = project.active_mut();
+                let Some(source) = timeline.clip(&mask_clip_id) else {
+                    return Ok(Outcome::default());
+                };
+                let Some(mask) = source.masks.iter().find(|mask| mask.id == mask_id) else {
+                    return Ok(Outcome::default());
+                };
+                let Some(x_run) = mask.keys.get("x").filter(|run| !run.is_empty()).cloned() else {
+                    return Ok(Outcome::default());
+                };
+                (
+                    source.start,
+                    source.duration,
+                    x_run,
+                    mask.keys.get("y").cloned().unwrap_or_default(),
+                )
+            };
+            if source_duration <= 0.0 {
+                return Ok(Outcome::default());
+            }
+
+            let Some(target) = project.active_mut().clip_mut(&clip_id) else {
+                return Ok(Outcome::default());
+            };
+            if target.duration <= 0.0 {
+                return Ok(Outcome::default());
+            }
+            let start = target.start;
+            let duration = target.duration;
+
+            let before = target.keys.clone();
+            target.clear_keys(KeyProperty::OffsetX);
+            target.clear_keys(KeyProperty::OffsetY);
+            let mut wrote = false;
+            for key in &x_run {
+                let Some(at) = within(source_start + key.at * source_duration, start, duration)
+                else {
+                    continue;
+                };
+                target.set_key(
+                    KeyProperty::OffsetX,
+                    at,
+                    key.value + shift_x,
+                    KeyEase::LINEAR,
+                );
+                wrote = true;
+            }
+            for key in &y_run {
+                let Some(at) = within(source_start + key.at * source_duration, start, duration)
+                else {
+                    continue;
+                };
+                target.set_key(
+                    KeyProperty::OffsetY,
+                    at,
+                    key.value + shift_y,
+                    KeyEase::LINEAR,
+                );
+                wrote = true;
+            }
+            Ok(Outcome {
+                created_id: None,
+                applied: wrote && target.keys != before,
+            })
+        }
+
         Command::SetClipSpeedCurve {
             clip_id,
             curve,
@@ -663,4 +739,18 @@ fn shift_followers(timeline: &mut Timeline, clip_id: &str, old_end: f64, ripple:
         };
         clips::follow_main(timeline, main.as_deref(), &track_id, ripple);
     }
+}
+
+/// Where `t` falls in a clip that starts at `start` and runs `duration`,
+/// as a fraction of that clip; `None` when it falls outside it.
+///
+/// A tracked stop is an instant on the timeline, and a clip's keys are
+/// fractions of its own length: one cannot be read as the other without the
+/// clip's start, which is why this takes it rather than a span.
+fn within(t: f64, start: f64, duration: f64) -> Option<f64> {
+    if duration <= 0.0 {
+        return None;
+    }
+    let at = (t - start) / duration;
+    (0.0..=1.0).contains(&at).then_some(at)
 }
