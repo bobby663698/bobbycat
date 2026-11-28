@@ -2390,7 +2390,7 @@ fn adjust_rows(chain: &[AppliedFilter], at: Option<f64>) -> Vec<AppliedParamData
                 (Some(entry), Some(at)) if keyed => {
                     let (prev, next) = entry.keys_around(&param.key, at);
                     (
-                        entry.key_at(&param.key, at).is_some(),
+                        entry.key_instant(&param.key, at),
                         prev.is_some(),
                         next.is_some(),
                     )
@@ -2672,11 +2672,7 @@ fn grading_rows(
                 let (here, prev, next) = match (link, at) {
                     (Some(link), Some(at)) if keyed => {
                         let (prev, next) = link.keys_around(&m, at);
-                        (
-                            link.key_at(&m, at).is_some(),
-                            prev.is_some(),
-                            next.is_some(),
-                        )
+                        (link.key_instant(&m, at), prev.is_some(), next.is_some())
                     }
                     _ => (false, false, false),
                 };

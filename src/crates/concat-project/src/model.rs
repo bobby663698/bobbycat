@@ -338,6 +338,15 @@ impl AppliedFilter {
         key_runs::at(&self.keys, key, at)
     }
 
+    /// Whether a key sits on `at` itself, not merely within [`KEY_EPSILON`]
+    /// of it. What a panel's diamond fills on: a key a hair away is another
+    /// key, however close the press that wanted it there.
+    pub fn key_instant(&self, key: &str, at: f64) -> bool {
+        self.keys_on(key)
+            .iter()
+            .any(|held| (held.at - at).abs() <= KEY_INSTANT)
+    }
+
     /// This parameter's keys as the engine plays them.
     pub fn track_on(&self, key: &str) -> concat_core::animate::Track {
         key_runs::track(&self.keys, key)
@@ -1393,6 +1402,14 @@ impl Mask {
     /// Whether this number rides at all.
     pub fn is_keyed(&self, number: &str) -> bool {
         !self.keys_on(number).is_empty()
+    }
+
+    /// Whether a key on this number sits on `at` itself, not merely within
+    /// [`KEY_EPSILON`] of it; see [`AppliedFilter::key_instant`].
+    pub fn key_instant(&self, number: &str, at: f64) -> bool {
+        self.keys_on(number)
+            .iter()
+            .any(|held| (held.at - at).abs() <= KEY_INSTANT)
     }
 
     /// What a number is worth at `at` (`0..=1` of the clip): its ride where
@@ -3273,6 +3290,13 @@ impl Clip {
             .map(|(index, _)| index)
     }
 
+    /// Whether a key on this property sits on `at` itself, not merely within
+    /// [`KEY_EPSILON`] of it; see [`Mask::key_instant`].
+    pub fn key_instant(&self, property: KeyProperty, at: f64) -> bool {
+        self.keys_on(property)
+            .any(|key| (key.at - at).abs() <= KEY_INSTANT)
+    }
+
     /// This property's keys as the engine plays them.
     pub fn track_on(&self, property: KeyProperty) -> concat_core::animate::Track {
         concat_core::animate::Track::new(
@@ -4311,5 +4335,43 @@ mod key_step_tests {
         let (before, after) = link.keys_around("exposure", at(0));
         assert_eq!(before, None, "nothing behind the first");
         assert_eq!(after, Some(at(1)));
+    }
+
+    #[test]
+    fn a_diamond_fills_only_on_the_key_under_the_playhead() {
+        // The same three hundred stops, 0.0017 of the clip apart: narrower
+        // than `KEY_EPSILON`, so a diamond asking "is a key within that"
+        // stayed lit between keys and at both ends. The instant asks the
+        // narrower question, and only a key on the playhead answers it.
+        let mut mask = Mask::of("mask-1", "Mask", MaskShape::Rectangle);
+        let stops = 300;
+        let at = |index: u32| 0.5 + 0.5 * f64::from(index) / f64::from(stops - 1);
+        // Planted rather than set: `set_key` merges a press into the key
+        // next to it, and these stops are closer than that.
+        mask.keys.insert(
+            "x".to_owned(),
+            (0..stops)
+                .map(|index| ParamKey {
+                    at: at(index),
+                    value: 0.1 + 0.001 * f64::from(index),
+                    ease: KeyEase::LINEAR,
+                })
+                .collect(),
+        );
+        assert!(mask.key_instant("x", at(0)), "the first key");
+        assert!(mask.key_instant("x", at(150)), "a key in the middle");
+        assert!(mask.key_instant("x", at(stops - 1)), "the last key");
+        let between = (at(150) + at(151)) / 2.0;
+        assert!(
+            mask.keys_on("x")
+                .iter()
+                .any(|key| (key.at - between).abs() <= KEY_EPSILON),
+            "a press there still lands within `KEY_EPSILON` of a key and merges"
+        );
+        assert!(
+            !mask.key_instant("x", between),
+            "but no key sits on the playhead between two"
+        );
+        assert!(!mask.key_instant("x", at(150) + 0.0013), "nor near one");
     }
 }

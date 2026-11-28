@@ -336,13 +336,16 @@ impl Studio {
                     };
                 };
                 let keys = mask.keys_on(number);
-                let near = |key: &model::ParamKey| (key.at - at).abs() <= model::KEY_EPSILON;
+                // The same three answers as on a clip's rows, and asked the
+                // same width: on the playhead, behind it, ahead of it. A
+                // `KEY_EPSILON` here lit every mark of a sampled run at once.
+                let on_playhead = |key: &model::ParamKey| (key.at - at).abs() <= model::KEY_INSTANT;
                 ClipKeyData {
                     field,
                     keyed: !keys.is_empty(),
-                    here: keys.iter().any(near),
-                    prev: keys.iter().any(|key| key.at < at - model::KEY_EPSILON),
-                    next: keys.iter().any(|key| key.at > at + model::KEY_EPSILON),
+                    here: keys.iter().any(on_playhead),
+                    prev: keys.iter().any(|key| key.at < at - model::KEY_INSTANT),
+                    next: keys.iter().any(|key| key.at > at + model::KEY_INSTANT),
                 }
             })
             .collect()
@@ -365,10 +368,13 @@ impl Studio {
             return Vec::new();
         };
         let (clip_id, mask_id, number) = (clip.id.clone(), mask.id.clone(), number.to_owned());
+        // Clear only a key the diamond is filled on. A press between two
+        // keys sets one - which the model merges into the nearer slot -
+        // rather than taking off a neighbour the person never aimed at.
         let here = mask
             .keys_on(&number)
             .iter()
-            .find(|key| (key.at - at).abs() <= model::KEY_EPSILON);
+            .find(|key| (key.at - at).abs() <= model::KEY_INSTANT);
         match here {
             Some(key) => vec![Command::ClearMaskKey {
                 clip_id,

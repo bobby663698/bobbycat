@@ -110,7 +110,7 @@ impl Studio {
                 ClipKeyData {
                     field: key_field_of(property),
                     keyed: clip.is_keyed(property),
-                    here: clip.key_at(property, at).is_some(),
+                    here: clip.key_instant(property, at),
                     prev: prev.is_some(),
                     next: next.is_some(),
                 }
@@ -130,7 +130,10 @@ impl Studio {
             return Vec::new();
         };
         let at = place_in(clip, self.playhead);
-        let near = |a: f64, b: f64| (a - b).abs() <= model::KEY_EPSILON;
+        // A mark is "here" only when its key sits on the playhead itself.
+        // `KEY_EPSILON` is wider than the gap between sampled keys, and a
+        // diamond drawn with it lit on every mark at once.
+        let on_playhead = |a: f64, b: f64| (a - b).abs() <= model::KEY_INSTANT;
         // A run of keys as marks: each with its value as a fraction of the
         // range and the ease into it, and the ride as a path - a hold to
         // the first key, a cubic per segment (the ease's control points are
@@ -145,7 +148,7 @@ impl Studio {
                     let [x1, y1, x2, y2] = ease.0;
                     KeyMarkData {
                         at: *key_at as f32,
-                        here: near(*key_at, at),
+                        here: on_playhead(*key_at, at),
                         value: to_fraction(*value).clamp(0.0, 1.0) as f32,
                         ease_x1: x1 as f32,
                         ease_y1: y1 as f32,
@@ -308,7 +311,7 @@ impl Studio {
                 state: ClipKeyData {
                     field: key_field_of(property),
                     keyed: !keys.is_empty(),
-                    here: clip.key_at(property, at).is_some(),
+                    here: clip.key_instant(property, at),
                     prev: prev.is_some(),
                     next: next.is_some(),
                 },
@@ -356,7 +359,7 @@ impl Studio {
                     state: ClipKeyData {
                         field,
                         keyed: !held.is_empty(),
-                        here: held.iter().any(|key| near(key.at, at)),
+                        here: held.iter().any(|key| on_playhead(key.at, at)),
                         prev: held.iter().any(|key| before(&key)),
                         next: held.iter().any(|key| after(&key)),
                     },
@@ -993,7 +996,7 @@ impl Studio {
             return;
         };
         let clip_id = clip.id.clone();
-        let command = if clip.key_at(property, at).is_some() {
+        let command = if clip.key_instant(property, at) {
             Command::ClearClipKey {
                 clip_id,
                 property,
